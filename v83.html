@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Supervivencia 3D V8.3</title>
+
+<style>
+*{box-sizing:border-box}
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#87b9d8;
+  font-family:Arial,sans-serif;
+  touch-action:none;
+}
+#game{
+  position:fixed;
+  inset:0;
+}
+#ui{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+}
+#top{
+  position:absolute;
+  top:10px;
+  left:10px;
+  right:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+}
+.panel{
+  background:rgba(0,0,0,.65);
+  color:white;
+  padding:8px 11px;
+  border-radius:10px;
+  font-size:13px;
+}
+#version{
+  font-weight:bold;
+}
+#controls{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:20px;
+  height:170px;
+}
+#joystick{
+  position:absolute;
+  left:20px;
+  bottom:20px;
+  width:125px;
+  height:125px;
+  border-radius:50%;
+  background:rgba(255,255,255,.15);
+  border:2px solid rgba(255,255,255,.35);
+  pointer-events:auto;
+}
+#stick{
+  position:absolute;
+  width:55px;
+  height:55px;
+  left:33px;
+  top:33px;
+  border-radius:50%;
+  background:rgba(255,255,255,.55);
+}
+.buttons{
+  position:absolute;
+  right:18px;
+  bottom:15px;
+  display:flex;
+  gap:10px;
+  pointer-events:auto;
+}
+button{
+  width:75px;
+  height:55px;
+  border:0;
+  border-radius:14px;
+  background:rgba(0,0,0,.65);
+  color:white;
+  font-weight:bold;
+  font-size:12px;
+}
+button:active{
+  transform:scale(.94);
+  background:rgba(255,255,255,.3);
+}
+#map{
+  display:none;
+  position:absolute;
+  top:65px;
+  right:10px;
+  width:220px;
+  height:220px;
+  background:rgba(0,0,0,.8);
+  border:2px solid white;
+  border-radius:10px;
+}
+#message{
+  position:absolute;
+  left:50%;
+  bottom:200px;
+  transform:translateX(-50%);
+  color:white;
+  background:rgba(0,0,0,.65);
+  padding:8px 12px;
+  border-radius:10px;
+  display:none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game"></div>
+
+<div id="ui">
+
+  <div id="top">
+    <div class="panel">
+      <div id="version">SUPERVIVENCIA 3D — V8.3</div>
+      <div id="stats">Vida: 100 | Resistencia: 100</div>
+    </div>
+
+    <div class="panel">
+      <div id="position">X: 0 | Z: 0</div>
+      <div id="distance">Base: 0 m</div>
+    </div>
+  </div>
+
+  <canvas id="map" width="220" height="220"></canvas>
+
+  <div id="message"></div>
+
+  <div id="controls">
+
+    <div id="joystick">
+      <div id="stick"></div>
+    </div>
+
+    <div class="buttons">
+      <button id="jump">SALTAR</button>
+      <button id="run">CORRER</button>
+      <button id="mapBtn">MAPA</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+"use strict";
+
+/* =========================
+   ESCENA
+========================= */
+
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0x87b9d8);
+
+scene.fog = new THREE.Fog(
+  0x87b9d8,
+  80,
+  650
+);
+
+
+/* =========================
+   CAMARA
+========================= */
+
+const camera = new THREE.PerspectiveCamera(
+  65,
+  innerWidth / innerHeight,
+  0.1,
+  2000
+);
+
+camera.position.set(0,6,10);
+
+
+/* =========================
+   RENDER
+========================= */
+
+const renderer = new THREE.WebGLRenderer({
+  antialias:true
+});
+
+renderer.setSize(
+  innerWidth,
+  innerHeight
+);
+
+renderer.setPixelRatio(
+  Math.min(devicePixelRatio,2)
+);
+
+renderer.shadowMap.enabled = true;
+
+document.getElementById("game").appendChild(renderer.domElement);
+
+
+/* =========================
+   LUCES
+========================= */
+
+const hemi = new THREE.HemisphereLight(
+  0xffffff,
+  0x506040,
+  1.8
+);
+
+scene.add(hemi);
+
+const sun = new THREE.DirectionalLight(
+  0xffffff,
+  2
+);
+
+sun.position.set(
+  100,
+  180,
+  100
+);
+
+sun.castShadow = true;
+
+scene.add(sun);
+
+
+/* =========================
+   SUELO
+========================= */
+
+const groundGeo = new THREE.PlaneGeometry(
+  2000,
+  2000
+);
+
+const groundMat = new THREE.MeshLambertMaterial({
+  color:0x4f8a43
+});
+
+const ground = new THREE.Mesh(
+  groundGeo,
+  groundMat
+);
+
+ground.rotation.x = -Math.PI/2;
+
+ground.receiveShadow = true;
+
+scene.add(ground);
+
+
+/* =========================
+   CAMINOS
+========================= */
+
+function road(x,z,w,d){
+
+  const geo = new THREE.BoxGeometry(
+    w,
+    .05,
+    d
+  );
+
+  const mat = new THREE.MeshLambertMaterial({
+    color:0x776b55
+  });
+
+  const r = new THREE.Mesh(
+    geo,
+    mat
+  );
+
+  r.position.set(
+    x,
+    .03,
+    z
+  );
+
+  scene.add(r);
+}
+
+road(0,0,15,2000);
+road(0,0,2000,15);
+
+
+/* =========================
+   ARBOLES
+========================= */
+
+function createTree(x,z,scale=1){
+
+  const tree = new THREE.Group();
+
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      .45*scale,
+      .65*scale,
+      4*scale,
+      8
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x6b4025
+    })
+  );
+
+  trunk.position.y = 2*scale;
+
+  trunk.castShadow = true;
+
+  tree.add(trunk);
+
+
+  const crown = new THREE.Mesh(
+    new THREE.SphereGeometry(
+      2.4*scale,
+      10,
+      8
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x245d2b
+    })
+  );
+
+  crown.position.y = 5*scale;
+
+  crown.castShadow = true;
+
+  tree.add(crown);
+
+  tree.position.set(x,0,z);
+
+  scene.add(tree);
+}
+
+
+/* bosque */
+
+for(let i=0;i<140;i++){
+
+  let x = (Math.random()-.5)*850;
+  let z = (Math.random()-.5)*850;
+
+  if(Math.abs(x)<35 && Math.abs(z)<35){
+    i--;
+    continue;
+  }
+
+  createTree(
+    x,
+    z,
+    .8+Math.random()*.7
+  );
+}
+
+
+/* =========================
+   ROCAS
+========================= */
+
+function createRock(x,z){
+
+  const rock = new THREE.Mesh(
+    new THREE.DodecahedronGeometry(
+      1+Math.random()*1.5,
+      0
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x686868
+    })
+  );
+
+  rock.position.set(
+    x,
+    1,
+    z
+  );
+
+  rock.rotation.set(
+    Math.random(),
+    Math.random(),
+    Math.random()
+  );
+
+  rock.castShadow = true;
+
+  scene.add(rock);
+}
+
+for(let i=0;i<70;i++){
+
+  createRock(
+    (Math.random()-.5)*800,
+    (Math.random()-.5)*800
+  );
+}
+
+
+/* =========================
+   CASA BASE
+========================= */
+
+function createHouse(x,z){
+
+  const house = new THREE.Group();
+
+  const wallMat =
+    new THREE.MeshLambertMaterial({
+      color:0xb99a72
+    });
+
+  const roofMat =
+    new THREE.MeshLambertMaterial({
+      color:0x553d30
+    });
+
+
+  const back = new THREE.Mesh(
+    new THREE.BoxGeometry(12,6,.5),
+    wallMat
+  );
+
+  back.position.set(0,3,-6);
+
+  house.add(back);
+
+
+  const left = new THREE.Mesh(
+    new THREE.BoxGeometry(.5,6,12),
+    wallMat
+  );
+
+  left.position.set(-6,3,0);
+
+  house.add(left);
+
+
+  const right = left.clone();
+
+  right.position.x = 6;
+
+  house.add(right);
+
+
+  const frontL = new THREE.Mesh(
+    new THREE.BoxGeometry(4.5,6,.5),
+    wallMat
+  );
+
+  frontL.position.set(-3.75,3,6);
+
+  house.add(frontL);
+
+
+  const frontR = frontL.clone();
+
+  frontR.position.x = 3.75;
+
+  house.add(frontR);
+
+
+  const roof = new THREE.Mesh(
+    new THREE.BoxGeometry(14,1,14),
+    roofMat
+  );
+
+  roof.position.y = 6.5;
+
+  roof.rotation.z = .08;
+
+  house.add(roof);
+
+
+  house.position.set(
+    x,
+    0,
+    z
+  );
+
+  house.traverse(o=>{
+    if(o.isMesh)o.castShadow=true;
+  });
+
+  scene.add(house);
+}
+
+createHouse(0,-12);
+
+
+/* =========================
+   BANDERA BASE
+========================= */
+
+function createFlag(x,z){
+
+  const g = new THREE.Group();
+
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      .08,.08,5,8
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0xdddddd
+    })
+  );
+
+  pole.position.y=2.5;
+
+  g.add(pole);
+
+
+  const flag = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      2.2,1.2
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0xd71920,
+      side:THREE.DoubleSide
+    })
+  );
+
+  flag.position.set(
+    1,
+    3.7,
+    0
+  );
+
+  g.add(flag);
+
+  g.position.set(
+    x,
+    0,
+    z
+  );
+
+  scene.add(g);
+}
+
+createFlag(0,8);
+
+
+/* =========================
+   PERSONA
+========================= */
+
+const player = new THREE.Group();
+
+scene.add(player);
+
+player.position.set(
+  0,
+  0,
+  0
+);
+
+
+const skin = new THREE.MeshLambertMaterial({
+  color:0xc98f68
+});
+
+const shirt = new THREE.MeshLambertMaterial({
+  color:0x20242b
+});
+
+const pants = new THREE.MeshLambertMaterial({
+  color:0x202020
+});
+
+const shoes = new THREE.MeshLambertMaterial({
+  color:0x111111
+});
+
+
+/* torso */
+
+const torso = new THREE.Mesh(
+  new THREE.BoxGeometry(
+    1.5,
+    2.2,
+    .8
+  ),
+  shirt
+);
+
+torso.position.y=3.1;
+
+player.add(torso);
+
+
+/* cabeza */
+
+const head = new THREE.Mesh(
+  new THREE.SphereGeometry(
+    .65,
+    16,
+    12
+  ),
+  skin
+);
+
+head.position.y=4.8;
+
+player.add(head);
+
+
+/* pelo */
+
+const hair = new THREE.Mesh(
+  new THREE.SphereGeometry(
+    .68,
+    16,
+    8
+  ),
+  new THREE.MeshLambertMaterial({
+    color:0x17120e
+  })
+);
+
+hair.scale.y=.55;
+
+hair.position.y=5.25;
+
+player.add(hair);
+
+
+/* brazos */
+
+const leftArm = new THREE.Mesh(
+  new THREE.BoxGeometry(
+    .45,
+    2,
+    .45
+  ),
+  shirt
+);
+
+leftArm.position.set(
+  -1.05,
+  3.1,
+  0
+);
+
+player.add(leftArm);
+
+
+const rightArm = leftArm.clone();
+
+rightArm.position.x=1.05;
+
+player.add(rightArm);
+
+
+/* manos */
+
+const leftHand = new THREE.Mesh(
+  new THREE.SphereGeometry(
+    .28,
+    10,
+    8
+  ),
+  skin
+);
+
+leftHand.position.set(
+  -1.05,
+  2,
+  0
+);
+
+player.add(leftHand);
+
+
+const rightHand = leftHand.clone();
+
+rightHand.position.x=1.05;
+
+player.add(rightHand);
+
+
+/* piernas */
+
+const leftLeg = new THREE.Mesh(
+  new THREE.BoxGeometry(
+    .55,
+    2.2,
+    .55
+  ),
+  pants
+);
+
+leftLeg.position.set(
+  -.43,
+  1.05,
+  0
+);
+
+player.add(leftLeg);
+
+
+const rightLeg = leftLeg.clone();
+
+rightLeg.position.x=.43;
+
+player.add(rightLeg);
+
+
+/* pies */
+
+const leftFoot = new THREE.Mesh(
+  new THREE.BoxGeometry(
+    .6,
+    .35,
+    1
+  ),
+  shoes
+);
+
+leftFoot.position.set(
+  -.43,
+  -.05,
+  -.2
+);
+
+player.add(leftFoot);
+
+
+const rightFoot = leftFoot.clone();
+
+rightFoot.position.x=.43;
+
+player.add(rightFoot);
+
+
+/* =========================
+   SOMBRAS
+========================= */
+
+player.traverse(o=>{
+  if(o.isMesh){
+    o.castShadow=true;
+  }
+});
+
+
+/* =========================
+   CONTROLES
+========================= */
+
+let joyX=0;
+let joyY=0;
+
+let running=false;
+
+let velocityY=0;
+
+let grounded=true;
+
+const gravity=-18;
+
+const speedNormal=7;
+const speedRun=12;
+
+
+/* joystick */
+
+const joystick =
+  document.getElementById("joystick");
+
+const stick =
+  document.getElementById("stick");
+
+
+let joyActive=false;
+
+function updateJoystick(clientX,clientY){
+
+  const rect =
+    joystick.getBoundingClientRect();
+
+  const cx =
+    rect.left + rect.width/2;
+
+  const cy =
+    rect.top + rect.height/2;
+
+  let dx=clientX-cx;
+  let dy=clientY-cy;
+
+  const max=43;
+
+  const len=Math.sqrt(
+    dx*dx+dy*dy
+  );
+
+  if(len>max){
+
+    dx=dx/len*max;
+    dy=dy/len*max;
+
+  }
+
+  joyX=dx/max;
+  joyY=dy/max;
+
+  stick.style.transform =
+    `translate(${dx}px,${dy}px)`;
+}
+
+
+joystick.addEventListener(
+  "pointerdown",
+  e=>{
+    joyActive=true;
+    joystick.setPointerCapture(e.pointerId);
+    updateJoystick(
+      e.clientX,
+      e.clientY
+    );
+  }
+);
+
+
+joystick.addEventListener(
+  "pointermove",
+  e=>{
+    if(joyActive){
+      updateJoystick(
+        e.clientX,
+        e.clientY
+      );
+    }
+  }
+);
+
+
+joystick.addEventListener(
+  "pointerup",
+  ()=>{
+    joyActive=false;
+    joyX=0;
+    joyY=0;
+    stick.style.transform="translate(0,0)";
+  }
+);
+
+
+joystick.addEventListener(
+  "pointercancel",
+  ()=>{
+    joyActive=false;
+    joyX=0;
+    joyY=0;
+    stick.style.transform="translate(0,0)";
+  }
+);
+
+
+/* correr */
+
+document
+.getElementById("run")
+.addEventListener(
+  "pointerdown",
+  ()=>{
+    running=true;
+  }
+);
+
+document
+.getElementById("run")
+.addEventListener(
+  "pointerup",
+  ()=>{
+    running=false;
+  }
+);
+
+document
+.getElementById("run")
+.addEventListener(
+  "pointercancel",
+  ()=>{
+    running=false;
+  }
+);
+
+
+/* saltar */
+
+document
+.getElementById("jump")
+.addEventListener(
+  "pointerdown",
+  ()=>{
+    if(grounded){
+
+      velocityY=8;
+
+      grounded=false;
+    }
+  }
+);
+
+
+/* =========================
+   CAMARA
+========================= */
+
+let cameraYaw=0;
+
+let cameraDistance=11;
+
+let cameraHeight=6;
+
+let dragging=false;
+
+let lastX=0;
+
+renderer.domElement.addEventListener(
+  "pointerdown",
+  e=>{
+    dragging=true;
+    lastX=e.clientX;
+  }
+);
+
+renderer.domElement.addEventListener(
+  "pointermove",
+  e=>{
+    if(!dragging)return;
+
+    const dx =
+      e.clientX-lastX;
+
+    cameraYaw -= dx*.008;
+
+    lastX=e.clientX;
+  }
+);
+
+renderer.domElement.addEventListener(
+  "pointerup",
+  ()=>{
+    dragging=false;
+  }
+);
+
+renderer.domElement.addEventListener(
+  "pointercancel",
+  ()=>{
+    dragging=false;
+  }
+);
+
+
+/* =========================
+   ANIMACION
+========================= */
+
+let walkTime=0;
+
+const stats =
+  document.getElementById("stats");
+
+const positionText =
+  document.getElementById("position");
+
+const distanceText =
+  document.getElementById("distance");
+
+
+function updatePlayer(dt){
+
+  const moving =
+    Math.abs(joyX)>.05 ||
+    Math.abs(joyY)>.05;
+
+
+  if(moving){
+
+    const speed =
+      running
+      ? speedRun
+      : speedNormal;
+
+
+    const moveX =
+      joyX*speed*dt;
+
+    const moveZ =
+      joyY*speed*dt;
+
+
+    player.position.x += moveX;
+
+    player.position.z += moveZ;
+
+
+    const angle =
+      Math.atan2(
+        moveX,
+        moveZ
+      );
+
+    player.rotation.y=angle;
+
+
+    walkTime +=
+      dt*(running?13:9);
+
+
+    const swing =
+      Math.sin(walkTime)*.6;
+
+
+    leftLeg.rotation.x=swing;
+
+    rightLeg.rotation.x=-swing;
+
+    leftArm.rotation.x=-swing;
+
+    rightArm.rotation.x=swing;
+
+  }else{
+
+    leftLeg.rotation.x*=.8;
+    rightLeg.rotation.x*=.8;
+
+    leftArm.rotation.x*=.8;
+    rightArm.rotation.x*=.8;
+  }
+
+
+  /* gravedad */
+
+  velocityY +=
+    gravity*dt;
+
+  player.position.y +=
+    velocityY*dt;
+
+
+  if(player.position.y<=0){
+
+    player.position.y=0;
+
+    velocityY=0;
+
+    grounded=true;
+  }
+
+
+  /* limite del mundo */
+
+  player.position.x =
+    THREE.MathUtils.clamp(
+      player.position.x,
+      -950,
+      950
+    );
+
+  player.position.z =
+    THREE.MathUtils.clamp(
+      player.position.z,
+      -950,
+      950
+    );
+
+
+  /* interfaz */
+
+  const x =
+    Math.round(player.position.x);
+
+  const z =
+    Math.round(player.position.z);
+
+  positionText.textContent =
+    `X: ${x} | Z: ${z}`;
+
+
+  const dist =
+    Math.sqrt(
+      x*x+z*z
+    );
+
+  distanceText.textContent =
+    `Base: ${Math.round(dist)} m`;
+
+
+  stats.textContent =
+    `Vida: 100 | Resistencia: ${running?65:100}`;
+}
+
+
+/* =========================
+   CAMARA SEGUIDORA
+========================= */
+
+function updateCamera(){
+
+  const px =
+    player.position.x;
+
+  const pz =
+    player.position.z;
+
+
+  const camX =
+    px +
+    Math.sin(cameraYaw) *
+    cameraDistance;
+
+  const camZ =
+    pz +
+    Math.cos(cameraYaw) *
+    cameraDistance;
+
+
+  camera.position.x =
+    THREE.MathUtils.lerp(
+      camera.position.x,
+      camX,
+      .12
+    );
+
+
+  camera.position.z =
+    THREE.MathUtils.lerp(
+      camera.position.z,
+      camZ,
+      .12
+    );
+
+
+  camera.position.y =
+    THREE.MathUtils.lerp(
+      camera.position.y,
+      player.position.y+
+      cameraHeight,
+      .12
+    );
+
+
+  camera.lookAt(
+    player.position.x,
+    player.position.y+2.7,
+    player.position.z
+  );
+}
+
+
+/* =========================
+   MAPA
+========================= */
+
+const map =
+  document.getElementById("map");
+
+const mapCtx =
+  map.getContext("2d");
+
+
+document
+.getElementById("mapBtn")
+.addEventListener(
+  "pointerdown",
+  ()=>{
+    map.style.display =
+      map.style.display==="none"
+      ? "block"
+      : "none";
+  }
+);
+
+
+function drawMap(){
+
+  mapCtx.clearRect(
+    0,0,220,220
+  );
+
+  mapCtx.fillStyle="#315a35";
+
+  mapCtx.fillRect(
+    0,0,220,220
+  );
+
+
+  const scale=.09;
+
+  const cx=110;
+
+  const cy=110;
+
+
+  /* base */
+
+  mapCtx.fillStyle="red";
+
+  mapCtx.beginPath();
+
+  mapCtx.arc(
+    cx,
+    cy,
+    5,
+    0,
+    Math.PI*2
+  );
+
+  mapCtx.fill();
+
+
+  /* player */
+
+  const px =
+    cx+
+    player.position.x*scale;
+
+  const py =
+    cy+
+    player.position.z*scale;
+
+
+  mapCtx.fillStyle="white";
+
+  mapCtx.beginPath();
+
+  mapCtx.arc(
+    px,
+    py,
+    5,
+    0,
+    Math.PI*2
+  );
+
+  mapCtx.fill();
+
+
+  /* ciudad */
+
+  mapCtx.fillStyle="orange";
+
+  mapCtx.fillRect(
+    cx+900*scale-4,
+    cy-700*scale-4,
+    8,
+    8
+  );
+
+
+  /* granja */
+
+  mapCtx.fillStyle="yellow";
+
+  mapCtx.fillRect(
+    cx-650*scale-4,
+    cy+550*scale-4,
+    8,
+    8
+  );
+}
+
+
+/* =========================
+   RESIZE
+========================= */
+
+addEventListener(
+  "resize",
+  ()=>{
+    camera.aspect =
+      innerWidth/innerHeight;
+
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(
+      innerWidth,
+      innerHeight
+    );
+  }
+);
+
+
+/* =========================
+   LOOP
+========================= */
+
+let previous=
+  performance.now();
+
+
+function animate(now){
+
+  requestAnimationFrame(
+    animate
+  );
+
+
+  const dt =
+    Math.min(
+      (now-previous)/1000,
+      .05
+    );
+
+  previous=now;
+
+
+  updatePlayer(dt);
+
+  updateCamera();
+
+  drawMap();
+
+
+  renderer.render(
+    scene,
+    camera
+  );
+}
+
+
+/* =========================
+   INICIO
+========================= */
+
+updateCamera();
+
+animate(
+  performance.now()
+);
+
+</script>
+
+</body>
+</html>
