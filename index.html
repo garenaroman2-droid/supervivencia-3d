@@ -2,2618 +2,1588 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width,
-initial-scale=1,
-maximum-scale=1,
-user-scalable=no">
-
-<title>Supervivencia 3D V4</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Supervivencia 3D</title>
 
 <style>
-
 *{
- box-sizing:border-box;
- user-select:none;
- -webkit-user-select:none;
- -webkit-tap-highlight-color:transparent;
+  box-sizing:border-box;
+  -webkit-user-select:none;
+  user-select:none;
+  touch-action:none;
 }
 
 html,body{
- margin:0;
- width:100%;
- height:100%;
- overflow:hidden;
- background:#000;
- touch-action:none;
- font-family:Arial,sans-serif;
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#111;
+  font-family:Arial,sans-serif;
+}
+
+#juego{
+  position:fixed;
+  inset:0;
 }
 
 canvas{
- position:fixed;
- inset:0;
- width:100%;
- height:100%;
- touch-action:none;
+  display:block;
+  width:100%;
+  height:100%;
 }
 
-/* ================= HUD ================= */
-
-#hud{
- position:fixed;
- top:10px;
- left:10px;
- z-index:20;
- color:white;
- font-weight:bold;
- font-size:14px;
- line-height:1.5;
- text-shadow:2px 2px 4px #000;
- pointer-events:none;
+#info{
+  position:fixed;
+  top:8px;
+  left:8px;
+  z-index:10;
+  color:white;
+  background:rgba(0,0,0,.58);
+  padding:10px;
+  border-radius:10px;
+  font-size:13px;
+  line-height:1.45;
 }
 
-#version{
- color:#9cff8c;
- font-size:11px;
+#inventario{
+  position:fixed;
+  top:8px;
+  right:8px;
+  z-index:10;
+  color:white;
+  background:rgba(0,0,0,.58);
+  padding:10px;
+  border-radius:10px;
+  font-size:14px;
+  line-height:1.5;
+  min-width:130px;
 }
 
-#herramienta{
- color:#ffd866;
+#vidaBox{
+  position:fixed;
+  top:112px;
+  left:8px;
+  width:150px;
+  z-index:10;
 }
 
-#mensaje{
- font-size:12px;
+.barra{
+  height:13px;
+  background:#333;
+  border-radius:8px;
+  overflow:hidden;
+  margin-top:4px;
 }
 
-#staminaBox{
- width:130px;
- height:9px;
- margin-top:4px;
- background:#222;
- border:1px solid white;
+#vida{
+  width:100%;
+  height:100%;
+  background:#e53935;
 }
 
 #stamina{
- width:100%;
- height:100%;
- background:#35d65c;
+  width:100%;
+  height:100%;
+  background:#f2c94c;
 }
-
-/* ================= CRUZ ================= */
-
-#crosshair{
- position:fixed;
- left:50%;
- top:50%;
- transform:translate(-50%,-50%);
- color:white;
- font-size:25px;
- z-index:10;
- pointer-events:none;
- text-shadow:0 0 5px #000;
-}
-
-#objetivo{
- position:fixed;
- left:50%;
- top:59%;
- transform:translate(-50%,-50%);
- color:white;
- text-align:center;
- font-weight:bold;
- font-size:14px;
- z-index:15;
- pointer-events:none;
- text-shadow:2px 2px 4px #000;
- display:none;
-}
-
-/* ================= JOYSTICK ================= */
 
 #joystick{
- position:fixed;
- left:20px;
- bottom:25px;
- width:135px;
- height:135px;
- border:3px solid rgba(255,255,255,.35);
- border-radius:50%;
- background:rgba(0,0,0,.25);
- z-index:30;
- touch-action:none;
+  position:fixed;
+  left:25px;
+  bottom:25px;
+  width:130px;
+  height:130px;
+  border-radius:50%;
+  background:rgba(255,255,255,.13);
+  border:2px solid rgba(255,255,255,.22);
+  z-index:20;
 }
 
 #stick{
- position:absolute;
- width:58px;
- height:58px;
- left:35px;
- top:35px;
- border-radius:50%;
- background:rgba(255,255,255,.55);
+  position:absolute;
+  left:35px;
+  top:35px;
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  background:rgba(255,255,255,.35);
 }
 
-/* ================= BOTONES ================= */
-
-#golpear{
- position:fixed;
- right:25px;
- bottom:135px;
- width:90px;
- height:90px;
- border-radius:50%;
- border:3px solid white;
- background:rgba(150,45,15,.9);
- color:white;
- font-weight:bold;
- z-index:30;
- touch-action:none;
+#botones{
+  position:fixed;
+  right:18px;
+  bottom:20px;
+  z-index:20;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  align-items:flex-end;
 }
 
-#correr{
- position:fixed;
- right:125px;
- bottom:45px;
- width:90px;
- height:65px;
- border-radius:15px;
- border:2px solid white;
- background:rgba(30,100,180,.85);
- color:white;
- font-weight:bold;
- z-index:30;
- touch-action:none;
+button{
+  border:0;
+  color:white;
+  background:rgba(20,20,20,.78);
+  border:1px solid rgba(255,255,255,.25);
+  border-radius:12px;
+  padding:14px 18px;
+  font-size:15px;
+  font-weight:bold;
 }
 
-#mochila{
- position:fixed;
- right:25px;
- bottom:30px;
- width:90px;
- height:65px;
- border:2px solid white;
- border-radius:14px;
- background:rgba(15,15,15,.9);
- color:white;
- font-weight:bold;
- z-index:30;
+button:active{
+  transform:scale(.95);
+  background:rgba(70,70,70,.9);
 }
 
-/* ================= INVENTARIO ================= */
-
-#inventario{
- position:fixed;
- left:50%;
- top:50%;
- transform:translate(-50%,-50%);
- width:90%;
- max-width:390px;
- padding:18px;
- background:rgba(10,15,10,.97);
- border:2px solid #aaa;
- border-radius:18px;
- color:white;
- z-index:100;
- display:none;
- box-shadow:0 0 30px #000;
+#mensaje{
+  position:fixed;
+  left:50%;
+  bottom:180px;
+  transform:translateX(-50%);
+  z-index:30;
+  color:white;
+  background:rgba(0,0,0,.72);
+  padding:10px 15px;
+  border-radius:10px;
+  opacity:0;
+  transition:.2s;
+  pointer-events:none;
+  text-align:center;
 }
 
-.item{
- background:#222b22;
- padding:10px;
- margin:7px 0;
- border-radius:8px;
+#craft{
+  position:fixed;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  z-index:50;
+  width:300px;
+  max-width:90%;
+  background:rgba(10,10,10,.95);
+  color:white;
+  padding:18px;
+  border-radius:15px;
+  display:none;
 }
 
-.craft{
- width:100%;
- padding:12px;
- margin-top:8px;
- border:0;
- border-radius:9px;
- background:#76512d;
- color:white;
- font-weight:bold;
+#craft h2{
+  margin:0 0 12px;
+}
+
+#craft button{
+  width:100%;
+  margin-top:7px;
 }
 
 #cerrar{
- width:100%;
- padding:10px;
- margin-top:12px;
- border:0;
- border-radius:8px;
- background:#555;
- color:white;
+  background:#8b2222;
 }
-
 </style>
 </head>
 
 <body>
 
-<div id="hud">
+<div id="juego"></div>
 
- <div id="version">
-  SUPERVIVENCIA 3D — V4.0
- </div>
-
- Madera:
- <span id="madera">0</span>
- <br>
-
- Piedra:
- <span id="piedra">0</span>
- <br>
-
- Hierro:
- <span id="hierro">0</span>
-
- <div id="herramienta">
-  Mano
- </div>
-
- <div>
-  STAMINA
-  <div id="staminaBox">
-   <div id="stamina"></div>
-  </div>
- </div>
-
- <div id="mensaje">
-  Buscá ramas y piedras
- </div>
-
+<div id="info">
+  <b>SUPERVIVENCIA 3D — V5.0</b><br>
+  Acercate a ramas y piedras pequeñas.<br>
+  GOLPEAR para recoger o usar herramienta.
 </div>
-
-<div id="crosshair">+</div>
-
-<div id="objetivo"></div>
-
-<div id="joystick">
- <div id="stick"></div>
-</div>
-
-<button id="golpear">
- GOLPEAR
-</button>
-
-<button id="correr">
- CORRER
-</button>
-
-<button id="mochila">
- MOCHILA
-</button>
 
 <div id="inventario">
-
- <h2>MOCHILA</h2>
-
- <div class="item">
-  Madera:
-  <span id="invMadera">0</span>
- </div>
-
- <div class="item">
-  Piedra:
-  <span id="invPiedra">0</span>
- </div>
-
- <div class="item">
-  Hierro:
-  <span id="invHierro">0</span>
- </div>
-
- <hr>
-
- <h3>FABRICAR</h3>
-
- <button
-  class="craft"
-  id="crearHachaPiedra">
-
-  HACHA DE PIEDRA
-  <br>
-  3 madera + 3 piedra
-
- </button>
-
- <button
-  class="craft"
-  id="crearPicoPiedra">
-
-  PICO DE PIEDRA
-  <br>
-  3 madera + 4 piedra
-
- </button>
-
- <button
-  class="craft"
-  id="crearHachaHierro">
-
-  HACHA DE HIERRO
-  <br>
-  5 madera + 5 hierro
-
- </button>
-
- <button
-  class="craft"
-  id="crearPicoHierro">
-
-  PICO DE HIERRO
-  <br>
-  5 madera + 5 hierro
-
- </button>
-
- <button id="cerrar">
-  CERRAR
- </button>
-
+  Madera: <span id="madera">0</span><br>
+  Piedra: <span id="piedra">0</span><br>
+  Hierro: <span id="hierro">0</span><br>
+  Herramienta: <span id="herramienta">Mano</span><br>
+  Durabilidad: <span id="durabilidad">∞</span>
 </div>
 
+<div id="vidaBox">
+  Vida
+  <div class="barra"><div id="vida"></div></div>
+  Energía
+  <div class="barra"><div id="stamina"></div></div>
+</div>
+
+<div id="joystick">
+  <div id="stick"></div>
+</div>
+
+<div id="botones">
+  <button id="golpear">GOLPEAR</button>
+  <button id="correr">CORRER</button>
+  <button id="abrirCraft">CREAR</button>
+</div>
+
+<div id="mensaje"></div>
+
+<div id="craft">
+  <h2>CREAR</h2>
+
+  <button id="hachaPiedra">
+    Hacha de piedra — 3 madera + 3 piedra
+  </button>
+
+  <button id="picoPiedra">
+    Pico de piedra — 3 madera + 4 piedra
+  </button>
+
+  <button id="hachaHierro">
+    Hacha de hierro — 5 madera + 5 hierro
+  </button>
+
+  <button id="picoHierro">
+    Pico de hierro — 5 madera + 5 hierro
+  </button>
+
+  <button id="cerrar">CERRAR</button>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
 
-/* =====================================================
- ESCENA
-===================================================== */
+/* =========================
+   ESCENA
+========================= */
 
-const scene =
- new THREE.Scene();
+const escena = new THREE.Scene();
 
-scene.background =
- new THREE.Color(0x82b9d9);
+escena.background = new THREE.Color(0x87b9df);
 
-scene.fog =
- new THREE.Fog(
-  0x82b9d9,
+escena.fog = new THREE.Fog(
+  0x87b9df,
   35,
-  150
+  130
 );
 
-
-/* =====================================================
- CÁMARA
-===================================================== */
-
-const camera =
- new THREE.PerspectiveCamera(
-  72,
+const camara = new THREE.PerspectiveCamera(
+  70,
   innerWidth/innerHeight,
   .05,
-  500
- );
+  300
+);
 
-camera.position.set(
- 0,
- 1.65,
- 0
- );
-
-
-/* =====================================================
- RENDER
-===================================================== */
-
-const renderer =
- new THREE.WebGLRenderer({
+const render = new THREE.WebGLRenderer({
   antialias:true
- });
+});
 
-renderer.setSize(
- innerWidth,
- innerHeight
- );
+render.setSize(innerWidth,innerHeight);
+render.setPixelRatio(Math.min(devicePixelRatio,2));
+render.shadowMap.enabled=true;
 
-renderer.setPixelRatio(
- Math.min(
-  devicePixelRatio,
-  1.8
- )
- );
-
-renderer.shadowMap.enabled=true;
-
-renderer.shadowMap.type =
- THREE.PCFSoftShadowMap;
-
-renderer.domElement.style.touchAction =
- "none";
-
-document.body.appendChild(
- renderer.domElement
- );
+document.getElementById("juego").appendChild(render.domElement);
 
 
-/* =====================================================
- LUCES
-===================================================== */
+/* =========================
+   LUZ
+========================= */
 
-const ambiente =
- new THREE.HemisphereLight(
-  0xbde5ff,
-  0x24351e,
-  1.6
- );
-
-scene.add(ambiente);
-
-
-const sol =
- new THREE.DirectionalLight(
+const luz = new THREE.HemisphereLight(
   0xffffff,
-  2
- );
+  0x49643a,
+  1.5
+);
 
-sol.position.set(
- 50,
- 90,
- 30
- );
+escena.add(luz);
 
+const sol = new THREE.DirectionalLight(
+  0xffffff,
+  1.7
+);
+
+sol.position.set(30,60,20);
 sol.castShadow=true;
 
-scene.add(sol);
+escena.add(sol);
 
 
-/* =====================================================
- JUGADOR
-===================================================== */
+/* =========================
+   TERRENO
+========================= */
 
-const jugador =
- new THREE.Object3D();
-
-jugador.position.set(
- 0,
- 1.65,
- 0
- );
-
-scene.add(jugador);
-
-jugador.add(camera);
-
-
-/* =====================================================
- TERRENO
-===================================================== */
-
-const terreno =
- new THREE.Mesh(
-
-  new THREE.PlaneGeometry(
-   500,
-   500
-  ),
-
+const suelo = new THREE.Mesh(
+  new THREE.PlaneGeometry(220,220),
   new THREE.MeshStandardMaterial({
-   color:0x416d32,
-   roughness:1
+    color:0x4b7838
   })
+);
 
- );
+suelo.rotation.x=-Math.PI/2;
+suelo.receiveShadow=true;
 
-terreno.rotation.x=
- -Math.PI/2;
-
-terreno.receiveShadow=true;
-
-scene.add(terreno);
+escena.add(suelo);
 
 
-/* =====================================================
- MANO
-===================================================== */
+/* =========================
+   JUGADOR
+========================= */
 
-const mano =
- new THREE.Group();
+const jugador = new THREE.Group();
+
+jugador.position.set(0,1,8);
+
+escena.add(jugador);
+
+jugador.add(camara);
+
+camara.position.set(0,1.6,0);
+
+
+/* =========================
+   BRAZO Y MANO
+========================= */
+
+const mano = new THREE.Group();
 
 mano.position.set(
- .48,
- -.48,
- -.72
- );
+  .5,
+  -.48,
+  -.75
+);
 
-mano.rotation.set(
- -.2,
- -.15,
- .15
- );
+camara.add(mano);
 
-camera.add(mano);
-
-
-/* BRAZO */
-
-const brazo =
- new THREE.Mesh(
-
-  new THREE.CylinderGeometry(
-   .075,
-   .095,
-   .55,
-   8
-  ),
-
+const brazo = new THREE.Mesh(
+  new THREE.BoxGeometry(.18,.55,.18),
   new THREE.MeshStandardMaterial({
-   color:0xd59b70
+    color:0xc68c68
   })
+);
 
- );
-
-brazo.rotation.z=
- -.55;
-
-brazo.position.set(
- -.12,
- -.08,
- .08
- );
+brazo.rotation.z=-.2;
+brazo.position.set(0,-.2,.05);
 
 mano.add(brazo);
 
-
-/* PUÑO */
-
-const puño =
- new THREE.Mesh(
-
-  new THREE.SphereGeometry(
-   .11,
-   10,
-   8
-  ),
-
+const puño = new THREE.Mesh(
+  new THREE.SphereGeometry(.13,12,12),
   new THREE.MeshStandardMaterial({
-   color:0xd59b70
+    color:0xd09a76
   })
+);
 
- );
-
-puño.position.set(
- .10,
- -.18,
- 0
- );
+puño.position.set(0,.08,0);
 
 mano.add(puño);
 
 
-/* =====================================================
- HERRAMIENTA
-===================================================== */
-
-let modeloHerramienta=null;
-
-
-function crearHachaHierro(
- esHierro
-){
-
- const grupo =
-  new THREE.Group();
-
-
- const mango =
-  new THREE.Mesh(
-
-   new THREE.CylinderGeometry(
-    .045,
-    .055,
-    .85,
-    8
-   ),
-
-   new THREE.MeshStandardMaterial({
-    color:
-     esHierro
-      ?0x292929
-      :0x70451f
-   })
-
-  );
-
- mango.rotation.z=
-  Math.PI/2;
-
- grupo.add(mango);
-
-
- const cabeza =
-  new THREE.Mesh(
-
-   new THREE.BoxGeometry(
-    .18,
-    .42,
-    .12
-   ),
-
-   new THREE.MeshStandardMaterial({
-    color:
-     esHierro
-      ?0x9b9b9b
-      :0x777777,
-
-    metalness:
-     esHierro?.8:.1,
-
-    roughness:.45
-   })
-
-  );
-
- cabeza.position.x=.38;
-
-grupo.add(cabeza);
-
- return grupo;
-
-}
-
-
-function crearPicoHierro(
- esHierro
-){
-
- const grupo =
-  new THREE.Group();
-
-
- const mango =
-  new THREE.Mesh(
-
-   new THREE.CylinderGeometry(
-    .045,
-    .055,
-    .9,
-    8
-   ),
-
-   new THREE.MeshStandardMaterial({
-    color:
-     esHierro
-      ?0x292929
-      :0x70451f
-   })
-
-  );
-
- mango.rotation.z=
-  Math.PI/2;
-
- grupo.add(mango);
-
-
- const cabeza =
-  new THREE.Mesh(
-
-   new THREE.CylinderGeometry(
-    .055,
-    .055,
-    .48,
-    6
-   ),
-
-   new THREE.MeshStandardMaterial({
-    color:
-     esHierro
-      ?0xaaaaaa
-      :0x777777,
-
-    metalness:
-     esHierro?.8:.1
-   })
-
-  );
-
- cabeza.rotation.z=
-  Math.PI/2;
-
- cabeza.position.x=.38;
-
- grupo.add(cabeza);
-
-
- const punta =
-  new THREE.Mesh(
-
-   new THREE.ConeGeometry(
-    .07,
-    .28,
-    6
-   ),
-
-   new THREE.MeshStandardMaterial({
-    color:
-     esHierro
-      ?0xc0c0c0
-      :0x777777
-   })
-
-  );
-
- punta.rotation.z=
-  -Math.PI/2;
-
- punta.position.x=.68;
-
- grupo.add(punta);
-
-
- return grupo;
-
-}
-
-
-/* =====================================================
- ACTUALIZAR ARMA
-===================================================== */
-
-function actualizarModeloHerramienta(){
-
- if(modeloHerramienta){
-
-  mano.remove(
-   modeloHerramienta
-  );
-
- }
-
- modeloHerramienta=null;
-
-
- if(
-  herramienta.tipo==="hacha"
- ){
-
-  modeloHerramienta=
-   crearHachaHierro(
-    herramienta.nivel>=2
-   );
-
- }
-
-
- if(
-  herramienta.tipo==="pico"
- ){
-
-  modeloHerramienta=
-   crearPicoHierro(
-    herramienta.nivel>=2
-   );
-
- }
-
-
- if(modeloHerramienta){
-
-  modeloHerramienta.scale.set(
-   1.15,
-   1.15,
-   1.15
-  );
-
-  modeloHerramienta.position.set(
-   .08,
-   .03,
-   -.05
-  );
-
-  mano.add(
-   modeloHerramienta
-  );
-
- }
-
-}
-
-
-/* =====================================================
- INVENTARIO
-===================================================== */
-
-let madera=0;
-let piedra=0;
-let hierro=0;
-
+/* =========================
+   INVENTARIO
+========================= */
+
+let recursos={
+  madera:0,
+  piedra:0,
+  hierro:0
+};
 
 let herramienta={
-
- nombre:"Mano",
- tipo:"mano",
- nivel:0,
- durabilidad:Infinity,
- maxima:Infinity
-
+  nombre:"Mano",
+  tipo:"mano",
+  nivel:0,
+  durabilidad:Infinity,
+  maxima:Infinity
 };
 
 
-/* =====================================================
- OBJETOS
-===================================================== */
+/* =========================
+   MODELOS DE HERRAMIENTAS
+========================= */
+
+let modeloHerramienta=null;
+
+function crearHacha(esHierro){
+
+  const grupo=new THREE.Group();
+
+  const palo=new THREE.Mesh(
+    new THREE.BoxGeometry(.08,.7,.08),
+    new THREE.MeshStandardMaterial({
+      color:0x70452a
+    })
+  );
+
+  palo.position.y=.1;
+
+  grupo.add(palo);
+
+  const metal=new THREE.Mesh(
+    new THREE.BoxGeometry(.42,.16,.08),
+    new THREE.MeshStandardMaterial({
+      color:esHierro?0x777777:0x999999
+    })
+  );
+
+  metal.position.set(.16,.42,0);
+
+  grupo.add(metal);
+
+  const filo=new THREE.Mesh(
+    new THREE.BoxGeometry(.12,.30,.08),
+    new THREE.MeshStandardMaterial({
+      color:esHierro?0x555555:0x777777
+    })
+  );
+
+  filo.position.set(.34,.30,0);
+
+  grupo.add(filo);
+
+  grupo.rotation.z=-.5;
+
+  return grupo;
+}
+
+
+function crearPico(esHierro){
+
+  const grupo=new THREE.Group();
+
+  const palo=new THREE.Mesh(
+    new THREE.BoxGeometry(.08,.7,.08),
+    new THREE.MeshStandardMaterial({
+      color:0x70452a
+    })
+  );
+
+  grupo.add(palo);
+
+  const cabeza=new THREE.Mesh(
+    new THREE.BoxGeometry(.55,.12,.10),
+    new THREE.MeshStandardMaterial({
+      color:esHierro?0x666666:0x999999
+    })
+  );
+
+  cabeza.position.y=.38;
+
+  grupo.add(cabeza);
+
+  const punta=new THREE.Mesh(
+    new THREE.ConeGeometry(.08,.35,4),
+    new THREE.MeshStandardMaterial({
+      color:esHierro?0x444444:0x777777
+    })
+  );
+
+  punta.rotation.z=Math.PI/2;
+  punta.position.x=.32;
+  punta.position.y=.38;
+
+  grupo.add(punta);
+
+  grupo.rotation.z=-.55;
+
+  return grupo;
+}
+
+
+function actualizarHerramienta(){
+
+  if(modeloHerramienta){
+    mano.remove(modeloHerramienta);
+    modeloHerramienta=null;
+  }
+
+  if(herramienta.tipo==="hacha"){
+    modeloHerramienta=
+      crearHacha(herramienta.nivel>=2);
+  }
+
+  if(herramienta.tipo==="pico"){
+    modeloHerramienta=
+      crearPico(herramienta.nivel>=2);
+  }
+
+  if(modeloHerramienta){
+
+    modeloHerramienta.position.set(
+      0,
+      -.1,
+      -.15
+    );
+
+    modeloHerramienta.scale.set(
+      .75,.75,.75
+    );
+
+    mano.add(modeloHerramienta);
+  }
+
+  document.getElementById("herramienta").textContent=
+    herramienta.nombre;
+
+  document.getElementById("durabilidad").textContent=
+    herramienta.durabilidad===Infinity
+    ? "∞"
+    : Math.ceil(herramienta.durabilidad);
+}
+
+actualizarHerramienta();
+
+
+/* =========================
+   OBJETOS DEL MUNDO
+========================= */
 
 const objetos=[];
 
 
-/* =====================================================
- ÁRBOL
-===================================================== */
-
-function crearArbol(
- x,
- z,
- dureza
-){
-
- const grupo=
-  new THREE.Group();
-
-
- const altura=
-  dureza===1
-   ?3.5
-   :dureza===2
-   ?5
-   :6.5;
-
-
- const tronco=
-  new THREE.Mesh(
-
-   new THREE.CylinderGeometry(
-    .28*dureza,
-    .38*dureza,
-    altura,
-    10
-   ),
-
-   new THREE.MeshStandardMaterial({
-    color:
-     dureza===1
-      ?0x68401f
-      :dureza===2
-      ?0x4d2d18
-      :0x321b0b
-   })
-
-  );
-
- tronco.position.y=
-  altura/2;
-
- tronco.castShadow=true;
-
- grupo.add(tronco);
-
-
- const copa=
-  new THREE.Mesh(
-
-   new THREE.SphereGeometry(
-    dureza===1
-     ?1.4
-     :dureza===2
-     ?1.8
-     :2.2,
-    10,
-    8
-   ),
-
-   new THREE.MeshStandardMaterial({
-    color:
-     dureza===1
-      ?0x28652d
-      :dureza===2
-      ?0x194d21
-      :0x0d3217
-   })
-
-  );
-
- copa.position.y=
-  altura+.4;
-
- copa.castShadow=true;
-
- grupo.add(copa);
-
-
- grupo.position.set(
-  x,
-  0,
-  z
- );
-
- scene.add(grupo);
-
-
- const vida=
-  dureza===1
-   ?3
-   :dureza===2
-   ?6
-   :10;
-
-
- objetos.push({
-
-  objeto:grupo,
-  tipo:"arbol",
-  dureza:dureza,
-  vida:vida,
-  vidaMax:vida,
-
-  madera:
-   dureza===1
-    ?4
-    :dureza===2
-    ?7
-    :12
-
- });
-
+function material(color){
+  return new THREE.MeshStandardMaterial({
+    color
+  });
 }
 
 
-/* =====================================================
- ROCA
-===================================================== */
+/* ÁRBOL */
 
-function crearRoca(
- x,
- z,
- dureza
-){
+function crearArbol(x,z,dureza){
 
- const roca=
-  new THREE.Mesh(
+  const grupo=new THREE.Group();
 
-   new THREE.DodecahedronGeometry(
-    .7+dureza*.15,
-    1
-   ),
+  const tronco=new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      .3+.08*dureza,
+      .42+.1*dureza,
+      2.8+.35*dureza,
+      8
+    ),
+    material(0x684328)
+  );
 
-   new THREE.MeshStandardMaterial({
-    color:
-     dureza===1
+  tronco.position.y=1.4;
+  tronco.castShadow=true;
+
+  grupo.add(tronco);
+
+
+  const hojas=new THREE.Mesh(
+    new THREE.ConeGeometry(
+      1.8+.3*dureza,
+      3.2+.5*dureza,
+      8
+    ),
+    material(
+      dureza===1
+      ?0x3d7c35
+      :dureza===2
+      ?0x28652c
+      :0x174d22
+    )
+  );
+
+  hojas.position.y=3.4;
+
+  hojas.castShadow=true;
+
+  grupo.add(hojas);
+
+
+  grupo.position.set(x,0,z);
+
+  escena.add(grupo);
+
+  objetos.push({
+    mesh:grupo,
+    tipo:"arbol",
+    dureza,
+    vida:dureza===1?3:dureza===2?6:10,
+    madera:dureza===1?4:dureza===2?7:12
+  });
+}
+
+
+/* PIEDRA */
+
+function crearRoca(x,z,dureza,hierro=false){
+
+  const grupo=new THREE.Group();
+
+  const roca=new THREE.Mesh(
+    new THREE.DodecahedronGeometry(
+      .8+.25*dureza
+    ),
+    material(
+      hierro
+      ?0x555555
+      :dureza===1
+      ?0x999999
+      :dureza===2
       ?0x777777
-      :dureza===2
-      ?0x555b61
-      :0x33383d
-   })
-
+      :0x4e4e4e
+    )
   );
 
- roca.position.set(
-  x,
-  .55,
-  z
- );
+  roca.position.y=.7;
 
- roca.scale.y=.7;
+  roca.scale.y=.7;
 
- roca.castShadow=true;
+  roca.castShadow=true;
 
- scene.add(roca);
+  grupo.add(roca);
 
+  grupo.position.set(x,0,z);
 
- const vida=
-  dureza===1
-   ?3
-   :dureza===2
-   ?6
-   :10;
+  escena.add(grupo);
 
-
- objetos.push({
-
-  objeto:roca,
-
-  tipo:
-   dureza===3
-    ?"hierro"
-    :"piedra",
-
-  dureza:dureza,
-  vida:vida,
-  vidaMax:vida,
-
-  recurso:
-   dureza===3
-    ?"hierro"
-    :"piedra"
-
- });
-
+  objetos.push({
+    mesh:grupo,
+    tipo:hierro?"hierro":"piedra",
+    dureza,
+    vida:dureza===1?3:dureza===2?6:10,
+    cantidad:dureza===1?3:dureza===2?6:10
+  });
 }
 
 
-/* =====================================================
- RAMAS RECOLECTABLES
-===================================================== */
+/* RAMA */
 
-function crearRama(
- x,
- z
-){
+function crearRama(x,z){
 
- const rama=
-  new THREE.Group();
-
-
- const palo=
-  new THREE.Mesh(
-
-   new THREE.CylinderGeometry(
-    .045,
-    .07,
-    .65,
-    6
-   ),
-
-   new THREE.MeshStandardMaterial({
-    color:0x70451f
-   })
-
+  const rama=new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      .06,.08,1,7
+    ),
+    material(0x70472c)
   );
 
+  rama.rotation.z=.8;
+  rama.position.set(x,.15,z);
 
- palo.rotation.z=
-  .9;
+  escena.add(rama);
 
- rama.add(palo);
-
-
- rama.position.set(
-  x,
-  .12,
-  z
- );
-
-
- scene.add(rama);
-
-
- objetos.push({
-
-  objeto:rama,
-
-  tipo:"rama",
-
-  recogible:true,
-
-  cantidad:1
-
- });
-
+  objetos.push({
+    mesh:rama,
+    tipo:"rama",
+    recogible:true,
+    cantidad:1
+  });
 }
 
 
-/* =====================================================
- PIEDRA PEQUEÑA
-===================================================== */
+/* PIEDRA PEQUEÑA */
 
-function crearPiedraPequena(
- x,
- z
-){
+function crearPiedraPequena(x,z){
 
- const piedraPequena=
-  new THREE.Mesh(
-
-   new THREE.DodecahedronGeometry(
-    .22,
-    0
-   ),
-
-   new THREE.MeshStandardMaterial({
-    color:0x888888
-   })
-
+  const p=new THREE.Mesh(
+    new THREE.DodecahedronGeometry(.18),
+    material(0x999999)
   );
 
+  p.position.set(x,.16,z);
 
- piedraPequena.position.set(
-  x,
-  .18,
-  z
- );
+  escena.add(p);
 
-
- scene.add(
-  piedraPequena
- );
-
-
- objetos.push({
-
-  objeto:piedraPequena,
-
-  tipo:"piedraPequena",
-
-  recogible:true,
-
-  cantidad:1
-
- });
-
+  objetos.push({
+    mesh:p,
+    tipo:"piedraPequena",
+    recogible:true,
+    cantidad:1
+  });
 }
 
 
-/* =====================================================
- GENERAR MUNDO
-===================================================== */
+/* =========================
+   GENERAR MUNDO
+========================= */
 
-for(
- let i=0;
- i<75;
- i++
-){
+for(let i=0;i<28;i++){
 
- const x=
-  (Math.random()-.5)*200;
+  let x=(Math.random()-.5)*80;
+  let z=(Math.random()-.5)*80;
 
- const z=
-  (Math.random()-.5)*200;
-
-
- if(
-  Math.abs(x)<10 &&
-  Math.abs(z)<10
- )
- continue;
-
-
- const r=
-  Math.random();
-
-
- const dureza=
-  r<.55
-   ?1
-   :r<.85
-   ?2
-   :3;
-
-
- crearArbol(
-  x,
-  z,
-  dureza
- );
-
-}
-
-
-for(
- let i=0;
- i<50;
- i++
-){
-
- const x=
-  (Math.random()-.5)*200;
-
- const z=
-  (Math.random()-.5)*200;
-
-
- const r=
-  Math.random();
-
-
- const dureza=
-  r<.55
-   ?1
-   :r<.85
-   ?2
-   :3;
-
-
- crearRoca(
-  x,
-  z,
-  dureza
- );
-
-}
-
-
-/* RAMAS */
-
-for(
- let i=0;
- i<80;
- i++
-){
-
- crearRama(
-  (Math.random()-.5)*150,
-  (Math.random()-.5)*150
- );
-
-}
-
-
-/* PIEDRAS PEQUEÑAS */
-
-for(
- let i=0;
- i<80;
- i++
-){
-
- crearPiedraPequena(
-  (Math.random()-.5)*150,
-  (Math.random()-.5)*150
- );
-
-}
-
-
-/* =====================================================
- HUD
-===================================================== */
-
-const maderaTxt=
- document.getElementById("madera");
-
-const piedraTxt=
- document.getElementById("piedra");
-
-const hierroTxt=
- document.getElementById("hierro");
-
-const invMadera=
- document.getElementById("invMadera");
-
-const invPiedra=
- document.getElementById("invPiedra");
-
-const invHierro=
- document.getElementById("invHierro");
-
-const herramientaTxt=
- document.getElementById("herramienta");
-
-const mensaje=
- document.getElementById("mensaje");
-
-const objetivoTxt=
- document.getElementById("objetivo");
-
-
-function actualizarInventario(){
-
- maderaTxt.textContent=
-  madera;
-
- piedraTxt.textContent=
-  piedra;
-
- hierroTxt.textContent=
-  hierro;
-
-
- invMadera.textContent=
-  madera;
-
- invPiedra.textContent=
-  piedra;
-
- invHierro.textContent=
-  hierro;
-
-
- herramientaTxt.textContent=
-  herramienta.nombre;
-
-
- if(
-  herramienta.maxima!==Infinity
- ){
-
-  herramientaTxt.textContent+=
-   " | "+
-   herramienta.durabilidad+
-   "/"+
-   herramienta.maxima;
-
- }
-
-
- actualizarModeloHerramienta();
-
-}
-
-
-/* =====================================================
- RECOGER RAMAS / PIEDRAS
-===================================================== */
-
-function buscarRecolectable(){
-
- let mejor=null;
-
- let mejorDist=2.4;
-
-
- for(
-  const obj of objetos
- ){
-
-  if(!obj.recogible)
-   continue;
-
-
-  const dx=
-   obj.objeto.position.x-
-   jugador.position.x;
-
-  const dz=
-   obj.objeto.position.z-
-   jugador.position.z;
-
-
-  const distancia=
-   Math.sqrt(
-    dx*dx+
-    dz*dz
-   );
-
-
-  if(
-   distancia<mejorDist
-  ){
-
-   mejor=obj;
-   mejorDist=distancia;
-
+  if(Math.abs(x)<7 && Math.abs(z)<7){
+    i--;
+    continue;
   }
 
- }
+  let dureza=
+    Math.random()<.5
+    ?1
+    :Math.random()<.75
+    ?2
+    :3;
 
-
- return mejor;
-
+  crearArbol(x,z,dureza);
 }
 
 
-/*
-BOTÓN GOLPEAR:
-si hay rama/piedra pequeña cerca,
-primero la recoge con la mano.
-*/
+for(let i=0;i<22;i++){
+
+  let x=(Math.random()-.5)*80;
+  let z=(Math.random()-.5)*80;
+
+  crearRoca(
+    x,z,
+    Math.floor(Math.random()*3)+1
+  );
+}
+
+
+for(let i=0;i<35;i++){
+
+  let x=(Math.random()-.5)*55;
+  let z=(Math.random()-.5)*55;
+
+  crearRama(x,z);
+}
+
+
+for(let i=0;i<35;i++){
+
+  let x=(Math.random()-.5)*55;
+  let z=(Math.random()-.5)*55;
+
+  crearPiedraPequena(x,z);
+}
+
+
+/* =========================
+   FUNCIONES
+========================= */
+
+function mensaje(texto){
+
+  const m=document.getElementById("mensaje");
+
+  m.textContent=texto;
+  m.style.opacity=1;
+
+  clearTimeout(window.timerMensaje);
+
+  window.timerMensaje=setTimeout(()=>{
+    m.style.opacity=0;
+  },1600);
+}
+
+
+function actualizarUI(){
+
+  document.getElementById("madera").textContent=
+    recursos.madera;
+
+  document.getElementById("piedra").textContent=
+    recursos.piedra;
+
+  document.getElementById("hierro").textContent=
+    recursos.hierro;
+
+  document.getElementById("herramienta").textContent=
+    herramienta.nombre;
+
+  document.getElementById("durabilidad").textContent=
+    herramienta.durabilidad===Infinity
+    ?"∞"
+    :Math.ceil(herramienta.durabilidad);
+}
+
+
+/* =========================
+   RECOGER RAMAS / PIEDRAS
+========================= */
 
 function recogerCercano(){
 
- const obj=
-  buscarRecolectable();
+  let mejor=null;
+  let distanciaMin=2.5;
 
+  for(const o of objetos){
 
- if(!obj)
-  return false;
+    if(!o.recogible) continue;
 
+    const d=jugador.position.distanceTo(
+      o.mesh.position
+    );
 
- if(
-  obj.tipo==="rama"
- ){
+    if(d<distanciaMin){
 
-  madera+=
-   obj.cantidad;
+      mejor=o;
+      distanciaMin=d;
+    }
+  }
 
-  mensaje.textContent=
-   "+1 MADERA";
+  if(!mejor) return false;
 
- }
+  if(mejor.tipo==="rama"){
+    recursos.madera+=mejor.cantidad;
+    mensaje("+1 madera");
+  }
 
+  if(mejor.tipo==="piedraPequena"){
+    recursos.piedra+=mejor.cantidad;
+    mensaje("+1 piedra");
+  }
 
- if(
-  obj.tipo==="piedraPequena"
- ){
+  escena.remove(mejor.mesh);
 
-  piedra+=
-   obj.cantidad;
+  const index=objetos.indexOf(mejor);
 
-  mensaje.textContent=
-   "+1 PIEDRA";
+  if(index>=0)
+    objetos.splice(index,1);
 
- }
+  actualizarUI();
 
-
- scene.remove(
-  obj.objeto
- );
-
-
- const index=
-  objetos.indexOf(obj);
-
-
- if(index!==-1){
-
-  objetos.splice(
-   index,
-   1
-  );
-
- }
-
-
- actualizarInventario();
-
-
- return true;
-
+  return true;
 }
 
 
-/* =====================================================
- EQUIPAR
-===================================================== */
+/* =========================
+   GOLPEAR
+========================= */
 
-function equipar(
- nombre,
- tipo,
- nivel,
- durabilidad
-){
+let golpeando=false;
 
- herramienta={
+function golpear(){
 
-  nombre:nombre,
-  tipo:tipo,
-  nivel:nivel,
-  durabilidad:durabilidad,
-  maxima:durabilidad
+  if(golpeando) return;
 
- };
+  if(recogerCercano()) return;
+
+  golpeando=true;
+
+  const inicioRot=mano.rotation.x;
+
+  let progreso=0;
+
+  function animar(){
+
+    progreso+=.18;
+
+    mano.rotation.x=
+      Math.sin(progreso*Math.PI)*-1.0;
+
+    if(progreso<1){
+
+      requestAnimationFrame(animar);
+
+    }else{
+
+      mano.rotation.x=inicioRot;
+
+      golpeando=false;
+    }
+  }
+
+  animar();
 
 
- actualizarInventario();
+  let objetivo=null;
+  let distanciaMin=3.2;
+
+  for(const o of objetos){
+
+    if(o.recogible) continue;
+
+    const d=jugador.position.distanceTo(
+      o.mesh.position
+    );
+
+    if(d<distanciaMin){
+
+      objetivo=o;
+      distanciaMin=d;
+    }
+  }
+
+  if(!objetivo){
+
+    mensaje("No hay nada cerca");
+
+    return;
+  }
 
 
- mensaje.textContent=
-  "Equipaste "+nombre;
+  /* ÁRBOLES */
 
+  if(objetivo.tipo==="arbol"){
+
+    if(herramienta.tipo!=="hacha"){
+
+      mensaje("Necesitas un hacha");
+
+      return;
+    }
+
+    if(herramienta.nivel<objetivo.dureza){
+
+      mensaje(
+        "El árbol necesita un hacha nivel "+
+        objetivo.dureza
+      );
+
+      return;
+    }
+
+    objetivo.vida-=
+      herramienta.nivel>objetivo.dureza
+      ?2
+      :1;
+
+    herramienta.durabilidad--;
+
+    recursos.madera+=1;
+
+    mensaje("+1 madera");
+
+    if(objetivo.vida<=0){
+
+      recursos.madera+=objetivo.madera;
+
+      escena.remove(objetivo.mesh);
+
+      const index=objetos.indexOf(objetivo);
+
+      if(index>=0)
+        objetos.splice(index,1);
+
+      mensaje(
+        "Árbol talado +"+
+        objetivo.madera+
+        " madera"
+      );
+    }
+  }
+
+
+  /* PIEDRA */
+
+  if(objetivo.tipo==="piedra"){
+
+    if(herramienta.tipo!=="pico"){
+
+      mensaje("Necesitas un pico");
+
+      return;
+    }
+
+    if(herramienta.nivel<objetivo.dureza){
+
+      mensaje(
+        "Necesitas pico nivel "+
+        objetivo.dureza
+      );
+
+      return;
+    }
+
+    objetivo.vida-=
+      herramienta.nivel>objetivo.dureza
+      ?2
+      :1;
+
+    herramienta.durabilidad--;
+
+    recursos.piedra++;
+
+    mensaje("+1 piedra");
+
+    if(objetivo.vida<=0){
+
+      recursos.piedra+=objetivo.cantidad;
+
+      escena.remove(objetivo.mesh);
+
+      const index=objetos.indexOf(objetivo);
+
+      if(index>=0)
+        objetos.splice(index,1);
+
+      mensaje(
+        "Roca destruida +"+
+        objetivo.cantidad+
+        " piedra"
+      );
+    }
+  }
+
+
+  /* HIERRO */
+
+  if(objetivo.tipo==="hierro"){
+
+    if(herramienta.tipo!=="pico"){
+
+      mensaje("Necesitas un pico");
+
+      return;
+    }
+
+    if(herramienta.nivel<objetivo.dureza){
+
+      mensaje(
+        "Necesitas pico nivel "+
+        objetivo.dureza
+      );
+
+      return;
+    }
+
+    objetivo.vida-=
+      herramienta.nivel>objetivo.dureza
+      ?2
+      :1;
+
+    herramienta.durabilidad--;
+
+    recursos.hierro++;
+
+    mensaje("+1 hierro");
+
+    if(objetivo.vida<=0){
+
+      recursos.hierro+=objetivo.cantidad;
+
+      escena.remove(objetivo.mesh);
+
+      const index=objetos.indexOf(objetivo);
+
+      if(index>=0)
+        objetos.splice(index,1);
+
+      mensaje(
+        "Hierro conseguido +"+
+        objetivo.cantidad
+      );
+    }
+  }
+
+
+  if(
+    herramienta.durabilidad<=0
+  ){
+
+    mensaje(
+      herramienta.nombre+
+      " se rompió"
+    );
+
+    herramienta={
+      nombre:"Mano",
+      tipo:"mano",
+      nivel:0,
+      durabilidad:Infinity,
+      maxima:Infinity
+    };
+
+    actualizarHerramienta();
+  }
+
+  actualizarUI();
 }
 
 
-/* =====================================================
- CÁMARA
-===================================================== */
+/* =========================
+   CRAFTING
+========================= */
 
-let lookPointer=null;
+function crearHachaPiedra(){
 
+  if(
+    recursos.madera<3 ||
+    recursos.piedra<3
+  ){
+
+    mensaje("Faltan materiales");
+    return;
+  }
+
+  recursos.madera-=3;
+  recursos.piedra-=3;
+
+  herramienta={
+    nombre:"Hacha de piedra",
+    tipo:"hacha",
+    nivel:1,
+    durabilidad:60,
+    maxima:60
+  };
+
+  actualizarHerramienta();
+  actualizarUI();
+
+  mensaje("Hacha de piedra creada");
+}
+
+
+function crearPicoPiedra(){
+
+  if(
+    recursos.madera<3 ||
+    recursos.piedra<4
+  ){
+
+    mensaje("Faltan materiales");
+    return;
+  }
+
+  recursos.madera-=3;
+  recursos.piedra-=4;
+
+  herramienta={
+    nombre:"Pico de piedra",
+    tipo:"pico",
+    nivel:1,
+    durabilidad:60,
+    maxima:60
+  };
+
+  actualizarHerramienta();
+  actualizarUI();
+
+  mensaje("Pico de piedra creado");
+}
+
+
+function crearHachaHierro(){
+
+  if(
+    recursos.madera<5 ||
+    recursos.hierro<5
+  ){
+
+    mensaje("Faltan materiales");
+    return;
+  }
+
+  recursos.madera-=5;
+  recursos.hierro-=5;
+
+  herramienta={
+    nombre:"Hacha de hierro",
+    tipo:"hacha",
+    nivel:2,
+    durabilidad:120,
+    maxima:120
+  };
+
+  actualizarHerramienta();
+  actualizarUI();
+
+  mensaje("Hacha de hierro creada");
+}
+
+
+function crearPicoHierro(){
+
+  if(
+    recursos.madera<5 ||
+    recursos.hierro<5
+  ){
+
+    mensaje("Faltan materiales");
+    return;
+  }
+
+  recursos.madera-=5;
+  recursos.hierro-=5;
+
+  herramienta={
+    nombre:"Pico de hierro",
+    tipo:"pico",
+    nivel:2,
+    durabilidad:120,
+    maxima:120
+  };
+
+  actualizarHerramienta();
+  actualizarUI();
+
+  mensaje("Pico de hierro creado");
+}
+
+
+/* =========================
+   BOTONES
+========================= */
+
+document
+.getElementById("golpear")
+.addEventListener(
+  "pointerdown",
+  e=>{
+    e.preventDefault();
+    golpear();
+  }
+);
+
+document
+.getElementById("abrirCraft")
+.addEventListener(
+  "pointerdown",
+  e=>{
+    e.preventDefault();
+
+    document.getElementById(
+      "craft"
+    ).style.display="block";
+  }
+);
+
+document
+.getElementById("cerrar")
+.addEventListener(
+  "pointerdown",
+  e=>{
+    e.preventDefault();
+
+    document.getElementById(
+      "craft"
+    ).style.display="none";
+  }
+);
+
+document
+.getElementById("hachaPiedra")
+.addEventListener(
+  "pointerdown",
+  crearHachaPiedra
+);
+
+document
+.getElementById("picoPiedra")
+.addEventListener(
+  "pointerdown",
+  crearPicoPiedra
+);
+
+document
+.getElementById("hachaHierro")
+.addEventListener(
+  "pointerdown",
+  crearHachaHierro
+);
+
+document
+.getElementById("picoHierro")
+.addEventListener(
+  "pointerdown",
+  crearPicoHierro
+);
+
+
+/* =========================
+   JOYSTICK
+========================= */
+
+const joystick=
+document.getElementById("joystick");
+
+const stick=
+document.getElementById("stick");
+
+let movX=0;
+let movY=0;
+let joystickActivo=false;
+
+function moverJoystick(e){
+
+  const rect=
+    joystick.getBoundingClientRect();
+
+  const centroX=
+    rect.left+rect.width/2;
+
+  const centroY=
+    rect.top+rect.height/2;
+
+  let dx=e.clientX-centroX;
+  let dy=e.clientY-centroY;
+
+  const max=45;
+
+  const distancia=
+    Math.sqrt(dx*dx+dy*dy);
+
+  if(distancia>max){
+
+    dx=dx/distancia*max;
+    dy=dy/distancia*max;
+  }
+
+  stick.style.transform=
+    `translate(${dx}px,${dy}px)`;
+
+  movX=dx/max;
+  movY=dy/max;
+}
+
+
+joystick.addEventListener(
+  "pointerdown",
+  e=>{
+
+    joystickActivo=true;
+
+    joystick.setPointerCapture(
+      e.pointerId
+    );
+
+    moverJoystick(e);
+  }
+);
+
+joystick.addEventListener(
+  "pointermove",
+  e=>{
+
+    if(!joystickActivo) return;
+
+    moverJoystick(e);
+  }
+);
+
+joystick.addEventListener(
+  "pointerup",
+  e=>{
+
+    joystickActivo=false;
+
+    movX=0;
+    movY=0;
+
+    stick.style.transform=
+      "translate(0,0)";
+  }
+);
+
+joystick.addEventListener(
+  "pointercancel",
+  e=>{
+
+    joystickActivo=false;
+
+    movX=0;
+    movY=0;
+
+    stick.style.transform=
+      "translate(0,0)";
+  }
+);
+
+
+/* =========================
+   CORRER
+========================= */
+
+let corriendo=false;
+let stamina=100;
+
+const correr=
+document.getElementById("correr");
+
+correr.addEventListener(
+  "pointerdown",
+  e=>{
+    e.preventDefault();
+    corriendo=true;
+  }
+);
+
+function pararCorrer(){
+  corriendo=false;
+}
+
+correr.addEventListener(
+  "pointerup",
+  pararCorrer
+);
+
+correr.addEventListener(
+  "pointercancel",
+  pararCorrer
+);
+
+correr.addEventListener(
+  "pointerleave",
+  pararCorrer
+);
+
+
+/* =========================
+   CÁMARA TÁCTIL
+========================= */
+
+let tocandoCamara=false;
 let ultimoX=0;
 let ultimoY=0;
 
 let yaw=0;
 let pitch=0;
 
-const sensibilidad=.006;
+render.domElement.addEventListener(
+  "pointerdown",
+  e=>{
 
+    tocandoCamara=true;
 
-renderer.domElement.addEventListener(
- "pointerdown",
- e=>{
+    ultimoX=e.clientX;
+    ultimoY=e.clientY;
 
-  if(lookPointer!==null)
-   return;
-
-  lookPointer=
-   e.pointerId;
-
-  ultimoX=
-   e.clientX;
-
-  ultimoY=
-   e.clientY;
-
-  renderer.domElement.setPointerCapture(
-   e.pointerId
-  );
-
- },
- {passive:false}
+    render.domElement.setPointerCapture(
+      e.pointerId
+    );
+  }
 );
 
+render.domElement.addEventListener(
+  "pointermove",
+  e=>{
 
-renderer.domElement.addEventListener(
- "pointermove",
- e=>{
+    if(!tocandoCamara) return;
 
-  if(
-   e.pointerId!==lookPointer
-  )
-   return;
+    const dx=
+      e.clientX-ultimoX;
 
+    const dy=
+      e.clientY-ultimoY;
 
-  e.preventDefault();
+    ultimoX=e.clientX;
+    ultimoY=e.clientY;
 
+    yaw-=dx*.006;
+    pitch-=dy*.006;
 
-  const dx=
-   e.clientX-ultimoX;
-
-  const dy=
-   e.clientY-ultimoY;
-
-
-  ultimoX=
-   e.clientX;
-
-  ultimoY=
-   e.clientY;
-
-
-  yaw-=
-   dx*sensibilidad;
-
-  pitch-=
-   dy*sensibilidad;
-
-
-  pitch=
-   Math.max(
-    -1.35,
-    Math.min(
-     1.35,
-     pitch
-    )
-   );
-
-
-  jugador.rotation.y=
-   yaw;
-
-  camera.rotation.x=
-   pitch;
-
- },
- {passive:false}
-);
-
-
-renderer.domElement.addEventListener(
- "pointerup",
- e=>{
-
-  if(
-   e.pointerId===lookPointer
-  )
-   lookPointer=null;
-
- }
-);
-
-
-renderer.domElement.addEventListener(
- "pointercancel",
- e=>{
-
-  if(
-   e.pointerId===lookPointer
-  )
-   lookPointer=null;
-
- }
-);
-
-
-/* =====================================================
- BUSCAR OBJETIVO
-===================================================== */
-
-function buscarObjetivo(){
-
- let mejor=null;
-
- let mejorDist=4;
-
-
- for(
-  const obj of objetos
- ){
-
-  if(obj.recogible)
-   continue;
-
-
-  const dx=
-   obj.objeto.position.x-
-   jugador.position.x;
-
-  const dz=
-   obj.objeto.position.z-
-   jugador.position.z;
-
-
-  const distancia=
-   Math.sqrt(
-    dx*dx+
-    dz*dz
-   );
-
-
-  const angulo=
-   Math.atan2(
-    dx,
-    -dz
-   );
-
-
-  let diferencia=
-   Math.abs(
-    ((angulo-yaw+Math.PI)
-     %(Math.PI*2))
-    -Math.PI
-   );
-
-
-  if(
-   distancia<mejorDist &&
-   diferencia<.65
-  ){
-
-   mejor=obj;
-
-   mejorDist=
-    distancia;
-
-  }
-
- }
-
-
- return mejor;
-
-}
-
-
-/* =====================================================
- ANIMACIÓN DEL ARMA
-===================================================== */
-
-let golpeando=false;
-
-
-function animarGolpe(){
-
- if(
-  golpeando ||
-  !modeloHerramienta
- )
- return;
-
-
- golpeando=true;
-
-
- const inicioPos=
-  modeloHerramienta.position.clone();
-
- const inicioRot=
-  modeloHerramienta.rotation.clone();
-
-
- const inicio=
-  performance.now();
-
- const duracion=
-  260;
-
-
- function frame(){
-
-  const ahora=
-   performance.now();
-
-
-  let t=
-   (ahora-inicio)/
-   duracion;
-
-
-  if(t>1)
-   t=1;
-
-
-  let fuerza;
-
-
-  if(t<.45){
-
-   fuerza=t/.45;
-
-  }else{
-
-   fuerza=
-    1-
-    (t-.45)/.55;
-
-  }
-
-
-  modeloHerramienta.position.z=
-   inicioPos.z-
-   .55*fuerza;
-
-
-  modeloHerramienta.position.y=
-   inicioPos.y+
-   .18*fuerza;
-
-
-  modeloHerramienta.rotation.z=
-   inicioRot.z-
-   .9*fuerza;
-
-
-  modeloHerramienta.rotation.x=
-   inicioRot.x+
-   .45*fuerza;
-
-
-  if(t<1){
-
-   requestAnimationFrame(
-    frame
-   );
-
-  }else{
-
-   modeloHerramienta.position.copy(
-    inicioPos
-   );
-
-   modeloHerramienta.rotation.copy(
-    inicioRot
-   );
-
-   golpeando=false;
-
-  }
-
- }
-
-
- requestAnimationFrame(
-  frame
- );
-
-}
-
-
-/* =====================================================
- GOLPEAR / RECOGER
-===================================================== */
-
-document
-.getElementById("golpear")
-.addEventListener(
- "pointerdown",
- e=>{
-
-  e.preventDefault();
-
-
-  /*
-  PRIMERO BUSCAMOS RAMAS
-  Y PIEDRAS PEQUEÑAS
-  */
-
-  if(
-   recogerCercano()
-  ){
-
-   return;
-
-  }
-
-
-  /*
-  ANIMAR HERRAMIENTA
-  */
-
-  animarGolpe();
-
-
-  const objetivo=
-   buscarObjetivo();
-
-
-  if(!objetivo){
-
-   mensaje.textContent=
-    "No hay nada para golpear";
-
-   return;
-
-  }
-
-
-  /*
-  ÁRBOL
-  */
-
-  if(
-   objetivo.tipo==="arbol" &&
-   herramienta.tipo!=="hacha"
-  ){
-
-   mensaje.textContent=
-    "Necesitás un hacha";
-
-   return;
-
-  }
-
-
-  /*
-  PIEDRA / HIERRO
-  */
-
-  if(
-   (
-    objetivo.tipo==="piedra" ||
-    objetivo.tipo==="hierro"
-   )
-   &&
-   herramienta.tipo!=="pico"
-  ){
-
-   mensaje.textContent=
-    "Necesitás un pico";
-
-   return;
-
-  }
-
-
-  /*
-  DUREZA
-  */
-
-  if(
-   herramienta.nivel<
-   objetivo.dureza
-  ){
-
-   mensaje.textContent=
-    "Herramienta demasiado débil";
-
-   return;
-
-  }
-
-
-  /*
-  DAÑO
-  */
-
-  let daño=1;
-
-
-  if(
-   herramienta.nivel>
-   objetivo.dureza
-  ){
-
-   daño=2;
-
-  }
-
-
-  objetivo.vida-=
-   daño;
-
-
-  herramienta.durabilidad--;
-
-
-  /*
-  ANIMACIÓN RECURSO
-  */
-
-  const rot=
-   objetivo.objeto.rotation.z;
-
-
-  objetivo.objeto.rotation.z=
-   -.10;
-
-
-  setTimeout(
-   ()=>{
-
-    objetivo.objeto.rotation.z=
-     rot;
-
-   },
-   100
-  );
-
-
-  /*
-  HUD
-  */
-
-  objetivoTxt.style.display=
-   "block";
-
-
-  objetivoTxt.innerHTML=
-
-   (
-    objetivo.tipo==="arbol"
-     ?"ÁRBOL"
-     :objetivo.tipo==="hierro"
-     ?"HIERRO"
-     :"PIEDRA"
-   )
-
-   +"<br>"+
-
-   Math.max(
-    0,
-    objetivo.vida
-   )
-   +"/"+
-   objetivo.vidaMax;
-
-
-  mensaje.textContent=
-   "Golpe: -"+
-   daño;
-
-
-  /*
-  ROMPER
-  */
-
-  if(
-   objetivo.vida<=0
-  ){
-
-   if(
-    objetivo.tipo==="arbol"
-   ){
-
-    madera+=
-     objetivo.madera;
-
-    mensaje.textContent=
-     "ÁRBOL ROTO +"+
-     objetivo.madera+
-     " MADERA";
-
-   }
-
-
-   if(
-    objetivo.tipo==="piedra"
-   ){
-
-    const cantidad=
-     3+
-     objetivo.dureza;
-
-    piedra+=
-     cantidad;
-
-    mensaje.textContent=
-     "ROCA ROTA +"+
-     cantidad+
-     " PIEDRA";
-
-   }
-
-
-   if(
-    objetivo.tipo==="hierro"
-   ){
-
-    const cantidad=
-     2+
-     objetivo.dureza;
-
-    hierro+=
-     cantidad;
-
-    mensaje.textContent=
-     "HIERRO +"+
-     cantidad;
-
-   }
-
-
-   scene.remove(
-    objetivo.objeto
-   );
-
-
-   const index=
-    objetos.indexOf(
-     objetivo
+    pitch=Math.max(
+      -.9,
+      Math.min(.9,pitch)
     );
 
+    jugador.rotation.y=yaw;
 
-   if(index!==-1){
+    camara.rotation.x=pitch;
+  }
+);
 
-    objetos.splice(
-     index,
-     1
+render.domElement.addEventListener(
+  "pointerup",
+  ()=>{
+    tocandoCamara=false;
+  }
+);
+
+render.domElement.addEventListener(
+  "pointercancel",
+  ()=>{
+    tocandoCamara=false;
+  }
+);
+
+
+/* =========================
+   MOVIMIENTO
+========================= */
+
+function actualizarMovimiento(){
+
+  let velocidad=.09;
+
+  if(corriendo && stamina>0){
+
+    velocidad=.19;
+
+    stamina-=.6;
+
+  }else{
+
+    stamina+=.35;
+  }
+
+  stamina=
+    Math.max(
+      0,
+      Math.min(100,stamina)
     );
 
-   }
+  if(stamina<=0)
+    corriendo=false;
 
 
-   setTimeout(
-    ()=>{
+  if(Math.abs(movX)>.05 ||
+     Math.abs(movY)>.05){
 
-     objetivoTxt.style.display=
-      "none";
+    const frente=
+      new THREE.Vector3(
+        0,
+        0,
+        -1
+      );
 
-    },
-    700
-   );
+    const derecha=
+      new THREE.Vector3(
+        1,
+        0,
+        0
+      );
 
+    frente.applyQuaternion(
+      jugador.quaternion
+    );
+
+    derecha.applyQuaternion(
+      jugador.quaternion
+    );
+
+    jugador.position.addScaledVector(
+      frente,
+      -movY*velocidad
+    );
+
+    jugador.position.addScaledVector(
+      derecha,
+      movX*velocidad
+    );
   }
 
-
-  /*
-  HERRAMIENTA ROTA
-  */
-
-  if(
-   herramienta.durabilidad<=0
-  ){
-
-   mensaje.textContent=
-    herramienta.nombre+
-    " SE ROMPIÓ";
-
-
-   herramienta={
-
-    nombre:"Mano",
-    tipo:"mano",
-    nivel:0,
-    durabilidad:Infinity,
-    maxima:Infinity
-
-   };
-
-  }
-
-
-  actualizarInventario();
-
- }
-);
-
-
-/* =====================================================
- JOYSTICK
-===================================================== */
-
-const joystick=
- document.getElementById(
-  "joystick"
- );
-
-const stick=
- document.getElementById(
-  "stick"
- );
-
-let joyPointer=null;
-
-let joyX=0;
-let joyY=0;
-
-
-function actualizarJoystick(e){
-
- const r=
-  joystick.getBoundingClientRect();
-
-
- let x=
-  e.clientX-
-  (r.left+r.width/2);
-
-
- let y=
-  e.clientY-
-  (r.top+r.height/2);
-
-
- const distancia=
-  Math.sqrt(
-   x*x+y*y
-  );
-
-
- const max=45;
-
-
- if(
-  distancia>max
- ){
-
-  x=
-   x/distancia*max;
-
-  y=
-   y/distancia*max;
-
- }
-
-
- joyX=
-  x/max;
-
- joyY=
-  y/max;
-
-
- stick.style.transform=
-  `translate(${x}px,${y}px)`;
-
+  document.getElementById(
+    "stamina"
+  ).style.width=
+    stamina+"%";
 }
 
 
-function resetJoystick(){
-
- joyPointer=null;
-
- joyX=0;
- joyY=0;
-
- stick.style.transform=
-  "translate(0,0)";
-
-}
-
-
-joystick.addEventListener(
- "pointerdown",
- e=>{
-
-  e.preventDefault();
-
-  joyPointer=
-   e.pointerId;
-
-  joystick.setPointerCapture(
-   e.pointerId
-  );
-
-  actualizarJoystick(e);
-
- }
-);
-
-
-joystick.addEventListener(
- "pointermove",
- e=>{
-
-  if(
-   e.pointerId!==joyPointer
-  )
-   return;
-
-  actualizarJoystick(e);
-
- }
-);
-
-
-joystick.addEventListener(
- "pointerup",
- resetJoystick
-);
-
-
-joystick.addEventListener(
- "pointercancel",
- resetJoystick
-);
-
-
-/* =====================================================
- CORRER
-===================================================== */
-
-let corriendo=false;
-
-let stamina=100;
-
-const staminaBar=
- document.getElementById(
-  "stamina"
- );
-
-
-const botonCorrer=
- document.getElementById(
-  "correr"
- );
-
-
-botonCorrer.addEventListener(
- "pointerdown",
- e=>{
-
-  e.preventDefault();
-
-  corriendo=true;
-
-  botonCorrer.style.background=
-   "rgba(20,180,80,.95)";
-
- }
-);
-
-
-function dejarDeCorrer(){
-
- corriendo=false;
-
- botonCorrer.style.background=
-  "rgba(30,100,180,.85)";
-
-}
-
-
-botonCorrer.addEventListener(
- "pointerup",
- dejarDeCorrer
-);
-
-botonCorrer.addEventListener(
- "pointercancel",
- dejarDeCorrer
-);
-
-botonCorrer.addEventListener(
- "pointerleave",
- dejarDeCorrer
-);
-
-
-/* =====================================================
- MOVIMIENTO
-===================================================== */
-
-function mover(){
-
- let velocidad=
-  .10;
-
-
- /*
- CORRER
- */
-
- if(
-  corriendo &&
-  stamina>0 &&
-  (Math.abs(joyX)>.1 ||
-   Math.abs(joyY)>.1)
- ){
-
-  velocidad=
-   .20;
-
-  stamina-=
-   .45;
-
- }else{
-
-  /*
-  RECUPERACIÓN
-  */
-
-  stamina+=
-   .28;
-
- }
-
-
- stamina=
-  Math.max(
-   0,
-   Math.min(
-    100,
-    stamina
-   )
-  );
-
-
- if(
-  stamina<=0
- ){
-
-  corriendo=false;
-
-  botonCorrer.style.background=
-   "rgba(30,100,180,.85)";
-
- }
-
-
- staminaBar.style.width=
-  stamina+"%";
-
-
- /*
- MOVIMIENTO
- */
-
- const derechaX=
-  Math.cos(yaw);
-
- const derechaZ=
-  -Math.sin(yaw);
-
- const adelanteX=
-  -Math.sin(yaw);
-
- const adelanteZ=
-  -Math.cos(yaw);
-
-
- jugador.position.x+=
-  (
-   derechaX*joyX+
-   adelanteX*(-joyY)
-  )*
-  velocidad;
-
-
- jugador.position.z+=
-  (
-   derechaZ*joyX+
-   adelanteZ*(-joyY)
-  )*
-  velocidad;
-
-}
-
-
-/* =====================================================
- MOCHILA
-===================================================== */
-
-const inventario=
- document.getElementById(
-  "inventario"
- );
-
-
-document
-.getElementById("mochila")
-.addEventListener(
- "pointerdown",
- ()=>{
-
-  inventario.style.display=
-   "block";
-
-  actualizarInventario();
-
- }
-);
-
-
-document
-.getElementById("cerrar")
-.addEventListener(
- "pointerdown",
- ()=>{
-
-  inventario.style.display=
-   "none";
-
- }
-);
-
-
-/* =====================================================
- CRAFTING
-===================================================== */
-
-document
-.getElementById(
- "crearHachaPiedra"
-)
-.addEventListener(
- "pointerdown",
- ()=>{
-
-  if(
-   madera>=3 &&
-   piedra>=3
-  ){
-
-   madera-=3;
-   piedra-=3;
-
-   equipar(
-    "Hacha de piedra",
-    "hacha",
-    1,
-    60
-   );
-
-  }else{
-
-   mensaje.textContent=
-    "Faltan 3 madera + 3 piedra";
-
-  }
-
- }
-);
-
-
-document
-.getElementById(
- "crearPicoPiedra"
-)
-.addEventListener(
- "pointerdown",
- ()=>{
-
-  if(
-   madera>=3 &&
-   piedra>=4
-  ){
-
-   madera-=3;
-   piedra-=4;
-
-   equipar(
-    "Pico de piedra",
-    "pico",
-    1,
-    60
-   );
-
-  }else{
-
-   mensaje.textContent=
-    "Faltan 3 madera + 4 piedra";
-
-  }
-
- }
-);
-
-
-document
-.getElementById(
- "crearHachaHierro"
-)
-.addEventListener(
- "pointerdown",
- ()=>{
-
-  if(
-   madera>=5 &&
-   hierro>=5
-  ){
-
-   madera-=5;
-   hierro-=5;
-
-   equipar(
-    "Hacha de hierro",
-    "hacha",
-    2,
-    120
-   );
-
-  }else{
-
-   mensaje.textContent=
-    "Faltan 5 madera + 5 hierro";
-
-  }
-
- }
-);
-
-
-document
-.getElementById(
- "crearPicoHierro"
-)
-.addEventListener(
- "pointerdown",
- ()=>{
-
-  if(
-   madera>=5 &&
-   hierro>=5
-  ){
-
-   madera-=5;
-   hierro-=5;
-
-   equipar(
-    "Pico de hierro",
-    "pico",
-    2,
-    120
-   );
-
-  }else{
-
-   mensaje.textContent=
-    "Faltan 5 madera + 5 hierro";
-
-  }
-
- }
-);
-
-
-/* =====================================================
- LOOP
-===================================================== */
+/* =========================
+   ANIMACIÓN
+========================= */
 
 function animar(){
 
- requestAnimationFrame(
-  animar
- );
+  requestAnimationFrame(animar);
 
- mover();
+  actualizarMovimiento();
 
- renderer.render(
-  scene,
-  camera
- );
-
+  render.render(
+    escena,
+    camara
+  );
 }
 
 animar();
 
 
-/* =====================================================
- RESIZE
-===================================================== */
+/* =========================
+   RESIZE
+========================= */
 
-window.addEventListener(
- "resize",
- ()=>{
+addEventListener(
+  "resize",
+  ()=>{
 
-  camera.aspect=
-   innerWidth/innerHeight;
+    camara.aspect=
+      innerWidth/innerHeight;
 
-  camera.updateProjectionMatrix();
+    camara.updateProjectionMatrix();
 
-  renderer.setSize(
-   innerWidth,
-   innerHeight
-  );
-
- }
+    render.setSize(
+      innerWidth,
+      innerHeight
+    );
+  }
 );
-
-
-actualizarInventario();
 
 </script>
 
