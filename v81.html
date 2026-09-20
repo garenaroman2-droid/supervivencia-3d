@@ -1,0 +1,2619 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SUPERVIVENCIA 3D V8.1</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#101812;
+  font-family:Arial,sans-serif;
+  touch-action:none;
+}
+
+#game{
+  position:fixed;
+  inset:0;
+}
+
+canvas{
+  display:block;
+}
+
+#version{
+  position:fixed;
+  top:8px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:20;
+  color:white;
+  background:rgba(0,0,0,.65);
+  padding:7px 14px;
+  border-radius:20px;
+  font-size:13px;
+  font-weight:bold;
+  border:1px solid rgba(255,255,255,.25);
+}
+
+#stats{
+  position:fixed;
+  top:48px;
+  left:10px;
+  z-index:20;
+  color:white;
+  background:rgba(0,0,0,.55);
+  border-radius:12px;
+  padding:9px 11px;
+  font-size:13px;
+  line-height:1.5;
+}
+
+#location{
+  position:fixed;
+  top:48px;
+  right:10px;
+  z-index:20;
+  color:white;
+  background:rgba(0,0,0,.55);
+  border-radius:12px;
+  padding:9px 11px;
+  text-align:right;
+  font-size:12px;
+  line-height:1.5;
+}
+
+#message{
+  position:fixed;
+  left:50%;
+  bottom:145px;
+  transform:translateX(-50%);
+  z-index:30;
+  color:white;
+  background:rgba(0,0,0,.75);
+  border-radius:12px;
+  padding:10px 15px;
+  text-align:center;
+  font-size:14px;
+  max-width:90%;
+  opacity:0;
+  transition:.25s;
+  pointer-events:none;
+}
+
+#joystick{
+  position:fixed;
+  left:22px;
+  bottom:25px;
+  width:125px;
+  height:125px;
+  border-radius:50%;
+  background:rgba(255,255,255,.10);
+  border:2px solid rgba(255,255,255,.25);
+  z-index:50;
+}
+
+#stick{
+  position:absolute;
+  width:55px;
+  height:55px;
+  left:33px;
+  top:33px;
+  border-radius:50%;
+  background:rgba(255,255,255,.35);
+  border:2px solid rgba(255,255,255,.55);
+}
+
+.btn{
+  position:fixed;
+  z-index:50;
+  width:62px;
+  height:62px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.3);
+  background:rgba(0,0,0,.55);
+  color:white;
+  font-weight:bold;
+  font-size:11px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  user-select:none;
+}
+
+#run{
+  right:22px;
+  bottom:28px;
+}
+
+#hit{
+  right:98px;
+  bottom:93px;
+  background:rgba(120,40,20,.65);
+}
+
+#mapBtn{
+  right:22px;
+  top:120px;
+}
+
+#flagBtn{
+  right:22px;
+  top:192px;
+}
+
+#invBtn{
+  right:22px;
+  top:264px;
+}
+
+#mapPanel,
+#inventoryPanel{
+  display:none;
+  position:fixed;
+  z-index:100;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:min(92vw,390px);
+  max-height:82vh;
+  overflow:auto;
+  background:rgba(12,18,14,.96);
+  color:white;
+  border:1px solid rgba(255,255,255,.25);
+  border-radius:18px;
+  padding:15px;
+  box-shadow:0 10px 50px rgba(0,0,0,.6);
+}
+
+.panelTitle{
+  font-size:19px;
+  font-weight:bold;
+  margin-bottom:8px;
+}
+
+.close{
+  float:right;
+  border:0;
+  background:#772b2b;
+  color:white;
+  border-radius:8px;
+  padding:6px 10px;
+}
+
+#mapCanvas{
+  width:100%;
+  aspect-ratio:1;
+  background:#17251a;
+  border-radius:12px;
+  border:1px solid #526653;
+  margin-top:10px;
+}
+
+.item{
+  padding:9px;
+  margin:6px 0;
+  background:rgba(255,255,255,.07);
+  border-radius:9px;
+}
+
+#nameInput{
+  width:100%;
+  padding:11px;
+  border-radius:9px;
+  border:1px solid #667;
+  background:#111;
+  color:white;
+  margin:8px 0;
+}
+
+.action{
+  width:100%;
+  padding:11px;
+  border:0;
+  border-radius:9px;
+  background:#315d36;
+  color:white;
+  font-weight:bold;
+}
+
+#help{
+  position:fixed;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  z-index:110;
+  background:rgba(0,0,0,.9);
+  color:white;
+  width:min(90vw,380px);
+  padding:20px;
+  border-radius:18px;
+  display:none;
+}
+
+#crosshair{
+  position:fixed;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  z-index:15;
+  width:8px;
+  height:8px;
+  border:1px solid rgba(255,255,255,.7);
+  border-radius:50%;
+  pointer-events:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="game"></div>
+
+<div id="version">SUPERVIVENCIA 3D — V8.1</div>
+
+<div id="stats">
+  ❤️ <span id="hp">100</span><br>
+  🪵 <span id="wood">0</span>
+  🪨 <span id="stone">0</span>
+  ⛓️ <span id="iron">0</span><br>
+  🥩 <span id="food">0</span>
+</div>
+
+<div id="location">
+  📍 <span id="place">Base</span><br>
+  🧭 <span id="distance">0 m</span>
+</div>
+
+<div id="crosshair"></div>
+<div id="message"></div>
+
+<div id="joystick">
+  <div id="stick"></div>
+</div>
+
+<div class="btn" id="run">CORRER</div>
+<div class="btn" id="hit">GOLPEAR</div>
+<div class="btn" id="mapBtn">MAPA</div>
+<div class="btn" id="flagBtn">⚑<br>BANDERA</div>
+<div class="btn" id="invBtn">MOCHILA</div>
+
+<div id="mapPanel">
+  <button class="close" onclick="closeMap()">X</button>
+  <div class="panelTitle">🗺️ MAPA DEL MUNDO</div>
+  <div id="mapInfo"></div>
+  <canvas id="mapCanvas" width="600" height="600"></canvas>
+  <div id="placesList"></div>
+</div>
+
+<div id="inventoryPanel">
+  <button class="close" onclick="closeInventory()">X</button>
+  <div class="panelTitle">🎒 MOCHILA</div>
+  <div id="inventoryList"></div>
+</div>
+
+<div id="help">
+  <b>SUPERVIVENCIA 3D V8.1</b>
+  <br><br>
+  🕹️ Mueve el personaje con el joystick.<br><br>
+  👆 Arrastra la pantalla para mirar.<br><br>
+  🪓 Acércate a un árbol y pulsa GOLPEAR.<br><br>
+  ⛏️ Las rocas también pueden recolectarse.<br><br>
+  ⚑ Puedes colocar una bandera en cualquier lugar.<br><br>
+  🗺️ Descubre lugares y quedarán guardados en el mapa.
+  <br><br>
+  <button class="action" onclick="document.getElementById('help').style.display='none'">
+    JUGAR
+  </button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+
+/* =========================================================
+   SUPERVIVENCIA 3D V8.1
+   Archivo: v81.html
+   ========================================================= */
+
+const WORLD = 5000;
+
+let scene;
+let camera;
+let renderer;
+let clock;
+
+let player;
+let playerGroup;
+
+let yaw = 0;
+let pitch = -0.18;
+
+let moveX = 0;
+let moveY = 0;
+
+let running = false;
+let stamina = 100;
+
+let hp = 100;
+
+let resources = {
+  wood:0,
+  stone:0,
+  iron:0,
+  food:0
+};
+
+let objects = [];
+let trees = [];
+let rocks = [];
+let flags = [];
+
+let discovered = JSON.parse(
+  localStorage.getItem("survival_v81_discovered") || "[]"
+);
+
+let savedFlags = JSON.parse(
+  localStorage.getItem("survival_v81_flags") || "[]"
+);
+
+let customPlaces = JSON.parse(
+  localStorage.getItem("survival_v81_places") || "[]"
+);
+
+const places = [
+  {
+    id:"city",
+    name:"Ciudad Vieja",
+    x:900,
+    z:-700,
+    radius:130,
+    discovered:false
+  },
+  {
+    id:"farm",
+    name:"Granja Verde",
+    x:-650,
+    z:550,
+    radius:110,
+    discovered:false
+  },
+  {
+    id:"forest",
+    name:"Bosque del Norte",
+    x:250,
+    z:-1150,
+    radius:160,
+    discovered:false
+  },
+  {
+    id:"lake",
+    name:"Lago Perdido",
+    x:-1100,
+    z:-500,
+    radius:150,
+    discovered:false
+  },
+  {
+    id:"house",
+    name:"Casa Abandonada",
+    x:650,
+    z:350,
+    radius:80,
+    discovered:false
+  },
+  {
+    id:"mine",
+    name:"Mina Vieja",
+    x:-1250,
+    z:900,
+    radius:100,
+    discovered:false
+  }
+];
+
+function saveGame(){
+
+  localStorage.setItem(
+    "survival_v81_discovered",
+    JSON.stringify(discovered)
+  );
+
+  localStorage.setItem(
+    "survival_v81_flags",
+    JSON.stringify(savedFlags)
+  );
+
+  localStorage.setItem(
+    "survival_v81_places",
+    JSON.stringify(customPlaces)
+  );
+}
+
+/* =========================================================
+   UTILIDADES
+   ========================================================= */
+
+function msg(text){
+
+  const box = document.getElementById("message");
+
+  box.innerHTML = text;
+  box.style.opacity = 1;
+
+  clearTimeout(window.msgTimer);
+
+  window.msgTimer = setTimeout(()=>{
+    box.style.opacity = 0;
+  },2500);
+}
+
+function distanceFromBase(x,z){
+
+  return Math.sqrt(x*x + z*z);
+}
+
+function formatDistance(m){
+
+  if(m >= 1000){
+    return (m/1000).toFixed(1) + " km";
+  }
+
+  return Math.round(m) + " m";
+}
+
+function rand(min,max){
+
+  return Math.random()*(max-min)+min;
+}
+
+/* =========================================================
+   ESCENA
+   ========================================================= */
+
+function init(){
+
+  scene = new THREE.Scene();
+
+  scene.background = new THREE.Color(0x88a8b8);
+
+  scene.fog = new THREE.Fog(
+    0x88a8b8,
+    500,
+    2500
+  );
+
+  camera = new THREE.PerspectiveCamera(
+    70,
+    innerWidth/innerHeight,
+    0.1,
+    4000
+  );
+
+  renderer = new THREE.WebGLRenderer({
+    antialias:true,
+    powerPreference:"high-performance"
+  });
+
+  renderer.setSize(
+    innerWidth,
+    innerHeight
+  );
+
+  renderer.setPixelRatio(
+    Math.min(devicePixelRatio,1.5)
+  );
+
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  document.getElementById("game").appendChild(renderer.domElement);
+
+  clock = new THREE.Clock();
+
+  createLights();
+  createWorld();
+  createBase();
+  createCity();
+  createFarm();
+  createSpecialPlaces();
+  createResources();
+  createPlayer();
+  loadFlags();
+
+  window.addEventListener(
+    "resize",
+    resize
+  );
+
+  setupControls();
+
+  document.getElementById("help").style.display="block";
+
+  animate();
+}
+
+/* =========================================================
+   LUCES
+   ========================================================= */
+
+function createLights(){
+
+  const hemi = new THREE.HemisphereLight(
+    0xc9e8ff,
+    0x26331f,
+    1.5
+  );
+
+  scene.add(hemi);
+
+  const sun = new THREE.DirectionalLight(
+    0xffffff,
+    2.0
+  );
+
+  sun.position.set(
+    300,
+    600,
+    200
+  );
+
+  sun.castShadow = true;
+
+  sun.shadow.mapSize.width = 1024;
+  sun.shadow.mapSize.height = 1024;
+
+  sun.shadow.camera.left = -1000;
+  sun.shadow.camera.right = 1000;
+  sun.shadow.camera.top = 1000;
+  sun.shadow.camera.bottom = -1000;
+
+  scene.add(sun);
+}
+
+/* =========================================================
+   TERRENO
+   ========================================================= */
+
+function createWorld(){
+
+  const groundGeo = new THREE.PlaneGeometry(
+    WORLD,
+    WORLD,
+    40,
+    40
+  );
+
+  const groundMat = new THREE.MeshStandardMaterial({
+    color:0x49683b,
+    roughness:1
+  });
+
+  const ground = new THREE.Mesh(
+    groundGeo,
+    groundMat
+  );
+
+  ground.rotation.x = -Math.PI/2;
+
+  ground.receiveShadow = true;
+
+  scene.add(ground);
+
+  /* caminos principales */
+
+  createRoad(
+    0,
+    0,
+    0,
+    -900,
+    16
+  );
+
+  createRoad(
+    0,
+    0,
+    900,
+    -700,
+    18
+  );
+
+  createRoad(
+    0,
+    0,
+    -650,
+    550,
+    14
+  );
+}
+
+function createRoad(x1,z1,x2,z2,width){
+
+  const dx = x2-x1;
+  const dz = z2-z1;
+
+  const len = Math.sqrt(dx*dx+dz*dz);
+
+  const geo = new THREE.PlaneGeometry(
+    width,
+    len
+  );
+
+  const mat = new THREE.MeshStandardMaterial({
+    color:0x70624b,
+    roughness:1
+  });
+
+  const road = new THREE.Mesh(
+    geo,
+    mat
+  );
+
+  road.rotation.x = -Math.PI/2;
+
+  road.position.set(
+    (x1+x2)/2,
+    0.015,
+    (z1+z2)/2
+  );
+
+  road.rotation.z = -Math.atan2(
+    dx,
+    dz
+  );
+
+  scene.add(road);
+}
+
+/* =========================================================
+   BASE
+   ========================================================= */
+
+function createBase(){
+
+  const group = new THREE.Group();
+
+  group.position.set(
+    0,
+    0,
+    0
+  );
+
+  scene.add(group);
+
+  /* piso */
+
+  const floor = new THREE.Mesh(
+    new THREE.BoxGeometry(11,0.35,9),
+    new THREE.MeshStandardMaterial({
+      color:0x73502f
+    })
+  );
+
+  floor.position.y=.18;
+  floor.castShadow=true;
+  floor.receiveShadow=true;
+
+  group.add(floor);
+
+  /* casa */
+
+  createBuilding(
+    group,
+    0,
+    2,
+    0,
+    10,
+    6,
+    7,
+    true
+  );
+
+  /* fogata */
+
+  const fire = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      .8,
+      1,
+      .35,
+      8
+    ),
+    new THREE.MeshStandardMaterial({
+      color:0x4d2d19
+    })
+  );
+
+  fire.position.set(
+    -7,
+    .18,
+    0
+  );
+
+  group.add(fire);
+
+  const light = new THREE.PointLight(
+    0xff8b30,
+    2,
+    20
+  );
+
+  light.position.set(
+    -7,
+    2,
+    0
+  );
+
+  group.add(light);
+
+  /* bandera de base */
+
+  createFlag(
+    7,
+    0,
+    "BASE",
+    true
+  );
+
+  msg("🏠 Tu base está marcada con una bandera roja.");
+}
+
+/* =========================================================
+   EDIFICIOS
+   ========================================================= */
+
+function createBuilding(
+  parent,
+  x,
+  y,
+  z,
+  w,
+  h,
+  d,
+  detailed
+){
+
+  const group = new THREE.Group();
+
+  group.position.set(
+    x,
+    y,
+    z
+  );
+
+  parent.add(group);
+
+  const wallMat = new THREE.MeshStandardMaterial({
+    color:0x876b4d,
+    roughness:.9
+  });
+
+  const roofMat = new THREE.MeshStandardMaterial({
+    color:0x3b3029,
+    roughness:1
+  });
+
+  /* paredes */
+
+  const back = new THREE.Mesh(
+    new THREE.BoxGeometry(w,h,.25),
+    wallMat
+  );
+
+  back.position.z = d/2;
+
+  group.add(back);
+
+  const side1 = new THREE.Mesh(
+    new THREE.BoxGeometry(.25,h,d),
+    wallMat
+  );
+
+  side1.position.x = -w/2;
+
+  group.add(side1);
+
+  const side2 = side1.clone();
+
+  side2.position.x = w/2;
+
+  group.add(side2);
+
+  /* pared frontal dividida */
+
+  const frontLeft = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      w*.42,
+      h,
+      .25
+    ),
+    wallMat
+  );
+
+  frontLeft.position.set(
+    -w*.29,
+    0,
+    -d/2
+  );
+
+  group.add(frontLeft);
+
+  const frontRight = frontLeft.clone();
+
+  frontRight.position.x = w*.29;
+
+  group.add(frontRight);
+
+  /* puerta */
+
+  const door = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      1.5,
+      2.7,
+      .18
+    ),
+    new THREE.MeshStandardMaterial({
+      color:0x432719
+    })
+  );
+
+  door.position.set(
+    0,
+    -h/2+1.35,
+    -d/2-.1
+  );
+
+  group.add(door);
+
+  /* techo */
+
+  const roof = new THREE.Mesh(
+    new THREE.ConeGeometry(
+      Math.max(w,d)*.72,
+      2.4,
+      4
+    ),
+    roofMat
+  );
+
+  roof.rotation.y=Math.PI/4;
+
+  roof.position.y=h/2+1;
+
+  group.add(roof);
+
+  /* ventanas */
+
+  if(detailed){
+
+    for(const sx of [-1,1]){
+
+      const win = new THREE.Mesh(
+        new THREE.BoxGeometry(
+          1.7,
+          1.2,
+          .12
+        ),
+        new THREE.MeshStandardMaterial({
+          color:0x79a9b4,
+          roughness:.2,
+          metalness:.1
+        })
+      );
+
+      win.position.set(
+        sx*(w/2+.07),
+        .3,
+        0
+      );
+
+      win.rotation.y=Math.PI/2;
+
+      group.add(win);
+    }
+
+    const chimney = new THREE.Mesh(
+      new THREE.BoxGeometry(
+        .7,
+        2,
+        .7
+      ),
+      new THREE.MeshStandardMaterial({
+        color:0x4a4038
+      })
+    );
+
+    chimney.position.set(
+      w*.22,
+      h/2+1.7,
+      0
+    );
+
+    group.add(chimney);
+  }
+
+  return group;
+}
+
+/* =========================================================
+   CIUDAD
+   ========================================================= */
+
+function createCity(){
+
+  const cityX=900;
+  const cityZ=-700;
+
+  /* plaza */
+
+  const plaza = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      35,
+      35,
+      .15,
+      32
+    ),
+    new THREE.MeshStandardMaterial({
+      color:0x776f61
+    })
+  );
+
+  plaza.position.set(
+    cityX,
+    .08,
+    cityZ
+  );
+
+  scene.add(plaza);
+
+  const positions = [
+
+    [-95,-80],
+    [0,-100],
+    [95,-80],
+
+    [-110,0],
+    [110,0],
+
+    [-95,85],
+    [0,105],
+    [95,85],
+
+    [-210,-40],
+    [210,-40],
+
+    [-210,100],
+    [210,100],
+
+    [-190,-150],
+    [190,-150],
+
+    [0,200],
+    [-100,200],
+    [100,200]
+
+  ];
+
+  positions.forEach((p,i)=>{
+
+    const house = createBuilding(
+      scene,
+      cityX+p[0],
+      2.5,
+      cityZ+p[1],
+      i%4===0 ? 15 : 11,
+      i%4===0 ? 7 : 6,
+      i%4===0 ? 11 : 8,
+      true
+    );
+
+    house.rotation.y = rand(
+      -0.08,
+      0.08
+    );
+  });
+
+  /* almacén */
+
+  createBuilding(
+    scene,
+    cityX+280,
+    4,
+    cityZ+20,
+    30,
+    9,
+    20,
+    true
+  );
+
+  msg("🏙️ Ciudad Vieja está a unos 1 km de la base.");
+}
+
+/* =========================================================
+   GRANJA
+   ========================================================= */
+
+function createFarm(){
+
+  const x=-650;
+  const z=550;
+
+  /* casa */
+
+  createBuilding(
+    scene,
+    x,
+    2.5,
+    z,
+    13,
+    6,
+    9,
+    true
+  );
+
+  /* parcelas */
+
+  for(let row=0;row<5;row++){
+
+    for(let col=0;col<8;col++){
+
+      const plant = new THREE.Mesh(
+        new THREE.ConeGeometry(
+          .22,
+          .8,
+          5
+        ),
+        new THREE.MeshStandardMaterial({
+          color:0x3f762d
+        })
+      );
+
+      plant.position.set(
+        x-18+col*5,
+        .45,
+        z+18+row*4
+      );
+
+      scene.add(plant);
+    }
+  }
+
+  /* granero */
+
+  createBuilding(
+    scene,
+    x+35,
+    3,
+    z+20,
+    18,
+    7,
+    14,
+    true
+  );
+}
+
+/* =========================================================
+   LUGARES ESPECIALES
+   ========================================================= */
+
+function createSpecialPlaces(){
+
+  /* Lago */
+
+  const lake = new THREE.Mesh(
+    new THREE.CircleGeometry(
+      75,
+      32
+    ),
+    new THREE.MeshStandardMaterial({
+      color:0x397f9c,
+      transparent:true,
+      opacity:.85,
+      roughness:.15
+    })
+  );
+
+  lake.rotation.x=-Math.PI/2;
+
+  lake.position.set(
+    -1100,
+    .03,
+    -500
+  );
+
+  scene.add(lake);
+
+  /* Casa abandonada */
+
+  createBuilding(
+    scene,
+    650,
+    2,
+    350,
+    11,
+    5,
+    8,
+    true
+  );
+
+  /* Mina */
+
+  const mine = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      16,
+      10,
+      12
+    ),
+    new THREE.MeshStandardMaterial({
+      color:0x33302c
+    })
+  );
+
+  mine.position.set(
+    -1250,
+    5,
+    900
+  );
+
+  scene.add(mine);
+
+  /* entrada oscura */
+
+  const entrance = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      5,
+      6,
+      .5
+    ),
+    new THREE.MeshStandardMaterial({
+      color:0x070707
+    })
+  );
+
+  entrance.position.set(
+    -1250,
+    3,
+    893
+  );
+
+  scene.add(entrance);
+
+  /* bosque */
+
+  for(let i=0;i<90;i++){
+
+    const x=rand(
+      100,
+      420
+    );
+
+    const z=rand(
+      -1350,
+      -950
+    );
+
+    createTree(
+      x,
+      z,
+      2
+    );
+  }
+}
+
+/* =========================================================
+   ÁRBOLES
+   ========================================================= */
+
+function createTree(x,z,hardness=1){
+
+  const group = new THREE.Group();
+
+  const scale =
+    hardness===1 ? 1 :
+    hardness===2 ? 1.25 :
+    1.55;
+
+  group.position.set(
+    x,
+    0,
+    z
+  );
+
+  group.scale.setScalar(scale);
+
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      .45,
+      .65,
+      5,
+      8
+    ),
+    new THREE.MeshStandardMaterial({
+      color:
+        hardness===1 ? 0x70492c :
+        hardness===2 ? 0x573a25 :
+        0x402d20
+    })
+  );
+
+  trunk.position.y=2.5;
+  trunk.castShadow=true;
+
+  group.add(trunk);
+
+  const crown = new THREE.Mesh(
+    new THREE.ConeGeometry(
+      3,
+      6,
+      8
+    ),
+    new THREE.MeshStandardMaterial({
+      color:
+        hardness===1 ? 0x2f6b32 :
+        hardness===2 ? 0x245a2a :
+        0x17451e
+    })
+  );
+
+  crown.position.y=6.2;
+  crown.castShadow=true;
+
+  group.add(crown);
+
+  scene.add(group);
+
+  trees.push({
+    mesh:group,
+    x,
+    z,
+    hardness,
+    health:hardness*3
+  });
+}
+
+/* =========================================================
+   ROCAS
+   ========================================================= */
+
+function createRock(x,z,hardness=1,iron=false){
+
+  const geo = new THREE.DodecahedronGeometry(
+    hardness===1 ? 1.1 :
+    hardness===2 ? 1.45 :
+    1.8,
+    0
+  );
+
+  const mat = new THREE.MeshStandardMaterial({
+    color:
+      iron ? 0x7b5547 :
+      hardness===1 ? 0x77736b :
+      hardness===2 ? 0x5f625f :
+      0x45494a,
+    roughness:1
+  });
+
+  const rock = new THREE.Mesh(
+    geo,
+    mat
+  );
+
+  rock.position.set(
+    x,
+    .8,
+    z
+  );
+
+  rock.rotation.set(
+    rand(0,2),
+    rand(0,2),
+    rand(0,2)
+  );
+
+  rock.castShadow=true;
+
+  scene.add(rock);
+
+  rocks.push({
+    mesh:rock,
+    x,
+    z,
+    hardness,
+    iron,
+    health:hardness*3
+  });
+}
+
+/* =========================================================
+   RECURSOS
+   ========================================================= */
+
+function createResources(){
+
+  /* árboles */
+
+  for(let i=0;i<90;i++){
+
+    const x=rand(-2200,2200);
+    const z=rand(-2200,2200);
+
+    if(
+      Math.abs(x)<100 &&
+      Math.abs(z)<100
+    ) continue;
+
+    let hardness=1;
+
+    const r=Math.random();
+
+    if(r>.80) hardness=2;
+    if(r>.95) hardness=3;
+
+    createTree(
+      x,
+      z,
+      hardness
+    );
+  }
+
+  /* rocas */
+
+  for(let i=0;i<70;i++){
+
+    const x=rand(-2200,2200);
+    const z=rand(-2200,2200);
+
+    const hardness =
+      Math.random()>.82 ? 2 : 1;
+
+    createRock(
+      x,
+      z,
+      hardness,
+      false
+    );
+  }
+
+  /* hierro */
+
+  for(let i=0;i<35;i++){
+
+    const x=rand(-1800,1800);
+    const z=rand(-1800,1800);
+
+    createRock(
+      x,
+      z,
+      2,
+      true
+    );
+  }
+
+  /* arbustos */
+
+  for(let i=0;i<280;i++){
+
+    const x=rand(-2300,2300);
+    const z=rand(-2300,2300);
+
+    const bush = new THREE.Mesh(
+      new THREE.SphereGeometry(
+        rand(.4,.9),
+        7,
+        6
+      ),
+      new THREE.MeshStandardMaterial({
+        color:0x315f2c
+      })
+    );
+
+    bush.scale.y=.65;
+
+    bush.position.set(
+      x,
+      .45,
+      z
+    );
+
+    scene.add(bush);
+  }
+
+  /* pasto */
+
+  for(let i=0;i<900;i++){
+
+    const x=rand(-2400,2400);
+    const z=rand(-2400,2400);
+
+    const grass = new THREE.Mesh(
+      new THREE.ConeGeometry(
+        .08,
+        rand(.3,.8),
+        4
+      ),
+      new THREE.MeshStandardMaterial({
+        color:0x3f7130
+      })
+    );
+
+    grass.position.set(
+      x,
+      .35,
+      z
+    );
+
+    scene.add(grass);
+  }
+}
+
+/* =========================================================
+   JUGADOR
+   ========================================================= */
+
+function createPlayer(){
+
+  playerGroup = new THREE.Group();
+
+  playerGroup.position.set(
+    0,
+    0,
+    12
+  );
+
+  scene.add(playerGroup);
+
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      .45,
+      .55,
+      1.7,
+      8
+    ),
+    new THREE.MeshStandardMaterial({
+      color:0x303b44
+    })
+  );
+
+  body.position.y=.9;
+
+  playerGroup.add(body);
+
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(
+      .38,
+      12,
+      10
+    ),
+    new THREE.MeshStandardMaterial({
+      color:0xc58d6c
+    })
+  );
+
+  head.position.y=2;
+
+  playerGroup.add(head);
+
+  player = playerGroup;
+
+  camera.position.set(
+    0,
+    2.5,
+    4
+  );
+
+  playerGroup.add(camera);
+
+  camera.rotation.order="YXZ";
+}
+
+/* =========================================================
+   BANDERAS
+   ========================================================= */
+
+function createFlag(x,z,name,base=false){
+
+  const group = new THREE.Group();
+
+  group.position.set(
+    x,
+    0,
+    z
+  );
+
+  scene.add(group);
+
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      .06,
+      .08,
+      4,
+      8
+    ),
+    new THREE.MeshStandardMaterial({
+      color:0x5b4630
+    })
+  );
+
+  pole.position.y=2;
+
+  group.add(pole);
+
+  const cloth = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      1.4,
+      .8
+    ),
+    new THREE.MeshStandardMaterial({
+      color:base ? 0xb51f24 : 0xe4b52e,
+      side:THREE.DoubleSide
+    })
+  );
+
+  cloth.position.set(
+    .7,
+    3.2,
+    0
+  );
+
+  group.add(cloth);
+
+  const label = createLabel(
+    name
+  );
+
+  label.position.set(
+    0,
+    4.3,
+    0
+  );
+
+  group.add(label);
+
+  flags.push({
+    mesh:group,
+    x,
+    z,
+    name,
+    base
+  });
+
+  return group;
+}
+
+function createLabel(text){
+
+  const canvas=document.createElement("canvas");
+
+  canvas.width=512;
+  canvas.height=128;
+
+  const ctx=canvas.getContext("2d");
+
+  ctx.fillStyle="rgba(0,0,0,.65)";
+  ctx.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  ctx.fillStyle="white";
+  ctx.font="bold 42px Arial";
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+
+  ctx.fillText(
+    text,
+    256,
+    64
+  );
+
+  const texture=new THREE.CanvasTexture(
+    canvas
+  );
+
+  const mat=new THREE.SpriteMaterial({
+    map:texture,
+    transparent:true
+  });
+
+  const sprite=new THREE.Sprite(mat);
+
+  sprite.scale.set(
+    5,
+    1.25,
+    1
+  );
+
+  return sprite;
+}
+
+function loadFlags(){
+
+  savedFlags.forEach(f=>{
+
+    createFlag(
+      f.x,
+      f.z,
+      f.name,
+      false
+    );
+  });
+}
+
+/* =========================================================
+   COLOCAR BANDERA
+   ========================================================= */
+
+document.getElementById("flagBtn")
+.addEventListener("pointerdown",()=>{
+
+  const x=player.position.x;
+  const z=player.position.z;
+
+  const dist=distanceFromBase(
+    x,
+    z
+  );
+
+  if(dist<30){
+
+    msg("⚑ Alejate un poco de la base para colocar otra bandera.");
+    return;
+  }
+
+  const name=prompt(
+    "Nombre de este lugar:"
+  );
+
+  if(!name || !name.trim()) return;
+
+  createFlag(
+    x,
+    z,
+    name.trim(),
+    false
+  );
+
+  savedFlags.push({
+    x,
+    z,
+    name:name.trim()
+  });
+
+  saveGame();
+
+  msg(
+    "⚑ Bandera colocada: "+
+    name+
+    " — "+
+    formatDistance(dist)+
+    " desde la base."
+  );
+});
+
+/* =========================================================
+   DESCUBRIR LUGARES
+   ========================================================= */
+
+function checkDiscoveries(){
+
+  places.forEach(p=>{
+
+    const d=Math.sqrt(
+      Math.pow(player.position.x-p.x,2)+
+      Math.pow(player.position.z-p.z,2)
+    );
+
+    if(
+      d<p.radius &&
+      !discovered.includes(p.id)
+    ){
+
+      discovered.push(p.id);
+
+      saveGame();
+
+      msg(
+        "📍 LUGAR DESCUBIERTO<br>"+
+        "<b>"+p.name+"</b><br>"+
+        formatDistance(
+          distanceFromBase(
+            p.x,
+            p.z
+          )
+        )+
+        " desde la base"
+      );
+    }
+  });
+}
+
+/* =========================================================
+   GOLPEAR / RECOLECTAR
+   ========================================================= */
+
+document.getElementById("hit")
+.addEventListener("pointerdown",harvest);
+
+function harvest(){
+
+  const px=player.position.x;
+  const pz=player.position.z;
+
+  let closest=null;
+  let best=6;
+
+  trees.forEach(t=>{
+
+    if(!t.mesh.parent) return;
+
+    const d=Math.sqrt(
+      Math.pow(px-t.x,2)+
+      Math.pow(pz-t.z,2)
+    );
+
+    if(d<best){
+
+      best=d;
+      closest=t;
+    }
+  });
+
+  if(closest){
+
+    closest.health--;
+
+    animateHit();
+
+    if(closest.health<=0){
+
+      resources.wood +=
+        closest.hardness===1 ? 4 :
+        closest.hardness===2 ? 7 :
+        10;
+
+      resources.food += 1;
+
+      scene.remove(
+        closest.mesh
+      );
+
+      msg(
+        "🪵 Árbol talado. "+
+        "Madera +"+(
+          closest.hardness===1 ? 4 :
+          closest.hardness===2 ? 7 :
+          10
+        )
+      );
+
+      updateUI();
+
+      return;
+    }
+
+    animateHit();
+
+    msg(
+      "🪓 Golpe al árbol "+
+      "(dureza "+closest.hardness+")"
+    );
+
+    return;
+  }
+
+  let closestRock=null;
+  best=6;
+
+  rocks.forEach(r=>{
+
+    if(!r.mesh.parent) return;
+
+    const d=Math.sqrt(
+      Math.pow(px-r.x,2)+
+      Math.pow(pz-r.z,2)
+    );
+
+    if(d<best){
+
+      best=d;
+      closestRock=r;
+    }
+  });
+
+  if(closestRock){
+
+    closestRock.health--;
+
+    animateHit();
+
+    if(closestRock.health<=0){
+
+      if(closestRock.iron){
+
+        resources.iron +=
+          closestRock.hardness===2 ? 3 : 5;
+
+        msg("⛓️ Encontraste hierro.");
+
+      }else{
+
+        resources.stone +=
+          closestRock.hardness===1 ? 3 : 6;
+
+        msg("🪨 Piedra recolectada.");
+      }
+
+      scene.remove(
+        closestRock.mesh
+      );
+
+      updateUI();
+
+      return;
+    }
+
+    msg(
+      "⛏️ Golpe a la roca "+
+      "(dureza "+closestRock.hardness+")"
+    );
+
+    return;
+  }
+
+  msg("No hay ningún recurso suficientemente cerca.");
+}
+
+function animateHit(){
+
+  camera.rotation.x -= .12;
+
+  setTimeout(()=>{
+    camera.rotation.x += .12;
+  },100);
+}
+
+/* =========================================================
+   MOVIMIENTO
+   ========================================================= */
+
+function movePlayer(dt){
+
+  if(
+    Math.abs(moveX)<.01 &&
+    Math.abs(moveY)<.01
+  ){
+
+    if(!running){
+      stamina=Math.min(
+        100,
+        stamina+20*dt
+      );
+    }
+
+    return;
+  }
+
+  let speed=running && stamina>0 ? 12 : 6;
+
+  if(running && stamina>0){
+
+    stamina-=30*dt;
+
+    if(stamina<0)
+      stamina=0;
+
+  }else{
+
+    stamina+=15*dt;
+
+    if(stamina>100)
+      stamina=100;
+  }
+
+  const forward=new THREE.Vector3(
+    0,
+    0,
+    -1
+  );
+
+  const right=new THREE.Vector3(
+    1,
+    0,
+    0
+  );
+
+  forward.applyQuaternion(
+    player.quaternion
+  );
+
+  right.applyQuaternion(
+    player.quaternion
+  );
+
+  const direction=new THREE.Vector3();
+
+  direction.addScaledVector(
+    forward,
+    -moveY
+  );
+
+  direction.addScaledVector(
+    right,
+    moveX
+  );
+
+  if(direction.length()>0)
+    direction.normalize();
+
+  player.position.addScaledVector(
+    direction,
+    speed*dt
+  );
+
+  const limit=WORLD/2-30;
+
+  player.position.x=
+    THREE.MathUtils.clamp(
+      player.position.x,
+      -limit,
+      limit
+    );
+
+  player.position.z=
+    THREE.MathUtils.clamp(
+      player.position.z,
+      -limit,
+      limit
+    );
+}
+
+/* =========================================================
+   CONTROLES JOYSTICK
+   ========================================================= */
+
+function setupControls(){
+
+  const joy=document.getElementById(
+    "joystick"
+  );
+
+  const stick=document.getElementById(
+    "stick"
+  );
+
+  let active=false;
+
+  function updateJoy(e){
+
+    const r=joy.getBoundingClientRect();
+
+    let x=e.clientX-
+      (r.left+r.width/2);
+
+    let y=e.clientY-
+      (r.top+r.height/2);
+
+    const max=45;
+
+    const len=Math.sqrt(
+      x*x+y*y
+    );
+
+    if(len>max){
+
+      x=x/len*max;
+      y=y/len*max;
+    }
+
+    stick.style.left=
+      (33+x)+"px";
+
+    stick.style.top=
+      (33+y)+"px";
+
+    moveX=x/max;
+    moveY=y/max;
+  }
+
+  joy.addEventListener(
+    "pointerdown",
+    e=>{
+      active=true;
+      joy.setPointerCapture(e.pointerId);
+      updateJoy(e);
+    }
+  );
+
+  joy.addEventListener(
+    "pointermove",
+    e=>{
+      if(active) updateJoy(e);
+    }
+  );
+
+  joy.addEventListener(
+    "pointerup",
+    resetJoy
+  );
+
+  joy.addEventListener(
+    "pointercancel",
+    resetJoy
+  );
+
+  function resetJoy(){
+
+    active=false;
+
+    moveX=0;
+    moveY=0;
+
+    stick.style.left="33px";
+    stick.style.top="33px";
+  }
+
+  /* correr */
+
+  const runBtn=
+    document.getElementById("run");
+
+  runBtn.addEventListener(
+    "pointerdown",
+    ()=>{
+      running=true;
+    }
+  );
+
+  runBtn.addEventListener(
+    "pointerup",
+    ()=>{
+      running=false;
+    }
+  );
+
+  runBtn.addEventListener(
+    "pointercancel",
+    ()=>{
+      running=false;
+    }
+  );
+
+  /* cámara */
+
+  let look=false;
+  let lastX=0;
+  let lastY=0;
+
+  renderer.domElement.addEventListener(
+    "pointerdown",
+    e=>{
+
+      if(
+        e.clientX<160 &&
+        e.clientY>innerHeight-180
+      ) return;
+
+      look=true;
+
+      lastX=e.clientX;
+      lastY=e.clientY;
+    }
+  );
+
+  renderer.domElement.addEventListener(
+    "pointermove",
+    e=>{
+
+      if(!look) return;
+
+      const dx=e.clientX-lastX;
+      const dy=e.clientY-lastY;
+
+      lastX=e.clientX;
+      lastY=e.clientY;
+
+      yaw-=dx*.004;
+      pitch-=dy*.003;
+
+      pitch=THREE.MathUtils.clamp(
+        pitch,
+        -1.1,
+        .8
+      );
+
+      player.rotation.y=yaw;
+
+      camera.rotation.x=pitch;
+    }
+  );
+
+  renderer.domElement.addEventListener(
+    "pointerup",
+    ()=>{
+      look=false;
+    }
+  );
+
+  renderer.domElement.addEventListener(
+    "pointercancel",
+    ()=>{
+      look=false;
+    }
+  );
+}
+
+/* =========================================================
+   MAPA
+   ========================================================= */
+
+document.getElementById("mapBtn")
+.addEventListener(
+  "pointerdown",
+  openMap
+);
+
+function openMap(){
+
+  document.getElementById(
+    "mapPanel"
+  ).style.display="block";
+
+  drawMap();
+}
+
+function closeMap(){
+
+  document.getElementById(
+    "mapPanel"
+  ).style.display="none";
+}
+
+function drawMap(){
+
+  const canvas=
+    document.getElementById(
+      "mapCanvas"
+    );
+
+  const ctx=canvas.getContext("2d");
+
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  ctx.fillStyle="#1b2b1d";
+
+  ctx.fillRect(
+    0,
+    0,
+    600,
+    600
+  );
+
+  /* cuadrícula */
+
+  ctx.strokeStyle=
+    "rgba(255,255,255,.07)";
+
+  for(let i=0;i<=600;i+=60){
+
+    ctx.beginPath();
+    ctx.moveTo(i,0);
+    ctx.lineTo(i,600);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(0,i);
+    ctx.lineTo(600,i);
+    ctx.stroke();
+  }
+
+  const scale=.12;
+
+  function mapX(x){
+    return 300+x*scale;
+  }
+
+  function mapZ(z){
+    return 300+z*scale;
+  }
+
+  /* base */
+
+  ctx.fillStyle="#ff3333";
+
+  ctx.beginPath();
+
+  ctx.arc(
+    mapX(0),
+    mapZ(0),
+    9,
+    0,
+    Math.PI*2
+  );
+
+  ctx.fill();
+
+  ctx.fillStyle="white";
+  ctx.font="bold 16px Arial";
+
+  ctx.fillText(
+    "BASE",
+    mapX(0)+12,
+    mapZ(0)+5
+  );
+
+  /* lugares */
+
+  places.forEach(p=>{
+
+    if(!discovered.includes(p.id))
+      return;
+
+    ctx.fillStyle="#40a5ff";
+
+    ctx.beginPath();
+
+    ctx.arc(
+      mapX(p.x),
+      mapZ(p.z),
+      7,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.fillStyle="white";
+    ctx.font="13px Arial";
+
+    ctx.fillText(
+      p.name,
+      mapX(p.x)+10,
+      mapZ(p.z)+4
+    );
+  });
+
+  /* banderas */
+
+  flags.forEach(f=>{
+
+    if(f.base) return;
+
+    ctx.fillStyle="#ffd447";
+
+    ctx.beginPath();
+
+    ctx.arc(
+      mapX(f.x),
+      mapZ(f.z),
+      6,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.fillStyle="white";
+    ctx.font="12px Arial";
+
+    ctx.fillText(
+      f.name,
+      mapX(f.x)+8,
+      mapZ(f.z)+4
+    );
+  });
+
+  /* jugador */
+
+  ctx.fillStyle="#00ff91";
+
+  ctx.beginPath();
+
+  ctx.arc(
+    mapX(player.position.x),
+    mapZ(player.position.z),
+    8,
+    0,
+    Math.PI*2
+  );
+
+  ctx.fill();
+
+  document.getElementById(
+    "mapInfo"
+  ).innerHTML=
+    "📍 Posición: "+
+    Math.round(player.position.x)+
+    " m / "+
+    Math.round(player.position.z)+
+    " m<br>"+
+    "🏠 Distancia a base: "+
+    formatDistance(
+      distanceFromBase(
+        player.position.x,
+        player.position.z
+      )
+    );
+
+  let html="<b>📍 Lugares descubiertos</b>";
+
+  places.forEach(p=>{
+
+    if(discovered.includes(p.id)){
+
+      html+=
+        '<div class="item">'+
+        "📍 "+p.name+
+        " — "+
+        formatDistance(
+          distanceFromBase(
+            p.x,
+            p.z
+          )
+        )+
+        " desde base"+
+        "</div>";
+    }
+  });
+
+  savedFlags.forEach(f=>{
+
+    html+=
+      '<div class="item">'+
+      "⚑ "+f.name+
+      " — "+
+      formatDistance(
+        distanceFromBase(
+          f.x,
+          f.z
+        )
+      )+
+      " desde base"+
+      "</div>";
+  });
+
+  document.getElementById(
+    "placesList"
+  ).innerHTML=html;
+}
+
+/* =========================================================
+   INVENTARIO
+   ========================================================= */
+
+document.getElementById("invBtn")
+.addEventListener(
+  "pointerdown",
+  openInventory
+);
+
+function openInventory(){
+
+  document.getElementById(
+    "inventoryPanel"
+  ).style.display="block";
+
+  document.getElementById(
+    "inventoryList"
+  ).innerHTML=`
+
+    <div class="item">🪵 Madera: ${resources.wood}</div>
+
+    <div class="item">🪨 Piedra: ${resources.stone}</div>
+
+    <div class="item">⛓️ Hierro: ${resources.iron}</div>
+
+    <div class="item">🥩 Comida: ${resources.food}</div>
+
+    <div class="item">
+      🏃 Resistencia: ${Math.round(stamina)}%
+    </div>
+
+    <div class="item">
+      ❤️ Vida: ${Math.round(hp)}%
+    </div>
+
+    <button class="action"
+      onclick="craftCampfire()">
+      🔥 Fabricar fogata
+    </button>
+
+    <br><br>
+
+    <button class="action"
+      onclick="craftWoodWall()">
+      🧱 Fabricar pared
+    </button>
+  `;
+}
+
+function closeInventory(){
+
+  document.getElementById(
+    "inventoryPanel"
+  ).style.display="none";
+}
+
+function craftCampfire(){
+
+  if(
+    resources.wood>=3 &&
+    resources.stone>=2
+  ){
+
+    resources.wood-=3;
+    resources.stone-=2;
+
+    msg("🔥 Fogata fabricada.");
+
+    updateUI();
+    openInventory();
+
+  }else{
+
+    msg(
+      "Necesitas 3 madera y 2 piedra."
+    );
+  }
+}
+
+function craftWoodWall(){
+
+  if(resources.wood>=5){
+
+    resources.wood-=5;
+
+    msg(
+      "🧱 Pared fabricada."
+    );
+
+    updateUI();
+    openInventory();
+
+  }else{
+
+    msg(
+      "Necesitas 5 madera."
+    );
+  }
+}
+
+/* =========================================================
+   UI
+   ========================================================= */
+
+function updateUI(){
+
+  document.getElementById(
+    "hp"
+  ).textContent=Math.round(hp);
+
+  document.getElementById(
+    "wood"
+  ).textContent=resources.wood;
+
+  document.getElementById(
+    "stone"
+  ).textContent=resources.stone;
+
+  document.getElementById(
+    "iron"
+  ).textContent=resources.iron;
+
+  document.getElementById(
+    "food"
+  ).textContent=resources.food;
+
+  const d=distanceFromBase(
+    player.position.x,
+    player.position.z
+  );
+
+  document.getElementById(
+    "distance"
+  ).textContent=formatDistance(d);
+
+  let nearest="Zona salvaje";
+  let nearestDist=Infinity;
+
+  places.forEach(p=>{
+
+    const d=Math.sqrt(
+      Math.pow(player.position.x-p.x,2)+
+      Math.pow(player.position.z-p.z,2)
+    );
+
+    if(
+      d<p.radius &&
+      d<nearestDist &&
+      discovered.includes(p.id)
+    ){
+
+      nearest=p.name;
+      nearestDist=d;
+    }
+  });
+
+  if(
+    Math.abs(player.position.x)<60 &&
+    Math.abs(player.position.z)<60
+  ){
+
+    nearest="Base";
+  }
+
+  document.getElementById(
+    "place"
+  ).textContent=nearest;
+}
+
+/* =========================================================
+   ANIMACIÓN
+   ========================================================= */
+
+function animate(){
+
+  requestAnimationFrame(
+    animate
+  );
+
+  const dt=Math.min(
+    clock.getDelta(),
+    .05
+  );
+
+  movePlayer(dt);
+
+  checkDiscoveries();
+
+  updateUI();
+
+  renderer.render(
+    scene,
+    camera
+  );
+}
+
+/* =========================================================
+   RESIZE
+   ========================================================= */
+
+function resize(){
+
+  camera.aspect=
+    innerWidth/innerHeight;
+
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(
+    innerWidth,
+    innerHeight
+  );
+}
+
+/* =========================================================
+   INICIO
+   ========================================================= */
+
+init();
+
+</script>
+
+</body>
+</html>
