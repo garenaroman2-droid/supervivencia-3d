@@ -3,1920 +3,1074 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Supervivencia 3D V6</title>
-
+<title>Supervivencia 3D V7.0</title>
 <style>
-*{
-  box-sizing:border-box;
-  user-select:none;
-  -webkit-user-select:none;
-  touch-action:none;
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111;font-family:Arial,sans-serif;touch-action:none}
+canvas{display:block}
+#hud{
+position:fixed;top:10px;left:10px;z-index:20;
+background:rgba(0,0,0,.65);color:white;padding:10px 12px;
+border-radius:12px;font-size:13px;line-height:1.45;
+min-width:185px;pointer-events:none
 }
-
-html,body{
-  margin:0;
-  width:100%;
-  height:100%;
-  overflow:hidden;
-  background:#111;
-  font-family:Arial,sans-serif;
-}
-
-#juego{
-  position:fixed;
-  inset:0;
-}
-
-canvas{
-  width:100%;
-  height:100%;
-  display:block;
-}
-
-#info,
-#inventario{
-  position:fixed;
-  top:8px;
-  z-index:10;
-  color:white;
-  background:rgba(0,0,0,.65);
-  padding:10px;
-  border-radius:10px;
-  font-size:13px;
-  line-height:1.5;
-}
-
-#info{
-  left:8px;
-}
-
-#inventario{
-  right:8px;
-  min-width:145px;
-}
-
-#vidaBox{
-  position:fixed;
-  top:110px;
-  left:8px;
-  width:155px;
-  z-index:10;
-  color:white;
-  font-size:12px;
-}
-
-.barra{
-  width:100%;
-  height:12px;
-  background:#222;
-  border-radius:8px;
-  overflow:hidden;
-  margin:3px 0 5px;
-}
-
-#vida{
-  height:100%;
-  width:100%;
-  background:#e53935;
-}
-
-#stamina{
-  height:100%;
-  width:100%;
-  background:#f0c42b;
-}
-
-#joystick{
-  position:fixed;
-  left:22px;
-  bottom:22px;
-  width:135px;
-  height:135px;
-  border-radius:50%;
-  background:rgba(255,255,255,.13);
-  border:2px solid rgba(255,255,255,.25);
-  z-index:20;
-}
-
-#stick{
-  position:absolute;
-  width:62px;
-  height:62px;
-  left:34px;
-  top:34px;
-  border-radius:50%;
-  background:rgba(255,255,255,.38);
-}
-
-#botones{
-  position:fixed;
-  right:16px;
-  bottom:18px;
-  z-index:20;
-  display:flex;
-  flex-direction:column;
-  gap:9px;
-}
-
-button{
-  border:1px solid rgba(255,255,255,.25);
-  border-radius:12px;
-  background:rgba(15,15,15,.82);
-  color:white;
-  padding:14px 17px;
-  font-size:14px;
-  font-weight:bold;
-}
-
-button:active{
-  transform:scale(.94);
-}
-
+#hud b{color:#ffd54a}
+.bar{height:8px;background:#333;border-radius:5px;overflow:hidden;margin:3px 0 5px}
+.fill{height:100%;width:100%}
+#vida{background:#e53935}
+#stamina{background:#42a5f5}
 #mensaje{
-  position:fixed;
-  z-index:30;
-  left:50%;
-  bottom:185px;
-  transform:translateX(-50%);
-  color:white;
-  background:rgba(0,0,0,.75);
-  padding:10px 15px;
-  border-radius:10px;
-  opacity:0;
-  transition:.2s;
-  pointer-events:none;
-  white-space:nowrap;
+position:fixed;top:105px;left:50%;transform:translateX(-50%);
+z-index:30;background:rgba(0,0,0,.75);color:#fff;
+padding:9px 15px;border-radius:12px;display:none;
+text-align:center;font-size:14px
 }
-
-#craft{
-  display:none;
-  position:fixed;
-  z-index:50;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  width:310px;
-  max-width:90%;
-  background:rgba(10,10,10,.96);
-  color:white;
-  border-radius:15px;
-  padding:18px;
+#joystick{
+position:fixed;left:20px;bottom:25px;width:125px;height:125px;
+border-radius:50%;background:rgba(255,255,255,.12);
+border:2px solid rgba(255,255,255,.22);z-index:20
 }
-
-#craft h2{
-  margin:0 0 10px;
+#stick{
+position:absolute;left:37px;top:37px;width:48px;height:48px;
+border-radius:50%;background:rgba(255,255,255,.45)
 }
-
-#craft button{
-  width:100%;
-  margin-top:7px;
+.btn{
+position:fixed;z-index:25;border:0;color:#fff;font-weight:bold;
+border-radius:50%;background:rgba(30,30,30,.78);
+border:2px solid rgba(255,255,255,.25);
+user-select:none;-webkit-user-select:none
 }
-
-#cerrar{
-  background:#8b2222;
+#golpear{right:25px;bottom:40px;width:82px;height:82px}
+#correr{right:125px;bottom:30px;width:65px;height:65px;font-size:11px}
+#crear{right:20px;top:15px;border-radius:12px;padding:10px 13px}
+#inventario{
+position:fixed;right:15px;top:65px;z-index:25;
+background:rgba(0,0,0,.82);color:white;padding:12px;
+border-radius:12px;display:none;width:210px
+}
+#inventario button{
+width:100%;margin-top:7px;padding:9px;border:0;border-radius:8px;
+background:#444;color:white
+}
+#cross{
+position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+color:rgba(255,255,255,.7);font-size:24px;z-index:15;pointer-events:none
 }
 </style>
 </head>
-
 <body>
 
-<div id="juego"></div>
-
-<div id="info">
-<b>SUPERVIVENCIA 3D — V6.0</b><br>
-Explorá, recolectá y construí.
-</div>
-
-<div id="inventario">
-Madera: <span id="madera">0</span><br>
-Piedra: <span id="piedra">0</span><br>
-Hierro: <span id="hierro">0</span><br>
-Herramienta: <span id="herramienta">Mano</span><br>
-Durabilidad: <span id="durabilidad">∞</span>
-</div>
-
-<div id="vidaBox">
-Vida
-<div class="barra">
-<div id="vida"></div>
-</div>
-
-Energía
-<div class="barra">
-<div id="stamina"></div>
-</div>
-</div>
-
-<div id="joystick">
-<div id="stick"></div>
-</div>
-
-<div id="botones">
-<button id="golpear">GOLPEAR</button>
-<button id="correr">CORRER</button>
-<button id="crear">CREAR</button>
+<div id="hud">
+<b>SUPERVIVENCIA 3D — V7.0</b><br>
+🪵 Madera: <span id="madera">0</span>
+&nbsp; 🪨 Piedra: <span id="piedra">0</span><br>
+⛓️ Hierro: <span id="hierro">0</span>
+&nbsp; 🌾 Comida: <span id="comida">0</span><br>
+💧 Agua: <span id="agua">0</span><br>
+❤️ Vida
+<div class="bar"><div id="vida" class="fill"></div></div>
+🏃 Stamina
+<div class="bar"><div id="stamina" class="fill"></div></div>
+🔧 <span id="herramienta">Manos</span>
 </div>
 
 <div id="mensaje"></div>
+<div id="cross">+</div>
 
-<div id="craft">
+<div id="joystick"><div id="stick"></div></div>
 
-<h2>CREAR HERRAMIENTA</h2>
+<button id="golpear" class="btn">GOLPEAR</button>
+<button id="correr" class="btn">CORRER</button>
+<button id="crear">🎒 INVENTARIO</button>
 
-<button id="crearHachaPiedra">
-Hacha de piedra<br>
-3 madera + 3 piedra
-</button>
+<div id="inventario">
+<b>INVENTARIO / CREACIÓN</b>
+<hr>
+Madera: <span id="imadera">0</span><br>
+Piedra: <span id="ipiedra">0</span><br>
+Hierro: <span id="ihierro">0</span><br>
+Comida: <span id="icomida">0</span><br>
+Agua: <span id="iagua">0</span>
 
-<button id="crearPicoPiedra">
-Pico de piedra<br>
-3 madera + 4 piedra
-</button>
-
-<button id="crearHachaHierro">
-Hacha de hierro<br>
-5 madera + 5 hierro
-</button>
-
-<button id="crearPicoHierro">
-Pico de hierro<br>
-5 madera + 5 hierro
-</button>
-
-<button id="cerrar">
-CERRAR
-</button>
-
+<button onclick="crearHachaPiedra()">🪓 Hacha de piedra<br>3 madera + 3 piedra</button>
+<button onclick="crearPicoPiedra()">⛏️ Pico de piedra<br>3 madera + 4 piedra</button>
+<button onclick="crearHachaHierro()">🪓 Hacha de hierro<br>5 madera + 5 hierro</button>
+<button onclick="crearPicoHierro()">⛏️ Pico de hierro<br>5 madera + 5 hierro</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-
 <script>
+/* =========================================================
+   SUPERVIVENCIA 3D V7.0
+   ========================================================= */
 
-/* ==========================
-ESCENA
-========================== */
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x91c7e8);
+scene.fog=new THREE.Fog(0x91c7e8,35,150);
 
-const escena=new THREE.Scene();
-
-escena.background=
-new THREE.Color(0x87b9df);
-
-escena.fog=
-new THREE.Fog(
-0x87b9df,
-35,
-130
+const camera=new THREE.PerspectiveCamera(
+70,innerWidth/innerHeight,.05,300
 );
+camera.position.set(0,2.1,8);
 
-const camara=
-new THREE.PerspectiveCamera(
-70,
-innerWidth/innerHeight,
-.05,
-300
-);
-
-const renderer=
-new THREE.WebGLRenderer({
-antialias:true
-});
-
-renderer.setSize(
-innerWidth,
-innerHeight
-);
-
-renderer.setPixelRatio(
-Math.min(devicePixelRatio,2)
-);
-
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
 
-document
-.getElementById("juego")
-.appendChild(renderer.domElement);
+/* LUCES */
+const hemi=new THREE.HemisphereLight(0xbfe8ff,0x315229,1.5);
+scene.add(hemi);
 
-
-/* ==========================
-LUZ
-========================== */
-
-escena.add(
-new THREE.HemisphereLight(
-0xffffff,
-0x405d35,
-1.5
-)
-);
-
-const sol=
-new THREE.DirectionalLight(
-0xffffff,
-1.7
-);
-
-sol.position.set(
-30,
-60,
-20
-);
-
+const sol=new THREE.DirectionalLight(0xffffff,2);
+sol.position.set(40,70,20);
 sol.castShadow=true;
-
-escena.add(sol);
-
-
-/* ==========================
-SUELO
-========================== */
-
-const suelo=
-new THREE.Mesh(
-new THREE.PlaneGeometry(
-220,
-220
-),
-new THREE.MeshStandardMaterial({
-color:0x4f7d3b
-})
-);
-
-suelo.rotation.x=-Math.PI/2;
-suelo.receiveShadow=true;
-
-escena.add(suelo);
-
-
-/* ==========================
-JUGADOR
-========================== */
-
-const jugador=
-new THREE.Group();
-
-jugador.position.set(
-0,
-1,
-8
-);
-
-escena.add(jugador);
-
-jugador.add(camara);
-
-camara.position.set(
-0,
-1.65,
-0
-);
-
-
-/* ==========================
-MANO FPS
-========================== */
-
-const mano=
-new THREE.Group();
-
-mano.position.set(
-0.65,
--0.55,
--1.15
-);
-
-mano.scale.set(
-1.5,
-1.5,
-1.5
-);
-
-camara.add(mano);
-
-
-/* BRAZO */
-
-const brazo=
-new THREE.Mesh(
-new THREE.BoxGeometry(
-.22,
-.65,
-.22
-),
-new THREE.MeshStandardMaterial({
-color:0xc98e6a
-})
-);
-
-brazo.rotation.z=-.25;
-brazo.position.y=-.2;
-
-mano.add(brazo);
-
-
-/* MANO */
-
-const manoMesh=
-new THREE.Mesh(
-new THREE.SphereGeometry(
-.16,
-16,
-16
-),
-new THREE.MeshStandardMaterial({
-color:0xd39b76
-})
-);
-
-manoMesh.position.set(
-0,
-.12,
-0
-);
-
-mano.add(manoMesh);
-
-
-/* ==========================
-HERRAMIENTA
-========================== */
-
-let modeloHerramienta=null;
-
-let herramienta={
-nombre:"Mano",
-tipo:"mano",
-nivel:0,
-durabilidad:Infinity,
-maxima:Infinity
-};
-
-
-function crearHacha(hierro){
-
-const g=
-new THREE.Group();
-
-
-const mango=
-new THREE.Mesh(
-new THREE.CylinderGeometry(
-.055,
-.065,
-.85,
-10
-),
-new THREE.MeshStandardMaterial({
-color:0x70452a
-})
-);
-
-mango.position.y=.2;
-
-g.add(mango);
-
-
-const cabeza=
-new THREE.Mesh(
-new THREE.BoxGeometry(
-.48,
-.18,
-.12
-),
-new THREE.MeshStandardMaterial({
-color:hierro?0x777777:0x999999,
-metalness:hierro?.7:.1,
-roughness:.35
-})
-);
-
-cabeza.position.set(
-.18,
-.58,
-0
-);
-
-g.add(cabeza);
-
-
-const filo=
-new THREE.Mesh(
-new THREE.BoxGeometry(
-.12,
-.35,
-.12
-),
-new THREE.MeshStandardMaterial({
-color:hierro?0x4d4d4d:0x777777,
-metalness:hierro?.8:.1
-})
-);
-
-filo.position.set(
-.39,
-.45,
-0
-);
-
-g.add(filo);
-
-
-g.rotation.z=-.55;
-
-return g;
-}
-
-
-function crearPico(hierro){
-
-const g=
-new THREE.Group();
-
-
-const mango=
-new THREE.Mesh(
-new THREE.CylinderGeometry(
-.055,
-.065,
-.9,
-10
-),
-new THREE.MeshStandardMaterial({
-color:0x70452a
-})
-);
-
-g.add(mango);
-
-
-const cabeza=
-new THREE.Mesh(
-new THREE.BoxGeometry(
-.65,
-.14,
-.13
-),
-new THREE.MeshStandardMaterial({
-color:hierro?0x666666:0x999999,
-metalness:hierro?.7:.1
-})
-);
-
-cabeza.position.y=.43;
-
-g.add(cabeza);
-
-
-const punta=
-new THREE.Mesh(
-new THREE.ConeGeometry(
-.09,
-.42,
-4
-),
-new THREE.MeshStandardMaterial({
-color:hierro?0x444444:0x777777,
-metalness:hierro?.8:.1
-})
-);
-
-punta.rotation.z=Math.PI/2;
-
-punta.position.set(
-.45,
-.43,
-0
-);
-
-g.add(punta);
-
-
-g.rotation.z=-.5;
-
-return g;
-}
-
-
-function actualizarHerramienta(){
-
-if(modeloHerramienta){
-
-mano.remove(
-modeloHerramienta
-);
-
-modeloHerramienta=null;
-}
-
-
-if(herramienta.tipo==="hacha"){
-
-modeloHerramienta=
-crearHacha(
-herramienta.nivel>=2
-);
-}
-
-
-if(herramienta.tipo==="pico"){
-
-modeloHerramienta=
-crearPico(
-herramienta.nivel>=2
-);
-}
-
-
-if(modeloHerramienta){
-
-modeloHerramienta.position.set(
-0,
--0.15,
--0.25
-);
-
-modeloHerramienta.rotation.x=-.25;
-modeloHerramienta.rotation.y=.15;
-
-modeloHerramienta.scale.set(
-1.35,
-1.35,
-1.35
-);
-
-mano.add(
-modeloHerramienta
-);
-}
-
-
-document.getElementById(
-"herramienta"
-).textContent=
-herramienta.nombre;
-
-document.getElementById(
-"durabilidad"
-).textContent=
-herramienta.durabilidad===Infinity
-?"∞"
-:Math.ceil(
-herramienta.durabilidad
-);
-}
-
-actualizarHerramienta();
-
-
-/* ==========================
-RECURSOS
-========================== */
-
-let recursos={
-madera:0,
-piedra:0,
-hierro:0
-};
-
-const objetos=[];
-
-
-/* ==========================
-ÁRBOLES
-========================== */
-
-function crearArbol(
-x,
-z,
-dureza
-){
-
-const g=
-new THREE.Group();
-
-const tronco=
-new THREE.Mesh(
-new THREE.CylinderGeometry(
-.32+.08*dureza,
-.45+.1*dureza,
-3+.4*dureza,
-8
-),
-new THREE.MeshStandardMaterial({
-color:0x684328
-})
-);
-
-tronco.position.y=1.5;
-tronco.castShadow=true;
-
-g.add(tronco);
-
-
-const copa=
-new THREE.Mesh(
-new THREE.ConeGeometry(
-1.7+.3*dureza,
-3.2+.4*dureza,
-8
-),
-new THREE.MeshStandardMaterial({
-color:
-dureza===1
-?0x3f8135
-:dureza===2
-?0x28682d
-:0x174d22
-})
-);
-
-copa.position.y=3.7;
-copa.castShadow=true;
-
-g.add(copa);
-
-g.position.set(
-x,
-0,
-z
-);
-
-escena.add(g);
-
-objetos.push({
-mesh:g,
-tipo:"arbol",
-dureza:dureza,
-vida:dureza===1?3:dureza===2?6:10,
-madera:dureza===1?4:dureza===2?7:12
-});
-}
-
-
-/* ==========================
-ROCAS
-========================== */
-
-function crearRoca(
-x,
-z,
-dureza,
-hierro=false
-){
-
-const g=
-new THREE.Group();
-
-const roca=
-new THREE.Mesh(
-new THREE.DodecahedronGeometry(
-.85+.25*dureza
-),
-new THREE.MeshStandardMaterial({
-color:
-hierro
-?0x555555
-:dureza===1
-?0x999999
-:dureza===2
-?0x777777
-:0x4e4e4e
-})
-);
-
-roca.position.y=.7;
-roca.scale.y=.7;
-roca.castShadow=true;
-
-g.add(roca);
-
-g.position.set(
-x,
-0,
-z
-);
-
-escena.add(g);
-
-objetos.push({
-mesh:g,
-tipo:hierro?"hierro":"piedra",
-dureza:dureza,
-vida:dureza===1?3:dureza===2?6:10,
-cantidad:dureza===1?3:dureza===2?6:10
-});
-}
-
-
-/* ==========================
-RAMAS
-========================== */
-
-function crearRama(x,z){
-
-const rama=
-new THREE.Mesh(
-new THREE.CylinderGeometry(
-.06,
-.08,
-1,
-7
-),
-new THREE.MeshStandardMaterial({
-color:0x70472c
-})
-);
-
-rama.rotation.z=.8;
-
-rama.position.set(
-x,
-.15,
-z
-);
-
-escena.add(rama);
-
-objetos.push({
-mesh:rama,
-tipo:"rama",
-recogible:true,
-cantidad:1
-});
-}
-
-
-/* ==========================
-PIEDRAS PEQUEÑAS
-========================== */
-
-function crearPiedraPequena(x,z){
-
-const piedra=
-new THREE.Mesh(
-new THREE.DodecahedronGeometry(.18),
-new THREE.MeshStandardMaterial({
-color:0x999999
-})
-);
-
-piedra.position.set(
-x,
-.16,
-z
-);
-
-escena.add(piedra);
-
-objetos.push({
-mesh:piedra,
-tipo:"piedraPequena",
-recogible:true,
-cantidad:1
-});
-}
-
-
-/* ==========================
-GENERAR MUNDO
-========================== */
-
-for(let i=0;i<28;i++){
-
-let x=
-(Math.random()-.5)*80;
-
-let z=
-(Math.random()-.5)*80;
-
-if(
-Math.abs(x)<7 &&
-Math.abs(z)<7
-){
-
-i--;
-continue;
-}
-
-let d=
-Math.random()<.5
-?1
-:Math.random()<.75
-?2
-:3;
-
-crearArbol(
-x,
-z,
-d
-);
-}
-
-
-for(let i=0;i<22;i++){
-
-crearRoca(
-(Math.random()-.5)*80,
-(Math.random()-.5)*80,
-Math.floor(
-Math.random()*3
-)+1
-);
-}
-
-
-for(let i=0;i<35;i++){
-
-crearRama(
-(Math.random()-.5)*55,
-(Math.random()-.5)*55
-);
-
-crearPiedraPequena(
-(Math.random()-.5)*55,
-(Math.random()-.5)*55
-);
-}
-
-
-/* ==========================
-MENSAJES
-========================== */
-
-function mensaje(texto){
-
-const m=
-document.getElementById(
-"mensaje"
-);
-
-m.textContent=texto;
-m.style.opacity=1;
-
-clearTimeout(
-window.tm
-);
-
-window.tm=
-setTimeout(()=>{
-m.style.opacity=0;
-},1600);
-}
-
-
-function actualizarUI(){
-
-document.getElementById(
-"madera"
-).textContent=
-recursos.madera;
-
-document.getElementById(
-"piedra"
-).textContent=
-recursos.piedra;
-
-document.getElementById(
-"hierro"
-).textContent=
-recursos.hierro;
-
-document.getElementById(
-"herramienta"
-).textContent=
-herramienta.nombre;
-
-document.getElementById(
-"durabilidad"
-).textContent=
-herramienta.durabilidad===Infinity
-?"∞"
-:Math.ceil(
-herramienta.durabilidad
-);
-}
-
-
-/* ==========================
-RECOLECTAR
-========================== */
-
-function recogerCercano(){
-
-let objetivo=null;
-let menor=2.5;
-
-for(
-const o of objetos
-){
-
-if(!o.recogible)
-continue;
-
-const d=
-jugador.position.distanceTo(
-o.mesh.position
-);
-
-if(d<menor){
-
-menor=d;
-objetivo=o;
-}
-}
-
-if(!objetivo)
-return false;
-
-
-if(
-objetivo.tipo==="rama"
-){
-
-recursos.madera+=1;
-
-mensaje(
-"+1 madera"
-);
-}
-
-
-if(
-objetivo.tipo==="piedraPequena"
-){
-
-recursos.piedra+=1;
-
-mensaje(
-"+1 piedra"
-);
-}
-
-
-escena.remove(
-objetivo.mesh
-);
-
-const i=
-objetos.indexOf(
-objetivo
-);
-
-if(i>=0)
-objetos.splice(i,1);
-
-actualizarUI();
-
-return true;
-}
-
-
-/* ==========================
-GOLPE
-========================== */
-
-let golpeando=false;
-
-function golpear(){
-
-if(golpeando)
-return;
-
-if(recogerCercano())
-return;
-
-
-golpeando=true;
-
-let t=0;
-
-const anim=()=>{
-
-t+=.18;
-
-mano.rotation.z=
-Math.sin(
-t*Math.PI
-)*-.75;
-
-mano.rotation.x=
-Math.sin(
-t*Math.PI
-)*-.8;
-
-if(t<1){
-
-requestAnimationFrame(anim);
-
-}else{
-
-mano.rotation.z=0;
-mano.rotation.x=0;
-
-golpeando=false;
-}
-};
-
-anim();
-
-
-let objetivo=null;
-let menor=3.3;
-
-for(
-const o of objetos
-){
-
-if(o.recogible)
-continue;
-
-const d=
-jugador.position.distanceTo(
-o.mesh.position
-);
-
-if(d<menor){
-
-menor=d;
-objetivo=o;
-}
-}
-
-
-if(!objetivo){
-
-mensaje(
-"No hay nada cerca"
-);
-
-return;
-}
-
-
-/* ÁRBOL */
-
-if(
-objetivo.tipo==="arbol"
-){
-
-if(
-herramienta.tipo!=="hacha"
-){
-
-mensaje(
-"Necesitas un hacha"
-);
-
-return;
-}
-
-if(
-herramienta.nivel<
-objetivo.dureza
-){
-
-mensaje(
-"Hacha insuficiente"
-);
-
-return;
-}
-
-objetivo.vida-=
-
-herramienta.nivel>
-objetivo.dureza
-?2
-:1;
-
-herramienta.durabilidad--;
-
-recursos.madera++;
-
-mensaje(
-"+1 madera"
-);
-
-if(
-objetivo.vida<=0
-){
-
-recursos.madera+=
-objetivo.madera;
-
-escena.remove(
-objetivo.mesh
-);
-
-objetos.splice(
-objetos.indexOf(
-objetivo
-),
-1
-);
-
-mensaje(
-"Árbol talado"
-);
-}
-}
-
-
-/* PIEDRA */
-
-if(
-objetivo.tipo==="piedra"
-){
-
-if(
-herramienta.tipo!=="pico"
-){
-
-mensaje(
-"Necesitas un pico"
-);
-
-return;
-}
-
-if(
-herramienta.nivel<
-objetivo.dureza
-){
-
-mensaje(
-"Pico insuficiente"
-);
-
-return;
-}
-
-objetivo.vida-=
-
-herramienta.nivel>
-objetivo.dureza
-?2
-:1;
-
-herramienta.durabilidad--;
-
-recursos.piedra++;
-
-mensaje(
-"+1 piedra"
-);
-
-if(
-objetivo.vida<=0
-){
-
-recursos.piedra+=
-objetivo.cantidad;
-
-escena.remove(
-objetivo.mesh
-);
-
-objetos.splice(
-objetos.indexOf(
-objetivo
-),
-1
-);
-
-mensaje(
-"Roca destruida"
-);
-}
-}
-
-
-/* HIERRO */
-
-if(
-objetivo.tipo==="hierro"
-){
-
-if(
-herramienta.tipo!=="pico"
-){
-
-mensaje(
-"Necesitas un pico"
-);
-
-return;
-}
-
-if(
-herramienta.nivel<
-objetivo.dureza
-){
-
-mensaje(
-"Pico insuficiente"
-);
-
-return;
-}
-
-objetivo.vida-=
-
-herramienta.nivel>
-objetivo.dureza
-?2
-:1;
-
-herramienta.durabilidad--;
-
-recursos.hierro++;
-
-mensaje(
-"+1 hierro"
-);
-
-if(
-objetivo.vida<=0
-){
-
-recursos.hierro+=
-objetivo.cantidad;
-
-escena.remove(
-objetivo.mesh
-);
-
-objetos.splice(
-objetos.indexOf(
-objetivo
-),
-1
-);
-
-mensaje(
-"Hierro conseguido"
-);
-}
-}
-
-
-if(
-herramienta.durabilidad<=0
-){
-
-mensaje(
-"¡Herramienta rota!"
-);
-
-herramienta={
-nombre:"Mano",
-tipo:"mano",
-nivel:0,
-durabilidad:Infinity,
-maxima:Infinity
-};
-
-actualizarHerramienta();
-}
-
-actualizarUI();
-}
-
-
-/* ==========================
-CRAFT
-========================== */
-
-function hachaPiedra(){
-
-if(
-recursos.madera<3 ||
-recursos.piedra<3
-){
-
-mensaje(
-"Faltan materiales"
-);
-
-return;
-}
-
-recursos.madera-=3;
-recursos.piedra-=3;
-
-herramienta={
-nombre:"Hacha de piedra",
-tipo:"hacha",
-nivel:1,
-durabilidad:60,
-maxima:60
-};
-
-actualizarHerramienta();
-actualizarUI();
-
-mensaje(
-"Hacha creada"
-);
-}
-
-
-function picoPiedra(){
-
-if(
-recursos.madera<3 ||
-recursos.piedra<4
-){
-
-mensaje(
-"Faltan materiales"
-);
-
-return;
-}
-
-recursos.madera-=3;
-recursos.piedra-=4;
-
-herramienta={
-nombre:"Pico de piedra",
-tipo:"pico",
-nivel:1,
-durabilidad:60,
-maxima:60
-};
-
-actualizarHerramienta();
-actualizarUI();
-
-mensaje(
-"Pico creado"
-);
-}
-
-
-function hachaHierro(){
-
-if(
-recursos.madera<5 ||
-recursos.hierro<5
-){
-
-mensaje(
-"Faltan materiales"
-);
-
-return;
-}
-
-recursos.madera-=5;
-recursos.hierro-=5;
-
-herramienta={
-nombre:"Hacha de hierro",
-tipo:"hacha",
-nivel:2,
-durabilidad:120,
-maxima:120
-};
-
-actualizarHerramienta();
-actualizarUI();
-
-mensaje(
-"Hacha de hierro creada"
-);
-}
-
-
-function picoHierro(){
-
-if(
-recursos.madera<5 ||
-recursos.hierro<5
-){
-
-mensaje(
-"Faltan materiales"
-);
-
-return;
-}
-
-recursos.madera-=5;
-recursos.hierro-=5;
-
-herramienta={
-nombre:"Pico de hierro",
-tipo:"pico",
-nivel:2,
-durabilidad:120,
-maxima:120
-};
-
-actualizarHerramienta();
-actualizarUI();
-
-mensaje(
-"Pico de hierro creado"
-);
-}
-
-
-/* ==========================
-BOTONES
-========================== */
-
-document
-.getElementById("golpear")
-.addEventListener(
-"pointerdown",
-e=>{
-e.preventDefault();
-golpear();
-}
-);
-
-document
-.getElementById("crear")
-.addEventListener(
-"pointerdown",
-()=>{
-document.getElementById(
-"craft"
-).style.display="block";
-}
-);
-
-document
-.getElementById("cerrar")
-.addEventListener(
-"pointerdown",
-()=>{
-document.getElementById(
-"craft"
-).style.display="none";
-}
-);
-
-document
-.getElementById("crearHachaPiedra")
-.addEventListener(
-"pointerdown",
-hachaPiedra
-);
-
-document
-.getElementById("crearPicoPiedra")
-.addEventListener(
-"pointerdown",
-picoPiedra
-);
-
-document
-.getElementById("crearHachaHierro")
-.addEventListener(
-"pointerdown",
-hachaHierro
-);
-
-document
-.getElementById("crearPicoHierro")
-.addEventListener(
-"pointerdown",
-picoHierro
-);
-
-
-/* ==========================
-JOYSTICK
-========================== */
-
-const joystick=
-document.getElementById(
-"joystick"
-);
-
-const stick=
-document.getElementById(
-"stick"
-);
-
-let movX=0;
-let movY=0;
-let activo=false;
-
-function moverJoystick(e){
-
-const r=
-joystick.getBoundingClientRect();
-
-const cx=
-r.left+r.width/2;
-
-const cy=
-r.top+r.height/2;
-
-let dx=e.clientX-cx;
-let dy=e.clientY-cy;
-
-const max=45;
-
-const dist=
-Math.sqrt(
-dx*dx+dy*dy
-);
-
-if(dist>max){
-
-dx=
-dx/dist*max;
-
-dy=
-dy/dist*max;
-}
-
-movX=dx/max;
-movY=dy/max;
-
-stick.style.transform=
-`translate(${dx}px,${dy}px)`;
-}
-
-joystick.addEventListener(
-"pointerdown",
-e=>{
-
-activo=true;
-
-joystick.setPointerCapture(
-e.pointerId
-);
-
-moverJoystick(e);
-}
-);
-
-joystick.addEventListener(
-"pointermove",
-e=>{
-
-if(activo)
-moverJoystick(e);
-}
-);
-
-function soltarJoystick(){
-
-activo=false;
-
-movX=0;
-movY=0;
-
-stick.style.transform=
-"translate(0,0)";
-}
-
-joystick.addEventListener(
-"pointerup",
-soltarJoystick
-);
-
-joystick.addEventListener(
-"pointercancel",
-soltarJoystick
-);
-
-
-/* ==========================
-CORRER
-========================== */
+sol.shadow.mapSize.width=2048;
+sol.shadow.mapSize.height=2048;
+scene.add(sol);
+
+/* DATOS */
+let madera=0,piedra=0,hierro=0;
+let comida=0,agua=0;
+let vida=100,stamina=100;
 
 let corriendo=false;
-let stamina=100;
+let herramienta=null;
+let objetos=[];
+let cofres=[];
+let puertas=[];
 
-const botonCorrer=
-document.getElementById(
-"correr"
-);
+const mundo=180;
 
-botonCorrer.addEventListener(
-"pointerdown",
-e=>{
-e.preventDefault();
-corriendo=true;
-}
-);
+/* =========================================================
+   TERRENO
+   ========================================================= */
 
-function parar(){
+const sueloGeo=new THREE.PlaneGeometry(mundo,mundo,30,30);
+const sueloMat=new THREE.MeshLambertMaterial({color:0x3d7c36});
+const suelo=new THREE.Mesh(sueloGeo,sueloMat);
+suelo.rotation.x=-Math.PI/2;
+suelo.receiveShadow=true;
+scene.add(suelo);
 
-corriendo=false;
-}
-
-botonCorrer.addEventListener(
-"pointerup",
-parar
-);
-
-botonCorrer.addEventListener(
-"pointercancel",
-parar
-);
-
-botonCorrer.addEventListener(
-"pointerleave",
-parar
-);
-
-
-/* ==========================
-CÁMARA
-========================== */
-
-let camaraTocada=false;
-
-let ultimoX=0;
-let ultimoY=0;
-
-let yaw=0;
-let pitch=0;
-
-renderer.domElement.addEventListener(
-"pointerdown",
-e=>{
-
-camaraTocada=true;
-
-ultimoX=e.clientX;
-ultimoY=e.clientY;
-
-renderer.domElement.setPointerCapture(
-e.pointerId
-);
-}
-);
-
-renderer.domElement.addEventListener(
-"pointermove",
-e=>{
-
-if(!camaraTocada)
-return;
-
-const dx=
-e.clientX-ultimoX;
-
-const dy=
-e.clientY-ultimoY;
-
-ultimoX=e.clientX;
-ultimoY=e.clientY;
-
-yaw-=dx*.006;
-
-pitch-=dy*.006;
-
-pitch=
-Math.max(
--.9,
-Math.min(.9,pitch)
-);
-
-jugador.rotation.y=yaw;
-camara.rotation.x=pitch;
-}
-);
-
-renderer.domElement.addEventListener(
-"pointerup",
-()=>{
-camaraTocada=false;
-}
-);
-
-
-/* ==========================
-MOVIMIENTO
-========================== */
-
-function actualizarMovimiento(){
-
-let velocidad=.09;
-
-if(
-corriendo &&
-stamina>0
-){
-
-velocidad=.19;
-
-stamina-=.6;
-
-}else{
-
-stamina+=.35;
+/* CAMINOS */
+function crearCamino(x,z,w,l){
+ const g=new THREE.BoxGeometry(w,.05,l);
+ const m=new THREE.MeshLambertMaterial({color:0x77705d});
+ const o=new THREE.Mesh(g,m);
+ o.position.set(x,.025,z);
+ o.receiveShadow=true;
+ scene.add(o);
 }
 
-stamina=
-Math.max(
-0,
-Math.min(
-100,
-stamina
-)
-);
+/* =========================================================
+   VEGETACIÓN
+   ========================================================= */
 
-if(stamina<=0)
-corriendo=false;
+function crearPasto(x,z){
+ const g=new THREE.Group();
 
+ for(let i=0;i<5;i++){
+  const geo=new THREE.ConeGeometry(.035,.35,4);
+  const mat=new THREE.MeshLambertMaterial({color:0x4d963d});
+  const h=new THREE.Mesh(geo,mat);
+  h.position.set(
+   (Math.random()-.5)*.35,
+   .17,
+   (Math.random()-.5)*.35
+  );
+  h.rotation.z=(Math.random()-.5)*.3;
+  g.add(h);
+ }
 
-if(
-Math.abs(movX)>.05 ||
-Math.abs(movY)>.05
-){
-
-const frente=
-new THREE.Vector3(
-0,
-0,
--1
-);
-
-const derecha=
-new THREE.Vector3(
-1,
-0,
-0
-);
-
-frente.applyQuaternion(
-jugador.quaternion
-);
-
-derecha.applyQuaternion(
-jugador.quaternion
-);
-
-jugador.position.addScaledVector(
-frente,
--movY*velocidad
-);
-
-jugador.position.addScaledVector(
-derecha,
-movX*velocidad
-);
+ g.position.set(x,0,z);
+ scene.add(g);
 }
 
-document.getElementById(
-"stamina"
-).style.width=
-stamina+"%";
+function crearArbusto(x,z){
+ const g=new THREE.Group();
+
+ for(let i=0;i<4;i++){
+  const geo=new THREE.SphereGeometry(.3,8,8);
+  const mat=new THREE.MeshLambertMaterial({color:0x236b2a});
+  const b=new THREE.Mesh(geo,mat);
+  b.position.set((Math.random()-.5)*.5,.3+Math.random()*.2,(Math.random()-.5)*.5);
+  b.scale.y=.8;
+  g.add(b);
+ }
+
+ g.position.set(x,0,z);
+ scene.add(g);
 }
 
+for(let i=0;i<450;i++){
+ const x=(Math.random()-.5)*170;
+ const z=(Math.random()-.5)*170;
 
-/* ==========================
-LOOP
-========================== */
+ if(Math.abs(x)<15 && Math.abs(z)<15)continue;
 
-function loop(){
-
-requestAnimationFrame(
-loop
-);
-
-actualizarMovimiento();
-
-renderer.render(
-escena,
-camara
-);
+ if(Math.random()<.75)crearPasto(x,z);
+ else crearArbusto(x,z);
 }
 
-loop();
+/* =========================================================
+   ÁRBOLES
+   ========================================================= */
 
+function crearArbol(x,z,nivel=1){
+ const g=new THREE.Group();
 
-/* ==========================
-RESIZE
-========================== */
+ const tronco=new THREE.Mesh(
+  new THREE.CylinderGeometry(.25,.34,3.1,8),
+  new THREE.MeshLambertMaterial({color:0x704523})
+ );
+ tronco.position.y=1.55;
+ tronco.castShadow=true;
+ g.add(tronco);
 
-window.addEventListener(
-"resize",
-()=>{
+ const hojas=new THREE.Mesh(
+  new THREE.ConeGeometry(1.45,3.3,9),
+  new THREE.MeshLambertMaterial({
+   color:nivel===1?0x347d32:nivel===2?0x28692b:0x1d5524
+  })
+ );
+ hojas.position.y=4;
+ hojas.castShadow=true;
+ g.add(hojas);
 
-camara.aspect=
-innerWidth/innerHeight;
+ g.position.set(x,0,z);
+ scene.add(g);
 
-camara.updateProjectionMatrix();
-
-renderer.setSize(
-innerWidth,
-innerHeight
-);
+ objetos.push({
+  mesh:g,tipo:"arbol",dureza:nivel,
+  vida:nivel===1?3:nivel===2?6:10,
+  madera:nivel===1?4:nivel===2?7:12,
+  recogible:false
+ });
 }
-);
 
+/* =========================================================
+   ROCAS
+   ========================================================= */
+
+function crearRoca(x,z,nivel=1,esHierro=false){
+ const g=new THREE.Group();
+
+ const roca=new THREE.Mesh(
+  new THREE.DodecahedronGeometry(.7+nivel*.08,0),
+  new THREE.MeshLambertMaterial({
+   color:esHierro?0x55585d:
+   nivel===1?0x777777:
+   nivel===2?0x5e6268:0x45484d
+  })
+ );
+ roca.scale.y=.75;
+ roca.castShadow=true;
+ g.add(roca);
+
+ g.position.set(x,.55,z);
+ scene.add(g);
+
+ objetos.push({
+  mesh:g,
+  tipo:esHierro?"hierro":"piedra",
+  dureza:nivel,
+  vida:nivel===1?3:nivel===2?6:10,
+  cantidad:nivel===1?3:nivel===2?6:10,
+  recogible:false
+ });
+}
+
+/* =========================================================
+   RAMAS / PIEDRAS PEQUEÑAS
+   ========================================================= */
+
+function crearRama(x,z){
+ const g=new THREE.Mesh(
+  new THREE.CylinderGeometry(.035,.05,.65,6),
+  new THREE.MeshLambertMaterial({color:0x70452a})
+ );
+ g.rotation.z=Math.PI/2;
+ g.position.set(x,.12,z);
+ g.castShadow=true;
+ scene.add(g);
+
+ objetos.push({
+  mesh:g,tipo:"rama",cantidad:1,recogible:true
+ });
+}
+
+function crearPiedraPequena(x,z){
+ const g=new THREE.Mesh(
+  new THREE.DodecahedronGeometry(.16,0),
+  new THREE.MeshLambertMaterial({color:0x777777})
+ );
+ g.position.set(x,.16,z);
+ scene.add(g);
+
+ objetos.push({
+  mesh:g,tipo:"piedraPequena",cantidad:1,recogible:true
+ });
+}
+
+/* =========================================================
+   PLANTACIONES
+   ========================================================= */
+
+function crearPlantacion(x,z){
+ const g=new THREE.Group();
+
+ for(let i=0;i<9;i++){
+  for(let j=0;j<7;j++){
+   const planta=new THREE.Group();
+
+   const tallo=new THREE.Mesh(
+    new THREE.CylinderGeometry(.025,.025,.45,5),
+    new THREE.MeshLambertMaterial({color:0x4d8c32})
+   );
+   tallo.position.y=.22;
+   planta.add(tallo);
+
+   const espiga=new THREE.Mesh(
+    new THREE.ConeGeometry(.09,.25,5),
+    new THREE.MeshLambertMaterial({color:0xd4a83e})
+   );
+   espiga.position.y=.52;
+   planta.add(espiga);
+
+   planta.position.set(
+    x+(i-4)*.65,
+    0,
+    z+(j-3)*.65
+   );
+   g.add(planta);
+  }
+ }
+
+ scene.add(g);
+
+ /* cartel */
+ const base=new THREE.Mesh(
+  new THREE.BoxGeometry(6,.05,5),
+  new THREE.MeshLambertMaterial({color:0x80663d})
+ );
+ base.position.set(x,.03,z);
+ scene.add(base);
+
+ return g;
+}
+
+/* =========================================================
+   EDIFICIOS
+   ========================================================= */
+
+function crearCasa(x,z,w=7,d=7){
+ const g=new THREE.Group();
+
+ const paredMat=new THREE.MeshLambertMaterial({color:0xb4a38a});
+
+ const p1=new THREE.Mesh(new THREE.BoxGeometry(w,4,.35),paredMat);
+ p1.position.set(0,2,-d/2);
+ g.add(p1);
+
+ const p2=new THREE.Mesh(new THREE.BoxGeometry(w,4,.35),paredMat);
+ p2.position.set(0,2,d/2);
+ g.add(p2);
+
+ const p3=new THREE.Mesh(new THREE.BoxGeometry(.35,4,d),paredMat);
+ p3.position.set(-w/2,2,0);
+ g.add(p3);
+
+ const p4=new THREE.Mesh(new THREE.BoxGeometry(.35,4,d),paredMat);
+ p4.position.set(w/2,2,0);
+ g.add(p4);
+
+ const techo=new THREE.Mesh(
+  new THREE.BoxGeometry(w+.5,.35,d+.5),
+  new THREE.MeshLambertMaterial({color:0x4a3b32})
+ );
+ techo.position.y=4.15;
+ g.add(techo);
+
+ g.position.set(x,0,z);
+ scene.add(g);
+
+ /* puerta visual */
+ const puerta=new THREE.Mesh(
+  new THREE.BoxGeometry(1.25,2.6,.12),
+  new THREE.MeshLambertMaterial({color:0x4b2e1d})
+ );
+ puerta.position.set(x,1.3,z-d/2-.03);
+ scene.add(puerta);
+
+ puertas.push({mesh:puerta,x,z,w,d,abierta:false});
+
+ /* ventanas */
+ for(const sx of [-1,1]){
+  const ventana=new THREE.Mesh(
+   new THREE.BoxGeometry(1.25,1.1,.08),
+   new THREE.MeshLambertMaterial({color:0x75b9d5})
+  );
+  ventana.position.set(x+sx*(w/2+.02),2.2,z);
+  ventana.rotation.y=Math.PI/2;
+  scene.add(ventana);
+ }
+
+ return g;
+}
+
+/* =========================================================
+   COFRES
+   ========================================================= */
+
+function crearCofre(x,z){
+ const g=new THREE.Group();
+
+ const caja=new THREE.Mesh(
+  new THREE.BoxGeometry(1.1,.65,.75),
+  new THREE.MeshLambertMaterial({color:0x7b4a24})
+ );
+ caja.position.y=.35;
+ caja.castShadow=true;
+ g.add(caja);
+
+ const tapa=new THREE.Mesh(
+  new THREE.BoxGeometry(1.12,.15,.78),
+  new THREE.MeshLambertMaterial({color:0x9a642d})
+ );
+ tapa.position.y=.73;
+ g.add(tapa);
+
+ const cierre=new THREE.Mesh(
+  new THREE.BoxGeometry(.15,.2,.08),
+  new THREE.MeshLambertMaterial({color:0xd3aa42})
+ );
+ cierre.position.set(0,.52,-.42);
+ g.add(cierre);
+
+ g.position.set(x,0,z);
+ scene.add(g);
+
+ cofres.push({
+  mesh:g,
+  abierto:false,
+  loot:null
+ });
+}
+
+function lootCofre(c){
+ if(c.abierto)return;
+
+ c.abierto=true;
+
+ const r=Math.random();
+
+ if(r<.2){
+  comida+=Math.floor(Math.random()*4)+2;
+  agua+=1;
+  mostrar("Encontraste comida y agua");
+ }else if(r<.4){
+  madera+=Math.floor(Math.random()*5)+3;
+  piedra+=Math.floor(Math.random()*4)+2;
+  mostrar("Encontraste materiales");
+ }else if(r<.6){
+  hierro+=Math.floor(Math.random()*4)+2;
+  mostrar("Encontraste hierro");
+ }else if(r<.8){
+  comida+=4;
+  madera+=6;
+  mostrar("Encontraste provisiones");
+ }else{
+  agua+=3;
+  hierro+=3;
+  mostrar("¡Cofre con buen loot!");
+ }
+
+ c.mesh.children[1].rotation.x=-.9;
+ actualizarHUD();
+}
+
+/* =========================================================
+   CIUDAD
+   ========================================================= */
+
+function crearCiudad(){
+ const cx=42,cz=-35;
+
+ crearCamino(cx,cz,8,60);
+ crearCamino(cx,cz,cx?60:60,8);
+
+ crearCasa(cx-15,cz-12,8,7);
+ crearCasa(cx+1,cz-12,7,8);
+ crearCasa(cx+15,cz-12,9,7);
+
+ crearCasa(cx-15,cz+10,8,8);
+ crearCasa(cx+1,cz+10,9,7);
+ crearCasa(cx+17,cz+10,8,9);
+
+ crearCofre(cx-15,cz-12);
+ crearCofre(cx+1,cz-12);
+ crearCofre(cx+15,cz-12);
+ crearCofre(cx-15,cz+10);
+ crearCofre(cx+1,cz+10);
+ crearCofre(cx+17,cz+10);
+
+ /* edificio grande */
+ const deposito=crearCasa(cx+1,cz+30,15,12);
+
+ /* cartel */
+ const poste=new THREE.Mesh(
+  new THREE.BoxGeometry(.15,3,.15),
+  new THREE.MeshLambertMaterial({color:0x4d351f})
+ );
+ poste.position.set(cx-8,1.5,cz-31);
+ scene.add(poste);
+
+ const cartel=new THREE.Mesh(
+  new THREE.BoxGeometry(5,1.1,.15),
+  new THREE.MeshLambertMaterial({color:0x9a7a42})
+ );
+ cartel.position.set(cx-8,2.7,cz-31);
+ scene.add(cartel);
+
+ crearCofre(cx+1,cz+30);
+}
+
+/* =========================================================
+   MUNDO
+   ========================================================= */
+
+crearCiudad();
+crearPlantacion(-35,25);
+crearPlantacion(-25,30);
+
+for(let i=0;i<55;i++){
+ let x=(Math.random()-.5)*150;
+ let z=(Math.random()-.5)*150;
+
+ if(Math.abs(x)<12&&Math.abs(z)<12)continue;
+
+ crearArbol(x,z,Math.floor(Math.random()*3)+1);
+}
+
+for(let i=0;i<38;i++){
+ let x=(Math.random()-.5)*150;
+ let z=(Math.random()-.5)*150;
+
+ if(Math.abs(x)<12&&Math.abs(z)<12)continue;
+
+ crearRoca(x,z,Math.floor(Math.random()*3)+1,false);
+}
+
+/* hierro en zonas más raras */
+for(let i=0;i<12;i++){
+ crearRoca(
+  (Math.random()-.5)*150,
+  (Math.random()-.5)*150,
+  Math.random()<.5?2:3,
+  true
+ );
+}
+
+for(let i=0;i<45;i++){
+ crearRama((Math.random()-.5)*100,(Math.random()-.5)*100);
+}
+
+for(let i=0;i<45;i++){
+ crearPiedraPequena((Math.random()-.5)*100,(Math.random()-.5)*100);
+}
+
+/* =========================================================
+   HERRAMIENTAS
+   ========================================================= */
+
+function crearHacha(hierro){
+ const g=new THREE.Group();
+
+ const mango=new THREE.Mesh(
+  new THREE.CylinderGeometry(.055,.07,.85,8),
+  new THREE.MeshLambertMaterial({color:0x6b4226})
+ );
+ mango.rotation.z=-.5;
+ g.add(mango);
+
+ const cabeza=new THREE.Mesh(
+  new THREE.BoxGeometry(.38,.45,.13),
+  new THREE.MeshLambertMaterial({color:hierro?0x999da2:0x777777})
+ );
+ cabeza.position.set(.25,.28,0);
+ cabeza.rotation.z=-.2;
+ g.add(cabeza);
+
+ return g;
+}
+
+function crearPico(hierro){
+ const g=new THREE.Group();
+
+ const mango=new THREE.Mesh(
+  new THREE.CylinderGeometry(.055,.07,.9,8),
+  new THREE.MeshLambertMaterial({color:0x6b4226})
+ );
+ mango.rotation.z=-.55;
+ g.add(mango);
+
+ const cabeza=new THREE.Mesh(
+  new THREE.BoxGeometry(.55,.1,.12),
+  new THREE.MeshLambertMaterial({color:hierro?0x999da2:0x777777})
+ );
+ cabeza.position.set(.25,.3,0);
+ cabeza.rotation.z=-.35;
+ g.add(cabeza);
+
+ return g;
+}
+
+/* MANO */
+const mano=new THREE.Group();
+mano.position.set(.65,-.55,-1.15);
+mano.scale.set(1.5,1.5,1.5);
+
+const brazo=new THREE.Mesh(
+ new THREE.CylinderGeometry(.11,.15,.65,8),
+ new THREE.MeshLambertMaterial({color:0xd49b73})
+);
+brazo.rotation.z=-.25;
+mano.add(brazo);
+
+const manoMesh=new THREE.Mesh(
+ new THREE.SphereGeometry(.16,10,10),
+ new THREE.MeshLambertMaterial({color:0xe0aa80})
+);
+manoMesh.position.set(.2,.3,0);
+mano.add(manoMesh);
+
+camera.add(mano);
+scene.add(camera);
+
+function actualizarHerramienta(){
+ while(mano.children.length>2)mano.remove(mano.children[2]);
+
+ if(!herramienta)return;
+
+ const modelo=herramienta.tipo==="hacha"
+ ?crearHacha(herramienta.nivel>=2)
+ :crearPico(herramienta.nivel>=2);
+
+ modelo.position.set(.22,.18,-.1);
+ modelo.scale.set(1.35,1.35,1.35);
+ modelo.rotation.set(.1,0,-.2);
+ mano.add(modelo);
+}
+
+function equipar(nombre,tipo,nivel,maxima){
+ herramienta={nombre,tipo,nivel,durabilidad:maxima,maxima};
+ actualizarHerramienta();
+ actualizarHUD();
+}
+
+/* =========================================================
+   CRAFT
+   ========================================================= */
+
+function crearHachaPiedra(){
+ if(madera>=3&&piedra>=3){
+  madera-=3;piedra-=3;
+  equipar("Hacha piedra","hacha",1,60);
+  mostrar("Hacha de piedra creada");
+ }else mostrar("Faltan materiales");
+ actualizarHUD();
+}
+
+function crearPicoPiedra(){
+ if(madera>=3&&piedra>=4){
+  madera-=3;piedra-=4;
+  equipar("Pico piedra","pico",1,60);
+  mostrar("Pico de piedra creado");
+ }else mostrar("Faltan materiales");
+ actualizarHUD();
+}
+
+function crearHachaHierro(){
+ if(madera>=5&&hierro>=5){
+  madera-=5;hierro-=5;
+  equipar("Hacha hierro","hacha",2,120);
+  mostrar("Hacha de hierro creada");
+ }else mostrar("Faltan materiales");
+ actualizarHUD();
+}
+
+function crearPicoHierro(){
+ if(madera>=5&&hierro>=5){
+  madera-=5;hierro-=5;
+  equipar("Pico hierro","pico",2,120);
+  mostrar("Pico de hierro creado");
+ }else mostrar("Faltan materiales");
+ actualizarHUD();
+}
+
+/* =========================================================
+   RECOLECCIÓN
+   ========================================================= */
+
+function distancia(a,b){
+ return a.distanceTo(b);
+}
+
+function recogerCercano(){
+ let mejor=null;
+ let d=2.3;
+
+ for(const o of objetos){
+  if(!o.recogible)continue;
+
+  const od=distancia(camera.position,o.mesh.position);
+
+  if(od<d){
+   d=od;
+   mejor=o;
+  }
+ }
+
+ if(!mejor)return false;
+
+ if(mejor.tipo==="rama"){
+  madera+=mejor.cantidad;
+  mostrar("+1 madera");
+ }
+
+ if(mejor.tipo==="piedraPequena"){
+  piedra+=mejor.cantidad;
+  mostrar("+1 piedra");
+ }
+
+ scene.remove(mejor.mesh);
+ objetos.splice(objetos.indexOf(mejor),1);
+
+ actualizarHUD();
+ return true;
+}
+
+/* =========================================================
+   GOLPEAR
+   ========================================================= */
+
+function golpear(){
+ if(recogerCercano())return;
+
+ /* cofres */
+ let cofreCercano=null;
+ let dc=2.7;
+
+ for(const c of cofres){
+  const d=distancia(camera.position,c.mesh.position);
+  if(d<dc){
+   dc=d;
+   cofreCercano=c;
+  }
+ }
+
+ if(cofreCercano){
+  lootCofre(cofreCercano);
+  return;
+ }
+
+ /* puerta */
+ for(const p of puertas){
+  const d=Math.hypot(camera.position.x-p.x,camera.position.z-p.z);
+  if(d<3){
+   p.abierta=!p.abierta;
+   p.mesh.rotation.y=p.abierta?Math.PI/2:0;
+   mostrar(p.abierta?"Puerta abierta":"Puerta cerrada");
+   return;
+  }
+ }
+
+ /* animación */
+ mano.position.z=-1.05;
+
+ setTimeout(()=>{
+  mano.position.z=-1.15;
+ },100);
+
+ let objetivo=null;
+ let mejor=3.4;
+
+ for(const o of objetos){
+  if(o.recogible)continue;
+
+  const d=distancia(camera.position,o.mesh.position);
+
+  if(d<mejor){
+   mejor=d;
+   objetivo=o;
+  }
+ }
+
+ if(!objetivo){
+  actualizarHUD();
+  return;
+ }
+
+ if(objetivo.tipo==="arbol"){
+  if(!herramienta||herramienta.tipo!=="hacha"){
+   mostrar("Necesitás un hacha");
+   return;
+  }
+
+  if(herramienta.nivel<objetivo.dureza){
+   mostrar("El hacha es demasiado débil");
+   return;
+  }
+ }
+
+ if((objetivo.tipo==="piedra"||objetivo.tipo==="hierro")){
+  if(!herramienta||herramienta.tipo!=="pico"){
+   mostrar("Necesitás un pico");
+   return;
+  }
+
+  if(herramienta.nivel<objetivo.dureza){
+   mostrar("El pico es demasiado débil");
+   return;
+  }
+ }
+
+ objetivo.vida--;
+ herramienta.durabilidad--;
+
+ if(objetivo.tipo==="arbol"){
+  madera+=1;
+ }else if(objetivo.tipo==="piedra"){
+  piedra+=1;
+ }else if(objetivo.tipo==="hierro"){
+  hierro+=1;
+ }
+
+ if(herramienta.durabilidad<=0){
+  mostrar("Tu herramienta se rompió");
+  herramienta=null;
+  actualizarHerramienta();
+ }
+
+ if(objetivo.vida<=0){
+  if(objetivo.tipo==="arbol")madera+=objetivo.madera;
+  if(objetivo.tipo==="piedra")piedra+=objetivo.cantidad;
+  if(objetivo.tipo==="hierro")hierro+=objetivo.cantidad;
+
+  scene.remove(objetivo.mesh);
+  objetos.splice(objetos.indexOf(objetivo),1);
+ }
+
+ actualizarHUD();
+}
+
+/* =========================================================
+   MOVIMIENTO
+   ========================================================= */
+
+let joyX=0,joyY=0;
+let tocandoJoy=false;
+
+const joystick=document.getElementById("joystick");
+const stick=document.getElementById("stick");
+
+joystick.addEventListener("pointerdown",e=>{
+ tocandoJoy=true;
+ joystick.setPointerCapture(e.pointerId);
+ moverJoy(e);
+});
+
+joystick.addEventListener("pointermove",e=>{
+ if(tocandoJoy)moverJoy(e);
+});
+
+joystick.addEventListener("pointerup",()=>{
+ tocandoJoy=false;
+ joyX=0;joyY=0;
+ stick.style.left="37px";
+ stick.style.top="37px";
+});
+
+function moverJoy(e){
+ const r=joystick.getBoundingClientRect();
+ let x=e.clientX-(r.left+r.width/2);
+ let y=e.clientY-(r.top+r.height/2);
+
+ const max=42;
+ const len=Math.hypot(x,y);
+
+ if(len>max){
+  x=x/len*max;
+  y=y/len*max;
+ }
+
+ joyX=x/max;
+ joyY=y/max;
+
+ stick.style.left=(37+x)+"px";
+ stick.style.top=(37+y)+"px";
+}
+
+/* =========================================================
+   CÁMARA
+   ========================================================= */
+
+let mirando=false;
+let ultimaX=0,ultimaY=0;
+
+renderer.domElement.addEventListener("pointerdown",e=>{
+ mirando=true;
+ ultimaX=e.clientX;
+ ultimaY=e.clientY;
+});
+
+renderer.domElement.addEventListener("pointermove",e=>{
+ if(!mirando)return;
+
+ const dx=e.clientX-ultimaX;
+ const dy=e.clientY-ultimaY;
+
+ ultimaX=e.clientX;
+ ultimaY=e.clientY;
+
+ camera.rotation.order="YXZ";
+ camera.rotation.y-=dx*.004;
+ camera.rotation.x-=dy*.004;
+
+ camera.rotation.x=Math.max(-1.35,Math.min(1.35,camera.rotation.x));
+});
+
+renderer.domElement.addEventListener("pointerup",()=>mirando=false);
+renderer.domElement.addEventListener("pointercancel",()=>mirando=false);
+
+/* =========================================================
+   CORRER
+   ========================================================= */
+
+const correr=document.getElementById("correr");
+
+correr.addEventListener("pointerdown",()=>{
+ corriendo=true;
+});
+
+correr.addEventListener("pointerup",()=>{
+ corriendo=false;
+});
+
+correr.addEventListener("pointercancel",()=>{
+ corriendo=false;
+});
+
+/* =========================================================
+   INVENTARIO
+   ========================================================= */
+
+const inv=document.getElementById("inventario");
+
+document.getElementById("crear").onclick=()=>{
+ inv.style.display=inv.style.display==="none"?"block":"none";
+};
+
+/* =========================================================
+   HUD
+   ========================================================= */
+
+function actualizarHUD(){
+ document.getElementById("madera").textContent=madera;
+ document.getElementById("piedra").textContent=piedra;
+ document.getElementById("hierro").textContent=hierro;
+ document.getElementById("comida").textContent=comida;
+ document.getElementById("agua").textContent=agua;
+
+ document.getElementById("imadera").textContent=madera;
+ document.getElementById("ipiedra").textContent=piedra;
+ document.getElementById("ihierro").textContent=hierro;
+ document.getElementById("icomida").textContent=comida;
+ document.getElementById("iagua").textContent=agua;
+
+ document.getElementById("vida").style.width=vida+"%";
+ document.getElementById("stamina").style.width=stamina+"%";
+
+ document.getElementById("herramienta").textContent=
+ herramienta
+ ?herramienta.nombre+" "+herramienta.durabilidad+"/"+herramienta.maxima
+ :"Manos";
+}
+
+function mostrar(txt){
+ const m=document.getElementById("mensaje");
+ m.textContent=txt;
+ m.style.display="block";
+
+ clearTimeout(m._t);
+ m._t=setTimeout(()=>{
+  m.style.display="none";
+ },1800);
+}
+
+document.getElementById("golpear").addEventListener("pointerdown",golpear);
+
+/* =========================================================
+   CICLO
+   ========================================================= */
+
+const reloj=new THREE.Clock();
+
+function animar(){
+ requestAnimationFrame(animar);
+
+ const dt=Math.min(reloj.getDelta(),.05);
+
+ /* movimiento */
+ let velocidad=corriendo&&stamina>0?.19:.09;
+
+ if(corriendo&&Math.abs(joyX)+Math.abs(joyY)>.1){
+  stamina-=35*dt;
+  if(stamina<0)stamina=0;
+ }else{
+  stamina+=22*dt;
+  if(stamina>100)stamina=100;
+ }
+
+ const adelante=new THREE.Vector3();
+ camera.getWorldDirection(adelante);
+ adelante.y=0;
+ adelante.normalize();
+
+ const derecha=new THREE.Vector3()
+  .crossVectors(adelante,new THREE.Vector3(0,1,0))
+  .normalize();
+
+ camera.position.addScaledVector(adelante,-joyY*velocidad);
+ camera.position.addScaledVector(derecha,joyX*velocidad);
+
+ /* límites */
+ camera.position.x=Math.max(-85,Math.min(85,camera.position.x));
+ camera.position.z=Math.max(-85,Math.min(85,camera.position.z));
+ camera.position.y=2.1;
+
+ actualizarHUD();
+
+ renderer.render(scene,camera);
+}
+
+animar();
+
+/* =========================================================
+   INICIO
+   ========================================================= */
+
+mostrar("Explorá el mundo y buscá recursos");
+actualizarHUD();
+
+addEventListener("resize",()=>{
+ camera.aspect=innerWidth/innerHeight;
+ camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight);
+});
 </script>
-
 </body>
 </html>
