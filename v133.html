@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Supervivencia 3D V13.3</title>
+
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{
+  margin:0;width:100%;height:100%;overflow:hidden;
+  background:#111;color:white;font-family:Arial,sans-serif;
+  touch-action:none;
+}
+canvas{display:block;position:fixed;inset:0;z-index:1}
+
+#loading{
+  position:fixed;inset:0;z-index:100;
+  display:flex;align-items:center;justify-content:center;
+  background:#111;color:white;font-size:20px;text-align:center;
+  padding:30px;
+}
+#loading small{display:block;margin-top:12px;color:#aaa;font-size:13px}
+
+#portrait{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:#111;color:white;align-items:center;justify-content:center;
+  text-align:center;font-size:25px;font-weight:bold;padding:30px;
+}
+#portrait span{font-size:50px;display:block;margin-bottom:20px}
+
+#error{
+  display:none;position:fixed;inset:0;z-index:300;
+  background:#170909;color:#fff;padding:25px;
+  overflow:auto;font-family:monospace;font-size:14px;
+}
+#error b{color:#ff5555;font-size:22px}
+#error pre{white-space:pre-wrap;word-break:break-word;color:#ffb0b0}
+
+#hud{
+  display:none;position:fixed;z-index:20;left:10px;top:10px;
+  width:210px;pointer-events:none;
+}
+.bar{
+  height:14px;background:#222;border:1px solid #555;
+  border-radius:8px;overflow:hidden;margin:3px 0 7px;
+}
+.fill{height:100%;width:100%}
+.hp{background:#e53935}.food{background:#e6a72e}
+.water{background:#3295e8}.sta{background:#62d45b}
+.label{font-size:11px;text-shadow:0 1px 2px #000}
+
+#info{
+  position:fixed;right:10px;top:10px;z-index:20;
+  text-align:right;font-size:12px;text-shadow:0 1px 3px #000;
+  pointer-events:none;
+}
+
+#cross{
+  position:fixed;z-index:15;left:50%;top:50%;
+  width:18px;height:18px;transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+#cross:before,#cross:after{
+  content:"";position:absolute;background:white;opacity:.8;
+}
+#cross:before{width:18px;height:2px;top:8px}
+#cross:after{height:18px;width:2px;left:8px}
+
+#joy{
+  display:none;position:fixed;z-index:30;
+  left:25px;bottom:25px;width:145px;height:145px;
+  border:2px solid rgba(255,255,255,.35);
+  background:rgba(0,0,0,.22);border-radius:50%;
+  touch-action:none;
+}
+#stick{
+  position:absolute;width:58px;height:58px;border-radius:50%;
+  background:rgba(255,255,255,.35);
+  left:50%;top:50%;transform:translate(-50%,-50%);
+}
+
+#look{
+  display:none;position:fixed;z-index:10;
+  left:170px;right:0;top:0;bottom:0;
+  touch-action:none;
+}
+
+.buttons{
+  display:none;position:fixed;right:15px;bottom:20px;
+  z-index:40;width:190px;
+  grid-template-columns:repeat(3,1fr);gap:8px;
+}
+button{
+  min-height:52px;border:1px solid rgba(255,255,255,.3);
+  border-radius:12px;background:rgba(20,20,20,.75);
+  color:#fff;font-weight:bold;font-size:12px;
+  touch-action:none;
+}
+button:active{background:rgba(255,255,255,.25)}
+
+#map,#inv,#craft{
+  display:none;position:fixed;z-index:80;
+  left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(92vw,500px);max-height:85vh;overflow:auto;
+  background:rgba(10,12,14,.96);border:1px solid #666;
+  border-radius:16px;padding:18px;
+}
+.panelTitle{font-size:22px;font-weight:bold;margin-bottom:12px}
+.close{float:right;background:#700}
+.item{
+  padding:10px;margin:5px 0;background:#202428;
+  border-radius:8px;display:flex;justify-content:space-between;
+}
+.action{margin-top:8px;width:100%}
+
+#mapCanvas{
+  display:block;width:100%;aspect-ratio:1;
+  background:#172018;border:1px solid #555;
+}
+
+@media(max-height:500px){
+  #joy{bottom:15px}
+  .buttons{bottom:12px}
+}
+</style>
+</head>
+
+<body>
+
+<div id="loading">
+  <div>
+    <strong>SUPERVIVENCIA 3D</strong>
+    <small>Iniciando mundo...</small>
+  </div>
+</div>
+
+<div id="portrait">
+  <div>
+    <span>↻</span>
+    GIRÁ EL CELULAR<br>
+    <small>Este juego se juega en pantalla horizontal.</small>
+  </div>
+</div>
+
+<div id="error">
+  <b>ERROR AL INICIAR EL JUEGO</b>
+  <p>Mandame una captura de esta pantalla y lo corregimos.</p>
+  <pre id="errorText"></pre>
+</div>
+
+<div id="hud">
+  <div class="label">VIDA</div>
+  <div class="bar"><div id="hp" class="fill hp"></div></div>
+  <div class="label">HAMBRE</div>
+  <div class="bar"><div id="food" class="fill food"></div></div>
+  <div class="label">AGUA</div>
+  <div class="bar"><div id="water" class="fill water"></div></div>
+  <div class="label">RESISTENCIA</div>
+  <div class="bar"><div id="sta" class="fill sta"></div></div>
+</div>
+
+<div id="info">
+  <div id="day">Día 1 — 08:00</div>
+  <div id="zone">Zona desconocida</div>
+  <div id="zcount">Zombies: 0</div>
+  <div id="weapon">Manos vacías</div>
+</div>
+
+<div id="cross"></div>
+
+<div id="look"></div>
+
+<div id="joy">
+  <div id="stick"></div>
+</div>
+
+<div class="buttons">
+  <button id="run">CORRER</button>
+  <button id="use">USAR</button>
+  <button id="light">LUZ</button>
+  <button id="reload">RECARGAR</button>
+  <button id="mapBtn">MAPA</button>
+  <button id="invBtn">MOCHILA</button>
+  <button id="craftBtn">CREAR</button>
+</div>
+
+<div id="map">
+  <button class="close" id="closeMap">X</button>
+  <div class="panelTitle">MAPA 10 × 10 KM</div>
+  <canvas id="mapCanvas" width="700" height="700"></canvas>
+  <div id="mapInfo"></div>
+</div>
+
+<div id="inv">
+  <button class="close" id="closeInv">X</button>
+  <div class="panelTitle">MOCHILA</div>
+  <div id="invList"></div>
+</div>
+
+<div id="craft">
+  <button class="close" id="closeCraft">X</button>
+  <div class="panelTitle">FABRICACIÓN</div>
+  <button class="action" id="makeAxe">HACER HACHA — 5 madera + 3 piedra</button>
+  <button class="action" id="makePick">HACER PICO — 4 madera + 5 piedra</button>
+  <button class="action" id="makeBandage">HACER VENDA — 3 tela</button>
+  <button class="action" id="makeMedkit">HACER BOTIQUÍN — 2 vendas + 2 medicina</button>
+</div>
+
+<script src="./three.min.js"></script>
+
+<script>
+(function(){
+
+"use strict";
+
+/* =========================
+   SEGURIDAD / ERRORES
+========================= */
+
+function showError(err){
+  var box=document.getElementById("error");
+  var txt=document.getElementById("errorText");
+  if(box && txt){
+    box.style.display="block";
+    txt.textContent=String(err && err.stack ? err.stack : err);
+  }
+  var loading=document.getElementById("loading");
+  if(loading) loading.style.display="none";
+}
+
+window.addEventListener("error",function(e){
+  if(e.error) showError(e.error);
+});
+
+window.addEventListener("unhandledrejection",function(e){
+  showError(e.reason || "Error desconocido");
+});
+
+/* =========================
+   ARRANQUE
+========================= */
+
+window.addEventListener("load",function(){
+
+try{
+
+if(!window.THREE){
+  throw new Error("Three.js no se encontró. Revisá que three.min.js esté en el mismo repositorio.");
+}
+
+/* =========================
+   ORIENTACIÓN
+========================= */
+
+var portrait=document.getElementById("portrait");
+
+function orientation(){
+  var vertical=window.innerHeight>window.innerWidth;
+  portrait.style.display=vertical?"flex":"none";
+}
+
+window.addEventListener("resize",orientation);
+window.addEventListener("orientationchange",orientation);
+orientation();
+
+/* =========================
+   ESCENA
+========================= */
+
+var scene=new THREE.Scene();
+scene.background=new THREE.Color(0x73889a);
+scene.fog=new THREE.Fog(0x73889a,250,4200);
+
+var camera=new THREE.PerspectiveCamera(
+  70,
+  window.innerWidth/window.innerHeight,
+  .1,
+  5000
+);
+
+camera.position.set(0,3,8);
+
+var renderer=new THREE.WebGLRenderer({
+  antialias:true,
+  powerPreference:"high-performance"
+});
+
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.domElement.style.touchAction="none";
+document.body.appendChild(renderer.domElement);
+
+/* =========================
+   LUCES
+========================= */
+
+var hemi=new THREE.HemisphereLight(0xb9d9ff,0x344027,1.5);
+scene.add(hemi);
+
+var sun=new THREE.DirectionalLight(0xffffff,1.6);
+sun.position.set(500,900,300);
+scene.add(sun);
+
+/* =========================
+   CONSTANTES
+========================= */
+
+var WORLD=10000;
+var HALF=WORLD/2;
+
+var matGrass=new THREE.MeshLambertMaterial({color:0x496c3d});
+var matGrass2=new THREE.MeshLambertMaterial({color:0x38582f});
+var matRoad=new THREE.MeshLambertMaterial({color:0x3b3b3b});
+var matRoad2=new THREE.MeshLambertMaterial({color:0x505050});
+var matWall=new THREE.MeshLambertMaterial({color:0xaaa59b});
+var matRoof=new THREE.MeshLambertMaterial({color:0x343638});
+var matWood=new THREE.MeshLambertMaterial({color:0x754c2d});
+var matTree=new THREE.MeshLambertMaterial({color:0x315b2e});
+var matTrunk=new THREE.MeshLambertMaterial({color:0x513b27});
+var matWater=new THREE.MeshLambertMaterial({
+  color:0x276c91,
+  transparent:true,
+  opacity:.8
+});
+var matMetal=new THREE.MeshLambertMaterial({color:0x666b70});
+var matRed=new THREE.MeshLambertMaterial({color:0x9b2525});
+var matYellow=new THREE.MeshLambertMaterial({color:0xd1a72a});
+var matWhite=new THREE.MeshLambertMaterial({color:0xd9d9d9});
+var matBlack=new THREE.MeshLambertMaterial({color:0x151515});
+var matZombie=new THREE.MeshLambertMaterial({color:0x58724a});
+var matMutant=new THREE.MeshLambertMaterial({color:0x6f3434});
+
+/* =========================
+   UTILIDADES
+========================= */
+
+function box(x,y,z,sx,sy,sz,mat){
+  var m=new THREE.Mesh(
+    new THREE.BoxGeometry(sx,sy,sz),
+    mat
+  );
+  m.position.set(x,y,z);
+  scene.add(m);
+  return m;
+}
+
+function cyl(x,y,z,r,h,mat){
+  var m=new THREE.Mesh(
+    new THREE.CylinderGeometry(r,r,h,10),
+    mat
+  );
+  m.position.set(x,y,z);
+  scene.add(m);
+  return m;
+}
+
+function dist2(a,b){
+  var dx=a.x-b.x;
+  var dz=a.z-b.z;
+  return Math.sqrt(dx*dx+dz*dz);
+}
+
+/* =========================
+   TERRENO
+========================= */
+
+box(0,-.5,0,WORLD,1,WORLD,matGrass);
+
+for(var r=-4500;r<=4500;r+=500){
+  box(r,.02,0,95,.05,WORLD,matRoad);
+}
+
+for(var r2=-4500;r2<=4500;r2+=500){
+  box(0,.025,r2,WORLD,.05,95,matRoad);
+}
+
+/* caminos secundarios */
+
+for(var i=0;i<18;i++){
+  var rx=-4200+Math.random()*8400;
+  var rz=-4200+Math.random()*8400;
+
+  box(rx,.03,rz,40,.05,800,matRoad2);
+}
+
+/* agua */
+
+box(
+  1800,-.08,-1700,
+  1800,.1,1300,
+  matWater
+);
+
+/* puente */
+
+box(1800,.15,-1700,2200,.25,150,matRoad2);
+
+/* =========================
+   MONTAÑAS
+========================= */
+
+for(var m=0;m<35;m++){
+
+  var ang=Math.random()*Math.PI*2;
+  var rr=3900+Math.random()*900;
+
+  var mx=Math.cos(ang)*rr;
+  var mz=Math.sin(ang)*rr;
+
+  var mh=100+Math.random()*300;
+
+  var mountain=new THREE.Mesh(
+    new THREE.ConeGeometry(
+      120+Math.random()*220,
+      mh,
+      8
+    ),
+    matGrass2
+  );
+
+  mountain.position.set(mx,mh/2,mz);
+  scene.add(mountain);
+}
+
+/* =========================
+   ÁRBOLES
+========================= */
+
+function tree(x,z,scale){
+
+  var s=scale||1;
+
+  cyl(
+    x,
+    3*s,
+    z,
+    1.4*s,
+    6*s,
+    matTrunk
+  );
+
+  var crown=new THREE.Mesh(
+    new THREE.ConeGeometry(5*s,14*s,8),
+    matTree
+  );
+
+  crown.position.set(x,11*s,z);
+  scene.add(crown);
+}
+
+for(var t=0;t<420;t++){
+
+  var tx=(Math.random()-.5)*WORLD;
+  var tz=(Math.random()-.5)*WORLD;
+
+  if(Math.abs(tx)<1300 && Math.abs(tz)<1300) continue;
+
+  tree(
+    tx,
+    tz,
+    .7+Math.random()*1.5
+  );
+}
+
+/* =========================
+   CASAS
+========================= */
+
+var buildings=[];
+
+function house(x,z,w,d,floors){
+
+  var h=4*floors;
+
+  for(var f=0;f<floors;f++){
+
+    var y=2+f*4;
+
+    box(x,y,z-d/2,w,.5,1,matWall);
+    box(x,y,z+d/2,w,.5,1,matWall);
+
+    box(x-w/2,y,z,1,.5,d,matWall);
+    box(x+w/2,y,z,1,.5,d,matWall);
+
+  }
+
+  var roof=box(
+    x,
+    h+.7,
+    z,
+    w+2,
+    1,
+    d+2,
+    matRoof
+  );
+
+  buildings.push({
+    x:x,
+    z:z,
+    w:w,
+    d:d,
+    name:"Casa"
+  });
+}
+
+/* barrio */
+
+for(var bx=-1100;bx<=1100;bx+=230){
+
+  for(var bz=-1100;bz<=1100;bz+=230){
+
+    if(Math.random()<.85){
+
+      house(
+        bx+(Math.random()-.5)*60,
+        bz+(Math.random()-.5)*60,
+        90+Math.random()*45,
+        75+Math.random()*45,
+        1+Math.floor(Math.random()*3)
+      );
+
+    }
+  }
+}
+
+/* =========================
+   EDIFICIOS GRANDES
+========================= */
+
+function bigBuilding(x,z,w,d,h,name,mat){
+
+  box(x,h/2,z,w,h,d,mat||matWall);
+
+  box(x,h+.5,z,w+3,1,d+3,matRoof);
+
+  buildings.push({
+    x:x,z:z,w:w,d:d,name:name
+  });
+}
+
+bigBuilding(900,500,260,220,90,"HOSPITAL",matWhite);
+bigBuilding(-900,500,220,180,65,"POLICÍA",matBlue||matWhite);
+bigBuilding(900,-700,330,250,100,"SUPERMERCADO",matYellow);
+bigBuilding(-1000,-700,300,240,110,"FÁBRICA",matMetal);
+bigBuilding(0,-1250,350,280,75,"ESCUELA",matWhite);
+bigBuilding(1400,1100,450,350,120,"BASE MILITAR",matMetal);
+bigBuilding(-1450,1100,280,200,80,"DEPÓSITO",matWall);
+
+/* edificios altos */
+
+for(var tower=0;tower<12;tower++){
+
+  var tw=-1800+Math.random()*3600;
+  var tz=-1800+Math.random()*3600;
+
+  bigBuilding(
+    tw,tz,
+    80+Math.random()*100,
+    80+Math.random()*100,
+    80+Math.random()*170,
+    "EDIFICIO",
+    matWall
+  );
+}
+
+/* =========================
+   VEHÍCULOS
+========================= */
+
+var vehicles=[];
+
+function vehicle(x,z,color,name){
+
+  var body=box(
+    x,2,z,
+    28,4,55,
+    color
+  );
+
+  box(
+    x,4.5,z,
+    25,2,22,
+    matBlack
+  );
+
+  vehicles.push({
+    x:x,
+    z:z,
+    name:name,
+    gasoline:Math.floor(Math.random()*70)
+  });
+}
+
+for(var v=0;v<35;v++){
+
+  vehicle(
+    -2400+Math.random()*4800,
+    -2400+Math.random()*4800,
+    [matRed,matWhite,matBlue||matMetal,matYellow][Math.floor(Math.random()*4)],
+    ["AUTO","CAMIONETA","AMBULANCIA","POLICÍA"][Math.floor(Math.random()*4)]
+  );
+}
+
+/* =========================
+   JUGADOR
+========================= */
+
+var player={
+  x:0,
+  y:1.7,
+  z:0,
+  hp:100,
+  food:100,
+  water:100,
+  stamina:100,
+  day:1,
+  time:8*60,
+  kills:0
+};
+
+var inventory={
+  wood:10,
+  stone:5,
+  metal:3,
+  food:2,
+  water:2,
+  cloth:2,
+  medicine:0,
+  bandage:1,
+  medkit:0,
+  axe:0,
+  pickaxe:0,
+  knife:0,
+  pistol:0,
+  shotgun:0,
+  rifle:0,
+  ammo:0,
+  battery:0,
+  gasoline:0,
+  wheel:0
+};
+
+var currentWeapon="none";
+var flashlight=false;
+var running=false;
+
+/* =========================
+   JUGADOR VISUAL
+========================= */
+
+var playerGroup=new THREE.Group();
+
+var body=box(0,1,0,1.2,2,0.65,matWhite);
+var head=new THREE.Mesh(
+  new THREE.SphereGeometry(.45,12,8),
+  matWhite
+);
+head.position.y=2.3;
+
+playerGroup.add(body);
+playerGroup.add(head);
+scene.add(playerGroup);
+
+/* =========================
+   ARMAS EN EL MAPA
+========================= */
+
+var weaponPickups=[];
+
+function weaponPickup(x,z,type){
+
+  var color=type==="pistol"?0x555555:
+            type==="shotgun"?0x70452b:
+            0x222222;
+
+  var w=box(x,.7,z,1.5,.35,4,new THREE.MeshLambertMaterial({color:color}));
+
+  weaponPickups.push({
+    mesh:w,
+    x:x,
+    z:z,
+    type:type,
+    taken:false
+  });
+}
+
+weaponPickup(300,300,"pistol");
+weaponPickup(-700,-350,"shotgun");
+weaponPickup(1500,-500,"rifle");
+
+/* =========================
+   RECURSOS
+========================= */
+
+var pickups=[];
+
+function resource(x,z,type,color){
+
+  var p=box(x,.6,z,1.3,1.2,1.3,
+    new THREE.MeshLambertMaterial({color:color})
+  );
+
+  pickups.push({
+    mesh:p,
+    x:x,
+    z:z,
+    type:type,
+    taken:false
+  });
+}
+
+for(var p=0;p<150;p++){
+
+  var px=(Math.random()-.5)*7000;
+  var pz=(Math.random()-.5)*7000;
+
+  var types=[
+    ["wood",0x754c2d],
+    ["stone",0x777777],
+    ["metal",0xaaaaaa],
+    ["food",0xd3a438],
+    ["water",0x287bc2],
+    ["cloth",0xb8b8b8]
+  ];
+
+  var pick=types[Math.floor(Math.random()*types.length)];
+
+  resource(px,pz,pick[0],pick[1]);
+}
+
+/* =========================
+   ZOMBIES
+========================= */
+
+var zombies=[];
+
+function zombie(x,z,type){
+
+  var material=type==="mutant"?matMutant:matZombie;
+
+  var g=new THREE.Group();
+
+  var b=box(0,1,0,1.3,2,.7,material);
+  var h=new THREE.Mesh(
+    new THREE.SphereGeometry(.48,10,8),
+    material
+  );
+
+  h.position.y=2.35;
+
+  g.add(b);
+  g.add(h);
+
+  g.position.set(x,0,z);
+  scene.add(g);
+
+  zombies.push({
+    mesh:g,
+    x:x,
+    z:z,
+    type:type,
+    hp:type==="mutant"?180:100,
+    speed:type==="runner"?2.8:type==="mutant"?1.2:1.5
+  });
+}
+
+for(var zc=0;zc<55;zc++){
+
+  var zx=(Math.random()-.5)*7000;
+  var zz=(Math.random()-.5)*7000;
+
+  if(Math.sqrt(zx*zx+zz*zz)<500){
+    zx+=1000;
+    zz+=1000;
+  }
+
+  var type=Math.random()<.15?"runner":
+           Math.random()<.08?"mutant":
+           "walker";
+
+  zombie(zx,zz,type);
+}
+
+/* =========================
+   JOYSTICK
+========================= */
+
+var joy=document.getElementById("joy");
+var stick=document.getElementById("stick");
+
+var joyX=0;
+var joyY=0;
+var joyActive=false;
+
+function joyMove(e){
+
+  var r=joy.getBoundingClientRect();
+
+  var cx=r.left+r.width/2;
+  var cy=r.top+r.height/2;
+
+  var dx=e.clientX-cx;
+  var dy=e.clientY-cy;
+
+  var max=55;
+  var len=Math.sqrt(dx*dx+dy*dy);
+
+  if(len>max){
+    dx=dx/len*max;
+    dy=dy/len*max;
+  }
+
+  joyX=dx/max;
+  joyY=dy/max;
+
+  stick.style.left=(50+joyX*38)+"%";
+  stick.style.top=(50+joyY*38)+"%";
+}
+
+joy.addEventListener("pointerdown",function(e){
+  joyActive=true;
+  joy.setPointerCapture(e.pointerId);
+  joyMove(e);
+});
+
+joy.addEventListener("pointermove",function(e){
+  if(joyActive) joyMove(e);
+});
+
+function joyEnd(){
+  joyActive=false;
+  joyX=0;
+  joyY=0;
+  stick.style.left="50%";
+  stick.style.top="50%";
+}
+
+joy.addEventListener("pointerup",joyEnd);
+joy.addEventListener("pointercancel",joyEnd);
+
+/* =========================
+   CÁMARA
+========================= */
+
+var yaw=0;
+var pitch=-.12;
+var lookActive=false;
+var lastX=0;
+var lastY=0;
+
+var look=document.getElementById("look");
+
+look.addEventListener("pointerdown",function(e){
+
+  lookActive=true;
+  lastX=e.clientX;
+  lastY=e.clientY;
+
+  try{
+    look.setPointerCapture(e.pointerId);
+  }catch(_){}
+
+});
+
+look.addEventListener("pointermove",function(e){
+
+  if(!lookActive)return;
+
+  var dx=e.clientX-lastX;
+  var dy=e.clientY-lastY;
+
+  lastX=e.clientX;
+  lastY=e.clientY;
+
+  yaw-=dx*.004;
+  pitch-=dy*.003;
+
+  pitch=Math.max(-1.1,Math.min(.8,pitch));
+});
+
+look.addEventListener("pointerup",function(){
+  lookActive=false;
+});
+
+look.addEventListener("pointercancel",function(){
+  lookActive=false;
+});
+
+/* =========================
+   BOTONES
+========================= */
+
+document.getElementById("run").addEventListener("pointerdown",function(){
+  running=true;
+});
+
+document.getElementById("run").addEventListener("pointerup",function(){
+  running=false;
+});
+
+document.getElementById("run").addEventListener("pointercancel",function(){
+  running=false;
+});
+
+document.getElementById("light").onclick=function(){
+
+  flashlight=!flashlight;
+
+  sun.intensity=flashlight?2.4:1.6;
+};
+
+document.getElementById("reload").onclick=function(){
+
+  if(currentWeapon!=="none" && inventory.ammo>0){
+    inventory.ammo--;
+  }
+
+  updateHUD();
+};
+
+document.getElementById("use").onclick=function(){
+
+  /* arma */
+
+  for(var i=0;i<weaponPickups.length;i++){
+
+    var wp=weaponPickups[i];
+
+    if(wp.taken)continue;
+
+    if(Math.hypot(player.x-wp.x,player.z-wp.z)<5){
+
+      inventory[wp.type]=1;
+      currentWeapon=wp.type;
+      wp.taken=true;
+      wp.mesh.visible=false;
+
+      updateHUD();
+      return;
+    }
+  }
+
+  /* recursos */
+
+  for(var j=0;j<pickups.length;j++){
+
+    var pk=pickups[j];
+
+    if(pk.taken)continue;
+
+    if(Math.hypot(player.x-pk.x,player.z-pk.z)<4){
+
+      inventory[pk.type]++;
+      pk.taken=true;
+      pk.mesh.visible=false;
+
+      updateHUD();
+      return;
+    }
+  }
+
+};
+
+/* =========================
+   PANELES
+========================= */
+
+var map=document.getElementById("map");
+var inv=document.getElementById("inv");
+var craft=document.getElementById("craft");
+
+document.getElementById("mapBtn").onclick=function(){
+  map.style.display="block";
+  drawMap();
+};
+
+document.getElementById("invBtn").onclick=function(){
+  inv.style.display="block";
+  drawInventory();
+};
+
+document.getElementById("craftBtn").onclick=function(){
+  craft.style.display="block";
+};
+
+document.getElementById("closeMap").onclick=function(){
+  map.style.display="none";
+};
+
+document.getElementById("closeInv").onclick=function(){
+  inv.style.display="none";
+};
+
+document.getElementById("closeCraft").onclick=function(){
+  craft.style.display="none";
+};
+
+/* =========================
+   CRAFT
+========================= */
+
+document.getElementById("makeAxe").onclick=function(){
+
+  if(inventory.wood>=5 && inventory.stone>=3){
+
+    inventory.wood-=5;
+    inventory.stone-=3;
+    inventory.axe++;
+
+  }
+
+  drawInventory();
+};
+
+document.getElementById("makePick").onclick=function(){
+
+  if(inventory.wood>=4 && inventory.stone>=5){
+
+    inventory.wood-=4;
+    inventory.stone-=5;
+    inventory.pickaxe++;
+
+  }
+
+  drawInventory();
+};
+
+document.getElementById("makeBandage").onclick=function(){
+
+  if(inventory.cloth>=3){
+
+    inventory.cloth-=3;
+    inventory.bandage++;
+
+  }
+
+  drawInventory();
+};
+
+document.getElementById("makeMedkit").onclick=function(){
+
+  if(inventory.bandage>=2 && inventory.medicine>=2){
+
+    inventory.bandage-=2;
+    inventory.medicine-=2;
+    inventory.medkit++;
+
+  }
+
+  drawInventory();
+};
+
+/* =========================
+   INVENTARIO
+========================= */
+
+function drawInventory(){
+
+  var el=document.getElementById("invList");
+  el.innerHTML="";
+
+  Object.keys(inventory).forEach(function(k){
+
+    var row=document.createElement("div");
+    row.className="item";
+
+    row.innerHTML=
+      "<span>"+k.toUpperCase()+"</span>"+
+      "<strong>"+inventory[k]+"</strong>";
+
+    el.appendChild(row);
+  });
+}
+
+/* =========================
+   MAPA
+========================= */
+
+var mapCanvas=document.getElementById("mapCanvas");
+var ctx=mapCanvas.getContext("2d");
+
+var locations=[
+  {x:900,z:500,n:"HOSPITAL"},
+  {x:-900,z:500,n:"POLICÍA"},
+  {x:900,z:-700,n:"SUPERMERCADO"},
+  {x:-1000,z:-700,n:"FÁBRICA"},
+  {x:0,z:-1250,n:"ESCUELA"},
+  {x:1400,z:1100,n:"BASE MILITAR"},
+  {x:1800,z:-1700,n:"LAGO"}
+];
+
+function mapX(x){
+  return (x+HALF)/WORLD*700;
+}
+
+function mapZ(z){
+  return (z+HALF)/WORLD*700;
+}
+
+function drawMap(){
+
+  ctx.clearRect(0,0,700,700);
+
+  ctx.fillStyle="#18301b";
+  ctx.fillRect(0,0,700,700);
+
+  /* calles */
+
+  ctx.strokeStyle="#555";
+  ctx.lineWidth=7;
+
+  for(var a=-4500;a<=4500;a+=500){
+
+    ctx.beginPath();
+    ctx.moveTo(mapX(a),0);
+    ctx.lineTo(mapX(a),700);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(0,mapZ(a));
+    ctx.lineTo(700,mapZ(a));
+    ctx.stroke();
+  }
+
+  locations.forEach(function(l){
+
+    var known=
+      Math.hypot(player.x-l.x,player.z-l.z)<900;
+
+    ctx.fillStyle=known?"#d4a72c":"#777";
+
+    ctx.beginPath();
+    ctx.arc(mapX(l.x),mapZ(l.z),8,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle="#fff";
+    ctx.font="12px Arial";
+    ctx.fillText(
+      known?l.n:"???",
+      mapX(l.x)+12,
+      mapZ(l.z)+4
+    );
+  });
+
+  ctx.fillStyle="#ff3030";
+  ctx.beginPath();
+  ctx.arc(mapX(player.x),mapZ(player.z),8,0,Math.PI*2);
+  ctx.fill();
+
+  document.getElementById("mapInfo").innerHTML=
+    "Posición: "+Math.round(player.x)+", "+Math.round(player.z);
+}
+
+/* =========================
+   HUD
+========================= */
+
+function updateHUD(){
+
+  document.getElementById("hp").style.width=
+    Math.max(0,player.hp)+"%";
+
+  document.getElementById("food").style.width=
+    Math.max(0,player.food)+"%";
+
+  document.getElementById("water").style.width=
+    Math.max(0,player.water)+"%";
+
+  document.getElementById("sta").style.width=
+    Math.max(0,player.stamina)+"%";
+
+  document.getElementById("zcount").textContent=
+    "Zombies: "+zombies.length;
+
+  document.getElementById("weapon").textContent=
+    currentWeapon==="none"
+    ?"Manos vacías"
+    :"Arma: "+currentWeapon.toUpperCase();
+}
+
+/* =========================
+   MOVIMIENTO
+========================= */
+
+function movePlayer(dt){
+
+  var forward=-joyY;
+  var right=joyX;
+
+  var fx=-Math.sin(yaw);
+  var fz=-Math.cos(yaw);
+
+  var rx=Math.cos(yaw);
+  var rz=-Math.sin(yaw);
+
+  var dx=fx*forward+rx*right;
+  var dz=fz*forward+rz*right;
+
+  var len=Math.sqrt(dx*dx+dz*dz);
+
+  if(len>1){
+    dx/=len;
+    dz/=len;
+  }
+
+  var moving=len>.05;
+
+  var speed=running && player.stamina>2 ? 8 : 4;
+
+  if(running && moving){
+    player.stamina-=22*dt;
+  }else{
+    player.stamina+=15*dt;
+  }
+
+  player.stamina=Math.max(0,Math.min(100,player.stamina));
+
+  player.x+=dx*speed*dt;
+  player.z+=dz*speed*dt;
+
+  player.x=Math.max(-HALF+20,Math.min(HALF-20,player.x));
+  player.z=Math.max(-HALF+20,Math.min(HALF-20,player.z));
+}
+
+/* =========================
+   ZOMBIES IA
+========================= */
+
+function updateZombies(dt){
+
+  for(var i=zombies.length-1;i>=0;i--){
+
+    var z=zombies[i];
+
+    var dx=player.x-z.x;
+    var dz=player.z-z.z;
+
+    var d=Math.sqrt(dx*dx+dz*dz);
+
+    if(d<800){
+
+      if(d>2.2){
+
+        z.x+=(dx/d)*z.speed*dt;
+        z.z+=(dz/d)*z.speed*dt;
+
+        z.mesh.position.x=z.x;
+        z.mesh.position.z=z.z;
+
+      }else{
+
+        player.hp-=7*dt;
+
+      }
+    }
+  }
+}
+
+/* =========================
+   SUPERVIVENCIA
+========================= */
+
+function survival(dt){
+
+  player.food-=.10*dt;
+  player.water-=.14*dt;
+
+  if(player.food<20) player.hp-=.4*dt;
+  if(player.water<20) player.hp-=.6*dt;
+
+  player.food=Math.max(0,player.food);
+  player.water=Math.max(0,player.water);
+  player.hp=Math.max(0,player.hp);
+
+  player.time+=dt*2;
+
+  if(player.time>=1440){
+
+    player.time-=1440;
+    player.day++;
+  }
+
+  var hour=Math.floor(player.time/60);
+  var minute=Math.floor(player.time%60);
+
+  document.getElementById("day").textContent=
+    "Día "+player.day+" — "+
+    String(hour).padStart(2,"0")+":"+
+    String(minute).padStart(2,"0");
+
+  if(player.hp<=0){
+
+    player.hp=100;
+    player.food=80;
+    player.water=80;
+    player.x=0;
+    player.z=0;
+  }
+}
+
+/* =========================
+   CÁMARA
+========================= */
+
+function updateCamera(){
+
+  var distance=7;
+
+  var cx=
+    player.x+
+    Math.sin(yaw)*distance;
+
+  var cz=
+    player.z+
+    Math.cos(yaw)*distance;
+
+  var cy=
+    player.y+
+    3+
+    Math.sin(pitch)*distance;
+
+  camera.position.lerp(
+    new THREE.Vector3(cx,cy,cz),
+    .18
+  );
+
+  camera.lookAt(
+    player.x,
+    player.y+1.2,
+    player.z
+  );
+
+  playerGroup.position.set(
+    player.x,
+    0,
+    player.z
+  );
+
+  playerGroup.rotation.y=yaw;
+}
+
+/* =========================
+   ZONA
+========================= */
+
+function updateZone(){
+
+  var closest=null;
+  var cd=Infinity;
+
+  locations.forEach(function(l){
+
+    var d=Math.hypot(
+      player.x-l.x,
+      player.z-l.z
+    );
+
+    if(d<cd){
+      cd=d;
+      closest=l;
+    }
+  });
+
+  if(closest && cd<700){
+
+    document.getElementById("zone").textContent=
+      closest.n;
+
+  }else{
+
+    document.getElementById("zone").textContent=
+      "Zona desconocida";
+  }
+}
+
+/* =========================
+   ANIMACIÓN
+========================= */
+
+var last=performance.now();
+
+function animate(now){
+
+  requestAnimationFrame(animate);
+
+  var dt=Math.min((now-last)/1000,.05);
+  last=now;
+
+  if(window.innerHeight>window.innerWidth){
+
+    renderer.render(scene,camera);
+    return;
+  }
+
+  movePlayer(dt);
+  updateZombies(dt);
+  survival(dt);
+  updateCamera();
+  updateZone();
+  updateHUD();
+
+  renderer.render(scene,camera);
+}
+
+/* =========================
+   RESIZE
+========================= */
+
+window.addEventListener("resize",function(){
+
+  camera.aspect=
+    window.innerWidth/window.innerHeight;
+
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(
+    window.innerWidth,
+    window.innerHeight
+  );
+
+});
+
+/* =========================
+   MOSTRAR JUEGO
+========================= */
+
+document.getElementById("loading").style.display="none";
+
+document.getElementById("hud").style.display="block";
+document.getElementById("joy").style.display="block";
+document.querySelector(".buttons").style.display="grid";
+document.getElementById("look").style.display="block";
+
+updateHUD();
+drawInventory();
+updateCamera();
+
+requestAnimationFrame(animate);
+
+}catch(err){
+
+  showError(err);
+
+}
+
+});
+
+})();
+</script>
+
+</body>
+</html>
