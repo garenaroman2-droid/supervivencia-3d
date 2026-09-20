@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Supervivencia 3D V11.0</title>
+<style>
+*{box-sizing:border-box;user-select:none;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#10150f;font-family:Arial}
+#game,canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+#hud{position:fixed;inset:0;color:#fff;text-shadow:0 2px 4px #000;pointer-events:none}
+.panel{
+ background:rgba(0,0,0,.48);border:1px solid #ffffff25;border-radius:12px;
+ padding:8px 11px;backdrop-filter:blur(5px)
+}
+#top{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between}
+#stats{font-size:11px;min-width:155px}
+#title{font-size:14px;font-weight:bold;margin-bottom:5px}
+.bar{width:130px;height:7px;background:#222;border-radius:8px;overflow:hidden;margin:3px 0}
+.bar i{display:block;height:100%;width:100%}
+#healthBar{background:#d93636}#foodBar{background:#dca92c}#waterBar{background:#329bd1}
+#location{text-align:right;font-size:12px}
+#joystick{
+ position:absolute;left:20px;bottom:60px;width:140px;height:140px;border-radius:50%;
+ background:#ffffff10;border:2px solid #ffffff22;pointer-events:auto
+}
+#stick{
+ position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px;
+ border-radius:50%;background:#ffffff25;border:2px solid #ffffff35
+}
+#buttons{
+ position:absolute;right:12px;bottom:62px;display:flex;flex-direction:column;gap:8px;
+ pointer-events:auto
+}
+button{
+ color:#fff;background:#101610bb;border:1px solid #ffffff30;border-radius:12px;
+ padding:11px 14px;font-weight:bold;box-shadow:0 3px 10px #0008
+}
+button:active{transform:scale(.94)}
+#crosshair{
+ position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px;opacity:.65
+}
+#crosshair:before,#crosshair:after{content:"";position:absolute;background:#fff}
+#crosshair:before{width:16px;height:2px;top:7px}
+#crosshair:after{width:2px;height:16px;left:7px}
+#notice{
+ position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);
+ padding:12px 20px;border-radius:12px;background:#000b;opacity:0;transition:.25s;
+ font-weight:bold;text-align:center
+}
+#map{
+ display:none;position:absolute;right:10px;top:72px;width:155px;height:155px;
+ border-radius:12px;overflow:hidden;background:#142117dd;border:2px solid #ffffff30
+}
+#map canvas{position:static;width:100%;height:100%}
+</style>
+</head>
+
+<body>
+<div id="game"></div>
+
+<div id="hud">
+ <div id="top">
+  <div id="stats" class="panel">
+   <div id="title">SUPERVIVENCIA 3D — V11.0</div>
+   VIDA <div class="bar"><i id="healthBar"></i></div>
+   HAMBRE <div class="bar"><i id="foodBar"></i></div>
+   SED <div class="bar"><i id="waterBar"></i></div>
+  </div>
+
+  <div id="location" class="panel">
+   <b id="place">BASE</b><br>
+   <span id="distance">0 m</span><br>
+   <span id="clock">Día 1 — 08:00</span>
+  </div>
+ </div>
+
+ <div id="crosshair"></div>
+ <div id="notice"></div>
+
+ <div id="map">
+  <canvas id="mapCanvas" width="300" height="300"></canvas>
+ </div>
+
+ <div id="joystick"><div id="stick"></div></div>
+
+ <div id="buttons">
+  <button id="cameraBtn">CÁMARA</button>
+  <button id="jumpBtn">SALTAR</button>
+  <button id="runBtn">CORRER</button>
+  <button id="mapBtn">MAPA</button>
+ </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+/* =====================================================
+   V11.0
+   ESCALA + SUELO + PASTO + AGUA + CASAS
+===================================================== */
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x8cae9c);
+scene.fog=new THREE.FogExp2(0x91a895,.00115);
+
+const camera=new THREE.PerspectiveCamera(
+  68,innerWidth/innerHeight,.1,3000
+);
+
+const renderer=new THREE.WebGLRenderer({
+  antialias:true,
+  powerPreference:"high-performance"
+});
+
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.05;
+
+document.getElementById("game").appendChild(renderer.domElement);
+
+
+/* =====================================================
+   LUCES
+===================================================== */
+
+const hemi=new THREE.HemisphereLight(
+  0xd5e9ff,
+  0x34422b,
+  1.8
+);
+scene.add(hemi);
+
+const sun=new THREE.DirectionalLight(
+  0xffe7b0,3
+);
+sun.position.set(250,400,180);
+sun.castShadow=true;
+
+sun.shadow.mapSize.width=2048;
+sun.shadow.mapSize.height=2048;
+sun.shadow.camera.left=-500;
+sun.shadow.camera.right=500;
+sun.shadow.camera.top=500;
+sun.shadow.camera.bottom=-500;
+sun.shadow.camera.far=1200;
+
+scene.add(sun);
+
+
+/* =====================================================
+   MATERIALES
+===================================================== */
+
+function material(c,rough=1){
+ return new THREE.MeshStandardMaterial({
+  color:c,
+  roughness:rough,
+  metalness:0
+ });
+}
+
+const grassMat=material(0x4c6939);
+const dirtMat=material(0x765d3c);
+const darkDirt=material(0x58442e);
+const woodMat=material(0x69452d);
+const roofMat=material(0x45372e);
+const wallMat=material(0xb59c75);
+const concreteMat=material(0x77746c);
+const glassMat=new THREE.MeshStandardMaterial({
+ color:0x79aabd,
+ roughness:.15,
+ metalness:.15,
+ transparent:true,
+ opacity:.8
+});
+
+
+/* =====================================================
+   TERRENO
+===================================================== */
+
+const WORLD=1800;
+const SEG=180;
+
+function terrainHeight(x,z){
+ return (
+   Math.sin(x*.012)*3.2+
+   Math.sin(z*.017)*2.7+
+   Math.sin((x+z)*.009)*3+
+   Math.sin((x-z)*.021)*1.3
+ )*.75;
+}
+
+const terrainGeo=new THREE.PlaneGeometry(
+ WORLD,WORLD,SEG,SEG
+);
+
+terrainGeo.rotateX(-Math.PI/2);
+
+const p=terrainGeo.attributes.position;
+
+for(let i=0;i<p.count;i++){
+ const x=p.getX(i);
+ const z=p.getZ(i);
+
+ let y=terrainHeight(x,z);
+
+ if(Math.abs(x)<80 && Math.abs(z)<80)y*=.2;
+
+ p.setY(i,y);
+}
+
+terrainGeo.computeVertexNormals();
+
+const terrain=new THREE.Mesh(
+ terrainGeo,
+ grassMat
+);
+
+terrain.receiveShadow=true;
+scene.add(terrain);
+
+
+/* =====================================================
+   MANCHAS DE TIERRA
+===================================================== */
+
+for(let i=0;i<170;i++){
+
+ const x=(Math.random()-.5)*1500;
+ const z=(Math.random()-.5)*1500;
+
+ const s=THREE.MathUtils.randFloat(4,18);
+
+ const patch=new THREE.Mesh(
+  new THREE.CircleGeometry(s,18),
+  material(
+   Math.random()>.5?0x675238:0x806743
+  )
+ );
+
+ patch.rotation.x=-Math.PI/2;
+ patch.rotation.z=Math.random()*Math.PI;
+ patch.position.set(x,terrainHeight(x,z)+.025,z);
+
+ scene.add(patch);
+}
+
+
+/* =====================================================
+   PASTO REALISTA
+===================================================== */
+
+const grassGeometry=new THREE.BufferGeometry();
+const vertices=[];
+const colors=[];
+
+const grassColors=[
+ new THREE.Color(0x34562f),
+ new THREE.Color(0x426b34),
+ new THREE.Color(0x557b3d),
+ new THREE.Color(0x6c8846)
+];
+
+for(let i=0;i<9000;i++){
+
+ const x=(Math.random()-.5)*1500;
+ const z=(Math.random()-.5)*1500;
+
+ if(Math.abs(x)<80 && Math.abs(z)<80)continue;
+
+ const y=terrainHeight(x,z);
+
+ const h=THREE.MathUtils.randFloat(.18,.75);
+ const w=THREE.MathUtils.randFloat(.015,.045);
+
+ const lean=THREE.MathUtils.randFloat(-.12,.12);
+
+ vertices.push(
+  x-w,y,z,
+  x+w,y,z,
+  x+lean,y+h,z
+ );
+
+ const c=grassColors[
+  Math.floor(Math.random()*grassColors.length)
+ ];
+
+ for(let j=0;j<3;j++){
+  colors.push(c.r,c.g,c.b);
+ }
+}
+
+grassGeometry.setAttribute(
+ "position",
+ new THREE.Float32BufferAttribute(vertices,3)
+);
+
+grassGeometry.setAttribute(
+ "color",
+ new THREE.Float32BufferAttribute(colors,3)
+);
+
+const grassMaterial=new THREE.MeshBasicMaterial({
+ vertexColors:true,
+ side:THREE.DoubleSide
+});
+
+const grass=new THREE.Mesh(
+ grassGeometry,
+ grassMaterial
+);
+
+scene.add(grass);
+
+
+/* =====================================================
+   FLORES / PLANTAS PEQUEÑAS
+===================================================== */
+
+function plant(x,z){
+
+ const g=new THREE.Group();
+
+ const stem=new THREE.Mesh(
+  new THREE.CylinderGeometry(.018,.025,.4,5),
+  material(0x315a2e)
+ );
+ stem.position.y=.2;
+ g.add(stem);
+
+ for(let i=0;i<3;i++){
+
+  const flower=new THREE.Mesh(
+   new THREE.SphereGeometry(.07,6,4),
+   material(
+    [0xe3c75b,0xc76c72,0xc6d4dd][
+     Math.floor(Math.random()*3)
+    ]
+   )
+  );
+
+  flower.position.set(
+   Math.cos(i*2)*.08,
+   .42,
+   Math.sin(i*2)*.08
+  );
+
+  g.add(flower);
+ }
+
+ g.position.set(
+  x,terrainHeight(x,z),z
+ );
+
+ scene.add(g);
+}
+
+for(let i=0;i<250;i++){
+ const x=(Math.random()-.5)*1300;
+ const z=(Math.random()-.5)*1300;
+ plant(x,z);
+}
+
+
+/* =====================================================
+   ARBUSTOS
+===================================================== */
+
+function bush(x,z,s=1){
+
+ const g=new THREE.Group();
+
+ for(let i=0;i<7;i++){
+
+  const b=new THREE.Mesh(
+   new THREE.SphereGeometry(
+    THREE.MathUtils.randFloat(.35,.65)*s,
+    9,7
+   ),
+   material(
+    [0x284a28,0x315b30,0x3d6b35][
+     Math.floor(Math.random()*3)
+    ]
+   )
+  );
+
+  b.position.set(
+   THREE.MathUtils.randFloat(-.7,.7)*s,
+   THREE.MathUtils.randFloat(.2,.8)*s,
+   THREE.MathUtils.randFloat(-.7,.7)*s
+  );
+
+  b.castShadow=true;
+  g.add(b);
+ }
+
+ g.position.set(x,terrainHeight(x,z),z);
+ scene.add(g);
+}
+
+for(let i=0;i<260;i++){
+
+ const x=(Math.random()-.5)*1400;
+ const z=(Math.random()-.5)*1400;
+
+ bush(x,z,THREE.MathUtils.randFloat(.7,1.5));
+}
+
+
+/* =====================================================
+   ÁRBOLES GRANDES
+===================================================== */
+
+function tree(x,z,s=1){
+
+ const g=new THREE.Group();
+
+ const trunk=new THREE.Mesh(
+  new THREE.CylinderGeometry(
+   .45*s,.7*s,8*s,10
+  ),
+  woodMat
+ );
+
+ trunk.position.y=4*s;
+ trunk.castShadow=true;
+ g.add(trunk);
+
+ for(let i=0;i<4;i++){
+
+  const branch=new THREE.Mesh(
+   new THREE.CylinderGeometry(
+    .12*s,.24*s,3*s,7
+   ),
+   woodMat
+  );
+
+  branch.position.set(
+   Math.cos(i*1.57)*1.2*s,
+   5.2*s,
+   Math.sin(i*1.57)*1.2*s
+  );
+
+  branch.rotation.z=.7*(i%2?1:-1);
+  branch.rotation.y=i;
+
+  branch.castShadow=true;
+  g.add(branch);
+ }
+
+ const foliage=[
+  0x274c29,
+  0x315d30,
+  0x3b6d34,
+  0x456f38
+ ];
+
+ for(let i=0;i<12;i++){
+
+  const crown=new THREE.Mesh(
+   new THREE.IcosahedronGeometry(
+    THREE.MathUtils.randFloat(1.2,2)*s,
+    1
+   ),
+   material(
+    foliage[Math.floor(Math.random()*foliage.length)]
+   )
+  );
+
+  crown.position.set(
+   THREE.MathUtils.randFloat(-2,2)*s,
+   THREE.MathUtils.randFloat(6.5,9)*s,
+   THREE.MathUtils.randFloat(-2,2)*s
+  );
+
+  crown.castShadow=true;
+  g.add(crown);
+ }
+
+ g.position.set(x,terrainHeight(x,z),z);
+ g.rotation.y=Math.random()*Math.PI;
+
+ scene.add(g);
+}
+
+for(let i=0;i<230;i++){
+
+ const x=(Math.random()-.5)*1500;
+ const z=(Math.random()-.5)*1500;
+
+ if(Math.hypot(x,z)<130)continue;
+
+ tree(
+  x,z,
+  THREE.MathUtils.randFloat(.9,1.8)
+ );
+}
+
+
+/* =====================================================
+   ROCAS
+===================================================== */
+
+function rock(x,z,s=1){
+
+ const g=new THREE.Group();
+
+ const r=new THREE.Mesh(
+  new THREE.DodecahedronGeometry(
+   THREE.MathUtils.randFloat(.7,1.8)*s,1
+  ),
+  material(
+   [0x555b55,0x656961,0x74776d][
+    Math.floor(Math.random()*3)
+   ]
+  )
+ );
+
+ r.scale.y=THREE.MathUtils.randFloat(.5,.9);
+ r.rotation.set(
+  Math.random(),Math.random(),Math.random()
+ );
+
+ r.castShadow=true;
+ r.receiveShadow=true;
+
+ g.add(r);
+
+ g.position.set(
+  x,terrainHeight(x,z)+.1,z
+ );
+
+ scene.add(g);
+}
+
+for(let i=0;i<300;i++){
+
+ const x=(Math.random()-.5)*1500;
+ const z=(Math.random()-.5)*1500;
+
+ rock(
+  x,z,
+  THREE.MathUtils.randFloat(.6,1.4)
+ );
+}
+
+
+/* =====================================================
+   AGUA
+===================================================== */
+
+function makeWater(x,z,w,d){
+
+ const geo=new THREE.PlaneGeometry(
+  w,d,35,35
+ );
+
+ geo.rotateX(-Math.PI/2);
+
+ const pp=geo.attributes.position;
+
+ for(let i=0;i<pp.count;i++){
+
+  const xx=pp.getX(i);
+  const zz=pp.getZ(i);
+
+  pp.setY(
+   i,
+   Math.sin(xx*.09)*.12+
+   Math.sin(zz*.12)*.1
+  );
+ }
+
+ const m=new THREE.MeshPhysicalMaterial({
+  color:0x176b8a,
+  transparent:true,
+  opacity:.78,
+  roughness:.12,
+  metalness:.05,
+  transmission:.15
+ });
+
+ const water=new THREE.Mesh(geo,m);
+
+ water.position.set(
+  x,
+  terrainHeight(x,z)+.25,
+  z
+ );
+
+ scene.add(water);
+
+ /* costa */
+
+ for(let i=0;i<80;i++){
+
+  const a=Math.random()*Math.PI*2;
+  const rr=Math.random()*.5+.75;
+
+  const px=x+Math.cos(a)*w*.48*rr;
+  const pz=z+Math.sin(a)*d*.48*rr;
+
+  const sand=new THREE.Mesh(
+   new THREE.CircleGeometry(
+    THREE.MathUtils.randFloat(.5,1.8),8
+   ),
+   material(
+    Math.random()>.5?0xa08b60:0x756b4c
+   )
+  );
+
+  sand.rotation.x=-Math.PI/2;
+  sand.position.set(
+   px,
+   terrainHeight(px,pz)+.03,
+   pz
+  );
+
+  scene.add(sand);
+ }
+
+ return water;
+}
+
+const lake1=makeWater(-250,270,230,150);
+const lake2=makeWater(390,330,190,125);
+
+
+/* =====================================================
+   RÍO CURVO
+===================================================== */
+
+for(let i=0;i<48;i++){
+
+ const z=-700+i*28;
+ const x=Math.sin(i*.34)*75;
+
+ const water=makeWater(
+  x,z,55,32
+ );
+
+ water.rotation.y=Math.sin(i*.34)*.08;
+}
+
+
+/* =====================================================
+   CASAS GRANDES
+   ESCALA HUMANA: CASA ≈ 3-4 VECES LA ALTURA DEL PERSONAJE
+===================================================== */
+
+function house(x,z,s=1,rot=0,old=false){
+
+ const g=new THREE.Group();
+
+ const width=20*s;
+ const depth=16*s;
+ const height=9*s;
+
+ const foundation=new THREE.Mesh(
+  new THREE.BoxGeometry(width+1,1,depth+1),
+  concreteMat
+ );
+
+ foundation.position.y=.5;
+ foundation.castShadow=true;
+ foundation.receiveShadow=true;
+ g.add(foundation);
+
+ const walls=new THREE.Mesh(
+  new THREE.BoxGeometry(width,height,depth),
+  material(old?0x817765:0xb39a72)
+ );
+
+ walls.position.y=5;
+ walls.castShadow=true;
+ walls.receiveShadow=true;
+ g.add(walls);
+
+ /* techo */
+
+ const roof=new THREE.Mesh(
+  new THREE.ConeGeometry(
+   15*s,
+   6*s,
+   4
+  ),
+  material(old?0x3e3730:0x4b392d)
+ );
+
+ roof.rotation.y=Math.PI/4;
+ roof.position.y=12;
+ roof.castShadow=true;
+ g.add(roof);
+
+ /* puerta grande */
+
+ const door=new THREE.Mesh(
+  new THREE.BoxGeometry(3.2*s,6*s,.3*s),
+  material(0x38271d)
+ );
+
+ door.position.set(
+  0,3.5,depth/2+.18
+ );
+
+ door.castShadow=true;
+ g.add(door);
+
+ /* marco puerta */
+
+ for(const xx of [-1.8,1.8]){
+
+  const frame=new THREE.Mesh(
+   new THREE.BoxGeometry(.3*s,6.5*s,.4*s),
+   material(0x513723)
+  );
+
+  frame.position.set(
+   xx*s,
+   3.5,
+   depth/2+.3
+  );
+
+  g.add(frame);
+ }
+
+ /* ventanas */
+
+ for(const side of [-1,1]){
+
+  const win=new THREE.Mesh(
+   new THREE.BoxGeometry(
+    4.2*s,
+    3*s,
+    .25*s
+   ),
+   glassMat
+  );
+
+  win.position.set(
+   side*5.7*s,
+   5.5,
+   depth/2+.22
+  );
+
+  g.add(win);
+
+  const frameH=new THREE.Mesh(
+   new THREE.BoxGeometry(
+    4.8*s,.25*s,.4*s
+   ),
+   material(0x493427)
+  );
+
+  frameH.position.set(
+   side*5.7*s,
+   7,
+   depth/2+.4
+  );
+
+  g.add(frameH);
+
+  const frameV=new THREE.Mesh(
+   new THREE.BoxGeometry(
+    .25*s,3.5*s,.4*s
+   ),
+   material(0x493427)
+  );
+
+  frameV.position.set(
+   side*5.7*s,
+   5.5,
+   depth/2+.4
+  );
+
+  g.add(frameV);
+ }
+
+ /* porche */
+
+ const porch= new THREE.Mesh(
+  new THREE.BoxGeometry(10*s,1*s,5*s),
+  woodMat
+ );
+
+ porch.position.set(
+  0,.8,depth/2+2.7*s
+ );
+
+ porch.castShadow=true;
+ g.add(porch);
+
+ /* columnas */
+
+ for(const xx of [-4,4]){
+
+  const col=new THREE.Mesh(
+   new THREE.CylinderGeometry(
+    .3*s,.4*s,5*s,8
+   ),
+   woodMat
+  );
+
+  col.position.set(
+   xx*s,
+   3.2,
+   depth/2+4.2*s
+  );
+
+  g.add(col);
+ }
+
+ /* chimenea */
+
+ const chimney=new THREE.Mesh(
+  new THREE.BoxGeometry(2*s,5*s,2*s),
+  material(0x62564a)
+ );
+
+ chimney.position.set(
+  5*s,13,0
+ );
+
+ g.add(chimney);
+
+ g.position.set(
+  x,terrainHeight(x,z),z
+ );
+
+ g.rotation.y=rot;
+
+ scene.add(g);
+}
+
+
+/* BASE */
+house(30,25,1.2,.1);
+
+/* GRANJA */
+house(330,-250,1.35,-.2);
+house(400,-300,1.05,.4);
+
+/* CIUDAD */
+house(330,70,1.1,.2);
+house(410,100,1.25,-.4);
+house(490,55,1.15,.5);
+house(550,120,1.35,-.1);
+house(440,180,1.05,.8);
+house(590,20,1.2,.3);
+
+/* ABANDONADA */
+house(-380,-300,1.3,.2,true);
+house(-450,-350,1.05,-.4,true);
+
+
+/* =====================================================
+   GRANERO GRANDE
+===================================================== */
+
+function barn(x,z){
+
+ const g=new THREE.Group();
+
+ const body=new THREE.Mesh(
+  new THREE.BoxGeometry(30,13,20),
+  material(0x75472f)
+ );
+
+ body.position.y=6.5;
+ body.castShadow=true;
+ g.add(body);
+
+ const roof=new THREE.Mesh(
+  new THREE.ConeGeometry(21,8,4),
+  roofMat
+ );
+
+ roof.rotation.y=Math.PI/4;
+ roof.position.y=17;
+ roof.scale.z=.72;
+ roof.castShadow=true;
+ g.add(roof);
+
+ const door=new THREE.Mesh(
+  new THREE.BoxGeometry(8,8,.3),
+  material(0x39261c)
+ );
+
+ door.position.set(
+  0,4,10.2
+ );
+
+ g.add(door);
+
+ g.position.set(
+  x,terrainHeight(x,z),z
+ );
+
+ scene.add(g);
+}
+
+barn(310,-180);
+
+
+/* =====================================================
+   VALLAS
+===================================================== */
+
+function fence(x,z,len,rot=0){
+
+ const g=new THREE.Group();
+
+ for(let i=0;i<len;i++){
+
+  const post=new THREE.Mesh(
+   new THREE.BoxGeometry(.35,2.5,.35),
+   woodMat
+  );
+
+  post.position.set(i*3,1.25,0);
+  post.castShadow=true;
+  g.add(post);
+
+  if(i<len-1){
+
+   const plank=new THREE.Mesh(
+    new THREE.BoxGeometry(3,.25,.22),
+    woodMat
+   );
+
+   plank.position.set(
+    i*3+1.5,1.7,0
+   );
+
+   g.add(plank);
+  }
+ }
+
+ g.position.set(
+  x,terrainHeight(x,z),z
+ );
+
+ g.rotation.y=rot;
+
+ scene.add(g);
+}
+
+fence(290,-320,12,.1);
+fence(250,-270,10,Math.PI/2);
+
+
+/* =====================================================
+   CAMINOS GRANDES
+===================================================== */
+
+function road(x,z,w,len,rot=0){
+
+ const r=new THREE.Mesh(
+  new THREE.PlaneGeometry(w,len),
+  material(0x806846)
+ );
+
+ r.rotation.x=-Math.PI/2;
+ r.rotation.z=rot;
+ r.position.set(
+  x,terrainHeight(x,z)+.04,z
+ );
+
+ scene.add(r);
+
+ for(let i=0;i<80;i++){
+
+  const s=new THREE.Mesh(
+   new THREE.CircleGeometry(
+    THREE.MathUtils.randFloat(.08,.35),6
+   ),
+   material(0x594a36)
+  );
+
+  s.rotation.x=-Math.PI/2;
+
+  s.position.set(
+   x+(Math.random()-.5)*w*.8,
+   terrainHeight(x,z)+.07,
+   z+(Math.random()-.5)*len
+  );
+
+  scene.add(s);
+ }
+}
+
+road(0,0,16,1000,0);
+road(430,0,15,600,Math.PI/2);
+road(-250,-270,13,500,.8);
+
+
+/* =====================================================
+   AUTOS
+===================================================== */
+
+function car(x,z,r=0){
+
+ const g=new THREE.Group();
+
+ const body=new THREE.Mesh(
+  new THREE.BoxGeometry(8,1.8,4),
+  material(0x3e4846)
+ );
+
+ body.position.y=2;
+ g.add(body);
+
+ const cabin=new THREE.Mesh(
+  new THREE.BoxGeometry(4.5,1.8,3.3),
+  material(0x202a2b)
+ );
+
+ cabin.position.y=3.7;
+ g.add(cabin);
+
+ for(const xx of [-3,3]){
+
+  const wheel=new THREE.Mesh(
+   new THREE.CylinderGeometry(.8,.8,.5,12),
+   material(0x151515)
+  );
+
+  wheel.rotation.z=Math.PI/2;
+  wheel.position.set(xx,.9,2);
+  g.add(wheel);
+ }
+
+ g.position.set(
+  x,terrainHeight(x,z),z
+ );
+
+ g.rotation.y=r;
+
+ scene.add(g);
+}
+
+car(390,55,.2);
+car(500,110,-.5);
+car(470,180,.7);
+
+
+/* =====================================================
+   PERSONAJE
+===================================================== */
+
+const player=new THREE.Group();
+
+const torso=new THREE.Group();
+const legs=new THREE.Group();
+
+const shirt=material(0x202c31);
+const pants=material(0x25282b);
+const skin=material(0xc98e69);
+const shoes=material(0x101214);
+
+const body=new THREE.Mesh(
+ new THREE.BoxGeometry(2.2,3.1,1.35),
+ shirt
+);
+body.position.y=6.2;
+body.castShadow=true;
+torso.add(body);
+
+const head=new THREE.Mesh(
+ new THREE.SphereGeometry(1,16,12),
+ skin
+);
+head.position.y=8.5;
+head.castShadow=true;
+torso.add(head);
+
+const hair=new THREE.Mesh(
+ new THREE.SphereGeometry(1.05,16,8),
+ material(0x241b18)
+);
+hair.scale.y=.55;
+hair.position.y=8.95;
+torso.add(hair);
+
+const armL=new THREE.Mesh(
+ new THREE.BoxGeometry(.55,2.7,.65),
+ shirt
+);
+armL.position.set(-1.5,6.1,0);
+torso.add(armL);
+
+const armR=new THREE.Mesh(
+ new THREE.BoxGeometry(.55,2.7,.65),
+ shirt
+);
+armR.position.set(1.5,6.1,0);
+torso.add(armR);
+
+const handL=new THREE.Mesh(
+ new THREE.SphereGeometry(.34,10,8),
+ skin
+);
+handL.position.set(-1.5,4.65,0);
+torso.add(handL);
+
+const handR=new THREE.Mesh(
+ new THREE.SphereGeometry(.34,10,8),
+ skin
+);
+handR.position.set(1.5,4.65,0);
+torso.add(handR);
+
+const legL=new THREE.Mesh(
+ new THREE.BoxGeometry(.75,4,.8),
+ pants
+);
+legL.position.set(-.6,2,0);
+legs.add(legL);
+
+const legR=new THREE.Mesh(
+ new THREE.BoxGeometry(.75,4,.8),
+ pants
+);
+legR.position.set(.6,2,0);
+legs.add(legR);
+
+const shoeL=new THREE.Mesh(
+ new THREE.BoxGeometry(.9,.55,1.7),
+ shoes
+);
+shoeL.position.set(-.6,.05,.25);
+legs.add(shoeL);
+
+const shoeR=new THREE.Mesh(
+ new THREE.BoxGeometry(.9,.55,1.7),
+ shoes
+);
+shoeR.position.set(.6,.05,.25);
+legs.add(shoeR);
+
+player.add(legs);
+player.add(torso);
+
+player.position.set(0,terrainHeight(0,0),10);
+scene.add(player);
+
+
+/* =====================================================
+   PRIMERA PERSONA
+===================================================== */
+
+const fp=new THREE.Group();
+
+const fpL=new THREE.Mesh(
+ new THREE.BoxGeometry(.42,2.3,.5),
+ skin
+);
+fpL.position.set(-.48,-.9,-1);
+fpL.rotation.z=-.15;
+
+const fpR=new THREE.Mesh(
+ new THREE.BoxGeometry(.42,2.3,.5),
+ skin
+);
+fpR.position.set(.48,-.9,-1);
+fpR.rotation.z=.15;
+
+fp.add(fpL,fpR);
+camera.add(fp);
+scene.add(camera);
+
+
+/* =====================================================
+   MOVIMIENTO
+===================================================== */
+
+let yaw=0;
+let pitch=-.15;
+
+let moveX=0;
+let moveY=0;
+
+let velocityY=0;
+let grounded=true;
+let running=false;
+let firstPerson=true;
+let walkTime=0;
+
+const walkSpeed=11;
+const runSpeed=18;
+
+
+/* =====================================================
+   JOYSTICK
+===================================================== */
+
+const joystick=document.getElementById("joystick");
+const stick=document.getElementById("stick");
+
+let joyId=null;
+
+function joystickMove(e){
+
+ const r=joystick.getBoundingClientRect();
+
+ let x=e.clientX-(r.left+r.width/2);
+ let y=e.clientY-(r.top+r.height/2);
+
+ const max=48;
+ const d=Math.hypot(x,y);
+
+ if(d>max){
+  x=x/d*max;
+  y=y/d*max;
+ }
+
+ moveX=x/max;
+ moveY=-y/max;
+
+ stick.style.transform=
+  `translate(${x}px,${y}px)`;
+}
+
+joystick.onpointerdown=e=>{
+ joyId=e.pointerId;
+ joystick.setPointerCapture(e.pointerId);
+ joystickMove(e);
+};
+
+joystick.onpointermove=e=>{
+ if(e.pointerId===joyId)joystickMove(e);
+};
+
+function joyEnd(){
+ joyId=null;
+ moveX=0;
+ moveY=0;
+ stick.style.transform="translate(0,0)";
+}
+
+joystick.onpointerup=joyEnd;
+joystick.onpointercancel=joyEnd;
+
+
+/* =====================================================
+   CONTROL CÁMARA
+===================================================== */
+
+let dragging=false;
+let lastX=0;
+let lastY=0;
+
+renderer.domElement.onpointerdown=e=>{
+ dragging=true;
+ lastX=e.clientX;
+ lastY=e.clientY;
+};
+
+renderer.domElement.onpointermove=e=>{
+
+ if(!dragging)return;
+
+ const dx=e.clientX-lastX;
+ const dy=e.clientY-lastY;
+
+ lastX=e.clientX;
+ lastY=e.clientY;
+
+ yaw-=dx*.006;
+ pitch-=dy*.004;
+
+ pitch=Math.max(-1.1,Math.min(.55,pitch));
+};
+
+renderer.domElement.onpointerup=()=>{
+ dragging=false;
+};
+
+renderer.domElement.onpointercancel=()=>{
+ dragging=false;
+};
+
+
+/* =====================================================
+   BOTONES
+===================================================== */
+
+document.getElementById("cameraBtn").onclick=()=>{
+
+ firstPerson=!firstPerson;
+
+ player.visible=!firstPerson;
+ fp.visible=firstPerson;
+
+ notify(
+  firstPerson?
+  "PRIMERA PERSONA":
+  "TERCERA PERSONA"
+ );
+};
+
+document.getElementById("jumpBtn").onclick=()=>{
+
+ if(grounded){
+  velocityY=11;
+  grounded=false;
+ }
+};
+
+document.getElementById("runBtn").onpointerdown=()=>{
+ running=true;
+};
+
+document.getElementById("runBtn").onpointerup=()=>{
+ running=false;
+};
+
+document.getElementById("runBtn").onpointercancel=()=>{
+ running=false;
+};
+
+document.getElementById("mapBtn").onclick=()=>{
+ const m=document.getElementById("map");
+ m.style.display=
+  m.style.display==="block"?"none":"block";
+};
+
+
+/* =====================================================
+   NOTIFICACIÓN
+===================================================== */
+
+let noticeTimer;
+
+function notify(t){
+
+ const n=document.getElementById("notice");
+
+ n.textContent=t;
+ n.style.opacity=1;
+
+ clearTimeout(noticeTimer);
+
+ noticeTimer=setTimeout(()=>{
+  n.style.opacity=0;
+ },1800);
+}
+
+
+/* =====================================================
+   LUGARES
+===================================================== */
+
+const places=[
+ {x:0,z:0,n:"BASE"},
+ {x:360,z:-250,n:"GRANJA"},
+ {x:450,z:90,n:"CIUDAD"},
+ {x:-410,z:-330,n:"ZONA ABANDONADA"},
+ {x:-250,z:270,n:"LAGO DEL SUR"},
+ {x:390,z:330,n:"LAGO DEL ESTE"},
+ {x:-430,z:400,n:"MONTAÑAS"}
+];
+
+let current="";
+
+function updatePlace(){
+
+ let closest=places[0];
+ let best=999999;
+
+ for(const p of places){
+
+  const d=Math.hypot(
+   player.position.x-p.x,
+   player.position.z-p.z
+  );
+
+  if(d<best){
+   best=d;
+   closest=p;
+  }
+ }
+
+ if(best<70 && current!==closest.n){
+  current=closest.n;
+  notify("LUGAR DESCUBIERTO: "+current);
+ }
+
+ document.getElementById("place").textContent=
+  closest.n;
+
+ const dist=Math.hypot(
+  player.position.x,
+  player.position.z
+ );
+
+ document.getElementById("distance").textContent=
+  dist<1000?
+  Math.round(dist)+" m":
+  (dist/1000).toFixed(2)+" km";
+}
+
+
+/* =====================================================
+   TIEMPO
+===================================================== */
+
+let time=8;
+
+function updateTime(dt){
+
+ time+=dt*.018;
+
+ if(time>=24)time=0;
+
+ const h=Math.floor(time);
+ const m=Math.floor((time-h)*60);
+
+ document.getElementById("clock").textContent=
+  "Día 1 — "+
+  String(h).padStart(2,"0")+":"+
+  String(m).padStart(2,"0");
+
+ const a=time/24*Math.PI*2;
+ const sy=Math.sin(a);
+
+ sun.position.set(
+  Math.cos(a)*350,
+  Math.max(20,sy*400),
+  Math.sin(a)*250
+ );
+
+ const night=Math.max(0,-sy);
+
+ sun.intensity=3-night*2.3;
+ hemi.intensity=1.8-night*1.25;
+
+ const dayColor=new THREE.Color(0x8cae9c);
+ const nightColor=new THREE.Color(0x111a2b);
+
+ scene.background.lerpColors(
+  nightColor,
+  dayColor,
+  Math.max(0,sy*.5+.5)
+ );
+
+ scene.fog.color.copy(scene.background);
+}
+
+
+/* =====================================================
+   SUPERVIVENCIA
+===================================================== */
+
+let health=100;
+let hunger=100;
+let thirst=100;
+let survival=0;
+
+function survivalUpdate(dt){
+
+ survival+=dt;
+
+ if(survival>6){
+
+  survival=0;
+
+  hunger=Math.max(0,hunger-.7);
+  thirst=Math.max(0,thirst-1);
+
+  if(hunger<=0||thirst<=0)
+   health=Math.max(0,health-1);
+ }
+
+ document.getElementById("healthBar").style.width=
+  health+"%";
+
+ document.getElementById("foodBar").style.width=
+  hunger+"%";
+
+ document.getElementById("waterBar").style.width=
+  thirst+"%";
+}
+
+
+/* =====================================================
+   MOVIMIENTO
+===================================================== */
+
+function movement(dt){
+
+ const len=Math.hypot(moveX,moveY);
+
+ if(len>.05){
+
+  const speed=running?runSpeed:walkSpeed;
+
+  const forward=new THREE.Vector3(
+   -Math.sin(yaw),0,-Math.cos(yaw)
+  );
+
+  const right=new THREE.Vector3(
+   Math.cos(yaw),0,-Math.sin(yaw)
+  );
+
+  const dir=new THREE.Vector3();
+
+  dir.addScaledVector(forward,moveY);
+  dir.addScaledVector(right,moveX);
+
+  dir.normalize();
+
+  player.position.addScaledVector(
+   dir,speed*dt
+  );
+
+  player.rotation.y=
+   Math.atan2(dir.x,dir.z);
+
+  walkTime+=dt*(running?12:8);
+
+  legs.children[0].rotation.x=
+   Math.sin(walkTime)*.7;
+
+  legs.children[1].rotation.x=
+   -Math.sin(walkTime)*.7;
+
+  torso.children[2].rotation.x=
+   -Math.sin(walkTime)*.45;
+
+  torso.children[3].rotation.x=
+   Math.sin(walkTime)*.45;
+ }
+
+ velocityY-=27*dt;
+ player.position.y+=velocityY*dt;
+
+ const ground=terrainHeight(
+  player.position.x,
+  player.position.z
+ );
+
+ if(player.position.y<=ground){
+
+  player.position.y=ground;
+  velocityY=0;
+  grounded=true;
+ }
+
+ player.position.x=
+  THREE.MathUtils.clamp(
+   player.position.x,-850,850
+  );
+
+ player.position.z=
+  THREE.MathUtils.clamp(
+   player.position.z,-850,850
+  );
+}
+
+
+/* =====================================================
+   CÁMARA
+===================================================== */
+
+function updateCamera(){
+
+ if(firstPerson){
+
+  camera.position.set(
+   player.position.x,
+   player.position.y+9,
+   player.position.z
+  );
+
+  camera.rotation.order="YXZ";
+  camera.rotation.y=yaw;
+  camera.rotation.x=pitch;
+
+ }else{
+
+  const d=15;
+
+  camera.position.set(
+   player.position.x+
+   Math.sin(yaw)*d,
+
+   player.position.y+
+   8-
+   Math.sin(pitch)*d,
+
+   player.position.z+
+   Math.cos(yaw)*d
+  );
+
+  camera.lookAt(
+   player.position.x,
+   player.position.y+5.5,
+   player.position.z
+  );
+ }
+}
+
+
+/* =====================================================
+   MAPA
+===================================================== */
+
+const mapCanvas=document.getElementById("mapCanvas");
+const ctx=mapCanvas.getContext("2d");
+
+function drawMap(){
+
+ ctx.clearRect(0,0,300,300);
+
+ ctx.fillStyle="#19271c";
+ ctx.fillRect(0,0,300,300);
+
+ function X(x){return 150+x/1800*270}
+ function Z(z){return 150+z/1800*270}
+
+ ctx.strokeStyle="#277994";
+ ctx.lineWidth=13;
+
+ ctx.beginPath();
+
+ for(let i=0;i<48;i++){
+
+  const z=-700+i*28;
+  const x=Math.sin(i*.34)*75;
+
+  if(i===0)ctx.moveTo(X(x),Z(z));
+  else ctx.lineTo(X(x),Z(z));
+ }
+
+ ctx.stroke();
+
+ for(const p of places){
+
+  ctx.fillStyle=
+   p.n==="BASE"?"#e83d3d":"#e3c85a";
+
+  ctx.beginPath();
+  ctx.arc(X(p.x),Z(p.z),5,0,Math.PI*2);
+  ctx.fill();
+ }
+
+ ctx.fillStyle="#43a5ff";
+
+ ctx.beginPath();
+ ctx.arc(
+  X(player.position.x),
+  Z(player.position.z),
+  6,0,Math.PI*2
+ );
+
+ ctx.fill();
+}
+
+
+/* =====================================================
+   RESIZE
+===================================================== */
+
+window.addEventListener("resize",()=>{
+
+ camera.aspect=innerWidth/innerHeight;
+ camera.updateProjectionMatrix();
+
+ renderer.setSize(
+  innerWidth,
+  innerHeight
+ );
+});
+
+
+/* =====================================================
+   LOOP
+===================================================== */
+
+const clock=new THREE.Clock();
+
+function loop(){
+
+ requestAnimationFrame(loop);
+
+ const dt=Math.min(
+  clock.getDelta(),.05
+ );
+
+ movement(dt);
+ updateCamera();
+ updateTime(dt);
+ survivalUpdate(dt);
+ updatePlace();
+ drawMap();
+
+ renderer.render(scene,camera);
+}
+
+loop();
+
+notify("V11.0 — ESCALA REALISTA");
+
+</script>
+</body>
+</html>
