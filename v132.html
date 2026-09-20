@@ -1,0 +1,3073 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Supervivencia 3D V13.2</title>
+
+<style>
+*{
+ box-sizing:border-box;
+ -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+ margin:0;
+ width:100%;
+ height:100%;
+ overflow:hidden;
+ background:#101820;
+ font-family:Arial,sans-serif;
+ touch-action:none;
+}
+
+#game{
+ position:fixed;
+ inset:0;
+}
+
+canvas{
+ display:block;
+}
+
+#loading{
+ position:fixed;
+ inset:0;
+ z-index:999;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ flex-direction:column;
+ background:#18231a;
+ color:white;
+ font-size:22px;
+ font-weight:bold;
+ text-align:center;
+}
+
+#portrait{
+ position:fixed;
+ inset:0;
+ z-index:900;
+ background:#080808;
+ color:white;
+ display:none;
+ align-items:center;
+ justify-content:center;
+ text-align:center;
+ font-size:24px;
+ font-weight:bold;
+ padding:30px;
+}
+
+#hud{
+ position:fixed;
+ top:8px;
+ left:8px;
+ z-index:20;
+ color:white;
+ font-size:12px;
+ text-shadow:2px 2px #000;
+ pointer-events:none;
+}
+
+.bar{
+ width:145px;
+ height:12px;
+ background:#222;
+ border:1px solid #aaa;
+ border-radius:5px;
+ overflow:hidden;
+ margin:2px 0;
+}
+
+.fill{
+ height:100%;
+ width:100%;
+}
+
+#hp{background:#d22}
+#food{background:#d7a51b}
+#water{background:#238fd0}
+#stamina{background:#49c94b}
+
+#info{
+ position:fixed;
+ right:8px;
+ top:8px;
+ z-index:20;
+ color:white;
+ text-align:right;
+ font-size:12px;
+ text-shadow:2px 2px #000;
+ pointer-events:none;
+}
+
+#cross{
+ position:fixed;
+ left:50%;
+ top:50%;
+ transform:translate(-50%,-50%);
+ z-index:20;
+ color:white;
+ font-size:22px;
+ pointer-events:none;
+ text-shadow:1px 1px #000;
+}
+
+#look{
+ position:fixed;
+ left:25%;
+ right:0;
+ top:0;
+ bottom:115px;
+ z-index:5;
+}
+
+#joyBase{
+ position:fixed;
+ left:20px;
+ bottom:20px;
+ width:125px;
+ height:125px;
+ border-radius:50%;
+ background:#ffffff18;
+ border:2px solid #ffffff55;
+ z-index:30;
+}
+
+#joy{
+ position:absolute;
+ left:37px;
+ top:37px;
+ width:50px;
+ height:50px;
+ border-radius:50%;
+ background:#ffffff55;
+ border:2px solid white;
+}
+
+.btn{
+ position:fixed;
+ z-index:40;
+ width:55px;
+ height:55px;
+ border-radius:50%;
+ border:2px solid white;
+ background:#111c;
+ color:white;
+ font-size:10px;
+ font-weight:bold;
+}
+
+#run{right:18px;bottom:18px}
+#use{right:82px;bottom:18px}
+#light{right:146px;bottom:18px}
+#mapBtn{right:18px;bottom:82px}
+#invBtn{right:82px;bottom:82px}
+#craftBtn{right:146px;bottom:82px}
+#reload{right:210px;bottom:18px}
+
+#weapon{
+ position:fixed;
+ right:8px;
+ bottom:145px;
+ z-index:20;
+ color:white;
+ text-shadow:2px 2px #000;
+ text-align:right;
+}
+
+#mission{
+ position:fixed;
+ left:8px;
+ bottom:8px;
+ z-index:20;
+ color:white;
+ background:#0009;
+ padding:7px;
+ border-radius:7px;
+ font-size:11px;
+ max-width:280px;
+}
+
+#message{
+ position:fixed;
+ left:50%;
+ bottom:145px;
+ transform:translateX(-50%);
+ z-index:200;
+ background:#000c;
+ color:white;
+ padding:9px 15px;
+ border-radius:9px;
+ display:none;
+ text-align:center;
+}
+
+.panel{
+ position:fixed;
+ z-index:100;
+ left:50%;
+ top:50%;
+ transform:translate(-50%,-50%);
+ width:min(92vw,620px);
+ max-height:82vh;
+ overflow:auto;
+ background:#11161beF;
+ border:2px solid #999;
+ border-radius:14px;
+ color:white;
+ padding:15px;
+ display:none;
+}
+
+.panel h2{
+ margin:0 0 10px;
+}
+
+.grid{
+ display:grid;
+ grid-template-columns:repeat(2,1fr);
+ gap:7px;
+}
+
+.card{
+ background:#20262c;
+ border:1px solid #444;
+ border-radius:7px;
+ padding:8px;
+}
+
+.panel button{
+ background:#303741;
+ color:white;
+ border:1px solid #777;
+ border-radius:7px;
+ padding:8px;
+ margin:3px;
+}
+
+#map{
+ width:100%;
+ background:#263629;
+ border:1px solid #777;
+}
+
+@media(max-width:700px){
+ .bar{width:120px}
+ .btn{width:51px;height:51px}
+}
+</style>
+</head>
+
+<body>
+
+<div id="loading">
+ CARGANDO SUPERVIVENCIA 3D...
+ <small style="margin-top:8px">V13.2</small>
+</div>
+
+<div id="game"></div>
+
+<div id="portrait">
+ GIRÁ EL CELULAR<br>
+ <small>Este juego se juega en pantalla horizontal.</small>
+</div>
+
+<div id="hud">
+ <b>SUPERVIVENCIA 3D V13.2</b><br>
+ VIDA
+ <div class="bar"><div id="hp" class="fill"></div></div>
+ COMIDA
+ <div class="bar"><div id="food" class="fill"></div></div>
+ AGUA
+ <div class="bar"><div id="water" class="fill"></div></div>
+ ENERGÍA
+ <div class="bar"><div id="stamina" class="fill"></div></div>
+</div>
+
+<div id="info">DÍA 1 — 08:00<br>???</div>
+
+<div id="cross">+</div>
+
+<div id="look"></div>
+
+<div id="joyBase">
+ <div id="joy"></div>
+</div>
+
+<button class="btn" id="run">CORRER</button>
+<button class="btn" id="use">USAR</button>
+<button class="btn" id="light">LUZ</button>
+<button class="btn" id="reload">RECARGAR</button>
+
+<button class="btn" id="mapBtn">MAPA</button>
+<button class="btn" id="invBtn">MOCHILA</button>
+<button class="btn" id="craftBtn">CREAR</button>
+
+<div id="weapon">
+ MANOS VACÍAS<br>
+ <span id="ammo">SIN ARMA</span>
+</div>
+
+<div id="mission">
+ MISIÓN: Explorá la zona.
+</div>
+
+<div id="message"></div>
+
+
+<div class="panel" id="mapPanel">
+ <h2>MAPA — 10 × 10 KM</h2>
+ <p>Los lugares desconocidos aparecen como <b>???</b>.</p>
+
+ <canvas id="map" width="600" height="600"></canvas>
+
+ <button onclick="closePanels()">CERRAR</button>
+</div>
+
+
+<div class="panel" id="invPanel">
+
+ <h2>MOCHILA</h2>
+
+ <div id="inventory" class="grid"></div>
+
+ <button onclick="eat()">COMER</button>
+ <button onclick="drink()">BEBER</button>
+ <button onclick="heal()">CURAR</button>
+ <button onclick="closePanels()">CERRAR</button>
+
+</div>
+
+
+<div class="panel" id="craftPanel">
+
+ <h2>FABRICACIÓN</h2>
+
+ <div class="card">
+ Hacha — 5 madera + 2 metal
+ <button onclick="craft('axe')">CREAR</button>
+ </div>
+
+ <div class="card">
+ Pico — 5 piedra + 2 metal
+ <button onclick="craft('pickaxe')">CREAR</button>
+ </div>
+
+ <div class="card">
+ Venda — 3 tela
+ <button onclick="craft('bandage')">CREAR</button>
+ </div>
+
+ <div class="card">
+ Botiquín — 2 tela + 1 medicina
+ <button onclick="craft('medkit')">CREAR</button>
+ </div>
+
+ <div class="card">
+ Munición — 2 metal
+ <button onclick="craft('ammo')">CREAR</button>
+ </div>
+
+ <button onclick="closePanels()">CERRAR</button>
+
+</div>
+
+
+<script src="./three.min.js"></script>
+
+<script>
+"use strict";
+
+/* =====================================================
+   ARRANQUE SEGURO
+===================================================== */
+
+window.addEventListener("error",function(e){
+
+ const l=document.getElementById("loading");
+
+ if(l){
+  l.innerHTML=
+   "ERROR DEL JUEGO<br><small>"+
+   (e.message||"Error desconocido")+
+   "</small>";
+ }
+});
+
+
+if(typeof THREE==="undefined"){
+
+ document.getElementById("loading").innerHTML=
+  "NO SE ENCONTRÓ three.min.js<br><small>"+
+  "Poné three.min.js en la misma carpeta que v132.html"+
+  "</small>";
+
+ throw new Error("Three.js no encontrado");
+
+}
+
+
+/* =====================================================
+   ESCENA
+===================================================== */
+
+const scene=new THREE.Scene();
+
+scene.background=
+ new THREE.Color(0x71899a);
+
+scene.fog=
+ new THREE.Fog(
+  0x71899a,
+  180,
+  3000
+);
+
+
+const camera=
+ new THREE.PerspectiveCamera(
+  70,
+  innerWidth/innerHeight,
+  .1,
+  5000
+);
+
+
+const renderer=
+ new THREE.WebGLRenderer({
+  antialias:true
+ });
+
+renderer.setPixelRatio(
+ Math.min(devicePixelRatio,1.5)
+);
+
+renderer.setSize(
+ innerWidth,
+ innerHeight
+);
+
+document
+ .getElementById("game")
+ .appendChild(renderer.domElement);
+
+
+/* =====================================================
+   LUZ
+===================================================== */
+
+scene.add(
+ new THREE.HemisphereLight(
+  0xcfe1ee,
+  0x29371f,
+  1.4
+ )
+);
+
+const sun=
+ new THREE.DirectionalLight(
+  0xffffff,
+  1.25
+);
+
+sun.position.set(
+ 500,
+ 800,
+ 300
+);
+
+scene.add(sun);
+
+
+/* =====================================================
+   MATERIALES
+===================================================== */
+
+function MAT(c){
+ return new THREE.MeshLambertMaterial({
+  color:c
+ });
+}
+
+const grass=MAT(0x496d39);
+const darkGrass=MAT(0x31512d);
+const road=MAT(0x373a3b);
+const wall=MAT(0x858078);
+const roof=MAT(0x403131);
+const wood=MAT(0x684426);
+const trunk=MAT(0x4b3220);
+const leaves=MAT(0x254c2a);
+const stone=MAT(0x707070);
+const metal=MAT(0x5d656b);
+const red=MAT(0x8e2222);
+const blue=MAT(0x2878a8);
+const white=MAT(0xe6e1d3);
+const yellow=MAT(0xc6a72d);
+const black=MAT(0x111111);
+const foodMat=MAT(0xd28a2b);
+const waterMat=MAT(0x268fc7);
+
+const glass=
+ new THREE.MeshLambertMaterial({
+  color:0x6aa8b8,
+  transparent:true,
+  opacity:.4
+ });
+
+
+/* =====================================================
+   FUNCIONES 3D
+===================================================== */
+
+function cube(
+ x,y,z,
+ w,h,d,
+ mat
+){
+
+ const m=
+ new THREE.Mesh(
+  new THREE.BoxGeometry(
+   w,h,d
+  ),
+  mat
+ );
+
+ m.position.set(
+  x,y,z
+ );
+
+ scene.add(m);
+
+ return m;
+}
+
+
+function tree(x,z,s){
+
+ s=s||1;
+
+ cube(
+  x,
+  4*s,
+  z,
+  4*s,
+  8*s,
+  4*s,
+  trunk
+ );
+
+ const crown=
+ new THREE.Mesh(
+  new THREE.SphereGeometry(
+   11*s,
+   9,
+   7
+  ),
+  leaves
+ );
+
+ crown.position.set(
+  x,
+  14*s,
+  z
+ );
+
+ scene.add(crown);
+}
+
+
+function makeRoad(
+ x,z,w,d
+){
+
+ cube(
+  x,
+  .02,
+  z,
+  w,
+  .1,
+  d,
+  road
+ );
+}
+
+
+function house(
+ x,z,
+ floors
+){
+
+ floors=floors||1;
+
+ const w=28;
+ const d=24;
+
+ for(
+  let f=0;
+  f<floors;
+  f++
+ ){
+
+  const y=
+   5+
+   f*10;
+
+  cube(
+   x,
+   y,
+   z-d/2,
+   w,
+   10,
+   .8,
+   wall
+  );
+
+  cube(
+   x,
+   y,
+   z+d/2,
+   w,
+   10,
+   .8,
+   wall
+  );
+
+  cube(
+   x-w/2,
+   y,
+   z,
+   .8,
+   10,
+   d,
+   wall
+  );
+
+  cube(
+   x+w/2,
+   y,
+   z,
+   .8,
+   10,
+   d,
+   wall
+  );
+
+  /* puerta */
+
+  cube(
+   x,
+   y,
+   z-d/2-.45,
+   5,
+   9,
+   .7,
+   wood
+  );
+
+  /* ventanas */
+
+  for(
+   let side=-1;
+   side<=1;
+   side+=2
+  ){
+
+   cube(
+    x+side*8,
+    y+1,
+    z-d/2-.5,
+    5,
+    4,
+    .4,
+    glass
+   );
+
+   /* cruz de madera */
+
+   cube(
+    x+side*8,
+    y+1,
+    z-d/2-.8,
+    .5,
+    4.5,
+    .3,
+    wood
+   );
+
+   cube(
+    x+side*8,
+    y+1,
+    z-d/2-.8,
+    5,
+    .5,
+    .3,
+    wood
+   );
+  }
+ }
+
+ cube(
+  x,
+  floors*10+1,
+  z,
+  w+3,
+  1,
+  d+3,
+  roof
+ );
+}
+
+
+function bigBuilding(
+ x,z,
+ w,d,h,
+ mat
+){
+
+ cube(
+  x,
+  h/2,
+  z,
+  w,
+  h,
+  d,
+  mat
+ );
+
+ for(
+  let y=7;
+  y<h-2;
+  y+=8
+ ){
+
+  for(
+   let xx=x-w/2+8;
+   xx<x+w/2-5;
+   xx+=12
+  ){
+
+   cube(
+    xx,
+    y,
+    z-d/2-.5,
+    5,
+    3,
+    .4,
+    glass
+   );
+  }
+ }
+
+ cube(
+  x,
+  h+.5,
+  z,
+  w+3,
+  1,
+  d+3,
+  roof
+ );
+}
+
+
+/* =====================================================
+   MAPA FÍSICO
+===================================================== */
+
+const WORLD=6000;
+const HALF=3000;
+
+cube(
+ 0,
+ -3,
+ 0,
+ WORLD,
+ 6,
+ WORLD,
+ grass
+);
+
+
+/* calles */
+
+makeRoad(
+ 0,0,
+ 45,
+ WORLD
+);
+
+makeRoad(
+ 0,0,
+ WORLD,
+ 45
+);
+
+makeRoad(
+ -800,0,
+ 22,
+ WORLD
+);
+
+makeRoad(
+ 800,0,
+ 22,
+ WORLD
+);
+
+makeRoad(
+ 0,-900,
+ WORLD,
+ 22
+);
+
+makeRoad(
+ 0,900,
+ WORLD,
+ 22
+);
+
+
+/* calles secundarias */
+
+for(
+ let i=0;
+ i<55;
+ i++
+){
+
+ const x=
+  (Math.random()-.5)*WORLD;
+
+ const z=
+  (Math.random()-.5)*WORLD;
+
+ if(
+  Math.abs(x)<100 ||
+  Math.abs(z)<100
+ )continue;
+
+ makeRoad(
+  x,
+  z,
+  10,
+  80+Math.random()*100
+ );
+}
+
+
+/* =====================================================
+   CIUDAD
+===================================================== */
+
+for(
+ let x=-6;
+ x<=6;
+ x++
+){
+
+ for(
+  let z=-6;
+  z<=6;
+  z++
+ ){
+
+  if(
+   Math.abs(x)<2 &&
+   Math.abs(z)<2
+  )continue;
+
+  if(Math.random()<.75){
+
+   house(
+    x*150+
+    Math.random()*40-20,
+
+    z*150+
+    Math.random()*40-20,
+
+    Math.random()<.2?2:1
+   );
+  }
+ }
+}
+
+
+/* =====================================================
+   EDIFICIOS
+===================================================== */
+
+bigBuilding(
+ -450,
+ -450,
+ 130,
+ 100,
+ 55,
+ wall
+);
+
+bigBuilding(
+ 450,
+ -450,
+ 110,
+ 90,
+ 75,
+ blue
+);
+
+bigBuilding(
+ -450,
+ 450,
+ 110,
+ 90,
+ 65,
+ white
+);
+
+bigBuilding(
+ 450,
+ 450,
+ 150,
+ 100,
+ 95,
+ wall
+);
+
+
+/* hospital */
+
+bigBuilding(
+ 0,
+ -650,
+ 190,
+ 125,
+ 110,
+ white
+);
+
+cube(
+ 0,
+ 118,
+ -650,
+ 10,
+ 18,
+ 3,
+ red
+);
+
+cube(
+ 0,
+ 118,
+ -650,
+ 40,
+ 5,
+ 3,
+ red
+);
+
+
+/* policía */
+
+bigBuilding(
+ 900,
+ 900,
+ 120,
+ 90,
+ 35,
+ blue
+);
+
+
+/* escuela */
+
+bigBuilding(
+ -900,
+ 900,
+ 150,
+ 90,
+ 30,
+ yellow
+);
+
+
+/* fábrica */
+
+bigBuilding(
+ -1200,
+ -1200,
+ 240,
+ 150,
+ 45,
+ metal
+);
+
+
+/* base militar */
+
+bigBuilding(
+ 1200,
+ -1200,
+ 220,
+ 180,
+ 35,
+ metal
+);
+
+
+/* supermercado */
+
+bigBuilding(
+ 1200,
+ 700,
+ 180,
+ 120,
+ 25,
+ white
+);
+
+
+/* =====================================================
+   BOSQUES
+===================================================== */
+
+function forest(
+ cx,cz,
+ amount,
+ spread
+){
+
+ for(
+  let i=0;
+  i<amount;
+  i++
+ ){
+
+  tree(
+   cx+
+   (Math.random()-.5)*spread,
+
+   cz+
+   (Math.random()-.5)*spread,
+
+   .7+
+   Math.random()*1.2
+  );
+ }
+}
+
+forest(
+ -1900,
+ -1700,
+ 120,
+ 1300
+);
+
+forest(
+ 1900,
+ -1700,
+ 120,
+ 1300
+);
+
+forest(
+ -1900,
+ 1900,
+ 120,
+ 1300
+);
+
+forest(
+ 1900,
+ 1900,
+ 120,
+ 1300
+);
+
+forest(
+ 0,
+ -2400,
+ 130,
+ 1300
+);
+
+
+/* =====================================================
+   MONTAÑAS
+===================================================== */
+
+for(
+ let i=0;
+ i<25;
+ i++
+){
+
+ const x=
+  (Math.random()-.5)*5600;
+
+ const z=
+  (Math.random()-.5)*5600;
+
+ if(
+  Math.abs(x)<1000 &&
+  Math.abs(z)<1000
+ )continue;
+
+ const h=
+  100+
+  Math.random()*240;
+
+ const r=
+  100+
+  Math.random()*170;
+
+ const m=
+ new THREE.Mesh(
+  new THREE.ConeGeometry(
+   r,
+   h,
+   8
+  ),
+  darkGrass
+ );
+
+ m.position.set(
+  x,
+  h/2,
+  z
+ );
+
+ scene.add(m);
+}
+
+
+/* =====================================================
+   AGUA
+===================================================== */
+
+cube(
+ 1500,
+ -.1,
+ 0,
+ 900,
+ .2,
+ 250,
+ waterMat
+);
+
+cube(
+ -1500,
+ -.1,
+ 1100,
+ 250,
+ .2,
+ 900,
+ waterMat
+);
+
+
+/* puente */
+
+cube(
+ 1500,
+ 2,
+ 0,
+ 180,
+ 4,
+ 350,
+ stone
+);
+
+
+/* =====================================================
+   VEHÍCULOS
+===================================================== */
+
+function vehicle(
+ x,z,
+ mat
+){
+
+ cube(
+  x,
+  3,
+  z,
+  22,
+  6,
+  40,
+  mat
+ );
+
+ cube(
+  x,
+  6.3,
+  z,
+  15,
+  4,
+  18,
+  glass
+ );
+
+ for(
+  const dz of [-13,13]
+ ){
+
+  for(
+   const dx of [-13,13]
+  ){
+
+   const wheel=
+   new THREE.Mesh(
+    new THREE.CylinderGeometry(
+     4,4,2,10
+    ),
+    black
+   );
+
+   wheel.position.set(
+    x+dx,
+    2,
+    z+dz
+   );
+
+   wheel.rotation.z=
+    Math.PI/2;
+
+   scene.add(wheel);
+  }
+ }
+}
+
+vehicle(
+ 200,
+ -100,
+ red
+);
+
+vehicle(
+ -250,
+ 100,
+ blue
+);
+
+vehicle(
+ 700,
+ 700,
+ white
+);
+
+vehicle(
+ -900,
+ -900,
+ blue
+);
+
+vehicle(
+ 1200,
+ -1100,
+ metal
+);
+
+
+/* =====================================================
+   PLAYER
+===================================================== */
+
+const player={
+ x:0,
+ y:0,
+ z:80,
+
+ health:100,
+ hunger:100,
+ thirst:100,
+ stamina:100,
+
+ level:1,
+ xp:0,
+ kills:0
+};
+
+
+/* cuerpo */
+
+const playerBody=
+ new THREE.Group();
+
+const torso=
+ new THREE.Mesh(
+  new THREE.BoxGeometry(
+   2,
+   3,
+   1.2
+  ),
+  blue
+ );
+
+torso.position.y=2.8;
+
+playerBody.add(
+ torso
+);
+
+const head=
+ new THREE.Mesh(
+  new THREE.SphereGeometry(
+   1,
+   12,
+   8
+  ),
+  white
+ );
+
+head.position.y=5;
+
+playerBody.add(
+ head
+);
+
+scene.add(
+ playerBody
+);
+
+
+/* =====================================================
+   INVENTARIO — SIN ARMAS
+===================================================== */
+
+let inventory={
+ wood:10,
+ stone:5,
+ metal:3,
+
+ food:2,
+ water:2,
+
+ cloth:2,
+ medicine:0,
+
+ bandage:1,
+ medkit:0,
+
+ axe:0,
+ pickaxe:0,
+ knife:0,
+
+ pistol:0,
+ shotgun:0,
+ rifle:0,
+
+ ammo:0,
+
+ battery:0,
+ gasoline:0,
+ wheel:0
+};
+
+
+/* =====================================================
+   PICKUPS
+===================================================== */
+
+const pickups=[];
+
+function createPickup(
+ x,z,
+ type
+){
+
+ const colors={
+  wood:wood,
+  stone:stone,
+  metal:metal,
+  food:foodMat,
+  water:waterMat,
+  cloth:white,
+  medicine:red,
+  battery:blue,
+  gasoline:yellow,
+  ammo:yellow,
+  pistol:metal,
+  shotgun:metal,
+  rifle:metal,
+  knife:metal
+ };
+
+ const p=
+ cube(
+  x,
+  1,
+  z,
+  3,
+  3,
+  3,
+  colors[type]||white
+ );
+
+ p.userData.type=
+  type;
+
+ pickups.push(p);
+}
+
+
+/* armas repartidas por el mundo */
+
+createPickup(
+  600,
+  -500,
+  "pistol"
+);
+
+createPickup(
+ -700,
+ -650,
+ "shotgun"
+);
+
+createPickup(
+ 1200,
+ -1200,
+ "rifle"
+);
+
+createPickup(
+ -1200,
+ -1200,
+ "ammo"
+);
+
+createPickup(
+ 900,
+ 900,
+ "ammo"
+);
+
+
+/* materiales */
+
+const types=[
+ "wood",
+ "stone",
+ "metal",
+ "food",
+ "water",
+ "cloth",
+ "medicine",
+ "battery",
+ "gasoline"
+];
+
+for(
+ let i=0;
+ i<180;
+ i++
+){
+
+ createPickup(
+  (Math.random()-.5)*5200,
+  (Math.random()-.5)*5200,
+  types[
+   Math.floor(
+    Math.random()*types.length
+   )
+  ]
+ );
+}
+
+
+/* =====================================================
+   ZOMBIES
+===================================================== */
+
+const zombies=[];
+
+const zombieTypes=[
+ {
+  name:"Caminante",
+  hp:40,
+  speed:1.2,
+  scale:1,
+  mat:red
+ },
+ {
+  name:"Corredor",
+  hp:30,
+  speed:2.5,
+  scale:.9,
+  mat:yellow
+ },
+ {
+  name:"Mutante",
+  hp:140,
+  speed:.8,
+  scale:1.6,
+  mat:metal
+ }
+];
+
+function spawnZombie(){
+
+ const a=
+  Math.random()*Math.PI*2;
+
+ const r=
+  300+
+  Math.random()*1000;
+
+ const x=
+  player.x+
+  Math.cos(a)*r;
+
+ const z=
+  player.z+
+  Math.sin(a)*r;
+
+ const t=
+  zombieTypes[
+   Math.floor(
+    Math.random()*zombieTypes.length
+   )
+  ];
+
+ const g=
+  new THREE.Group();
+
+ const body=
+  new THREE.Mesh(
+   new THREE.BoxGeometry(
+    1.8*t.scale,
+    3.2*t.scale,
+    1.2*t.scale
+   ),
+   t.mat
+  );
+
+ body.position.y=
+  2.5*t.scale;
+
+ g.add(body);
+
+ const head=
+  new THREE.Mesh(
+   new THREE.SphereGeometry(
+    t.scale,
+    10,
+    7
+   ),
+   white
+  );
+
+ head.position.y=
+  4.7*t.scale;
+
+ g.add(head);
+
+ g.position.set(
+  x,
+  0,
+  z
+ );
+
+ scene.add(g);
+
+ zombies.push({
+  g:g,
+  hp:t.hp,
+  speed:t.speed,
+  type:t.name
+ });
+}
+
+for(
+ let i=0;
+ i<55;
+ i++
+){
+ spawnZombie();
+}
+
+
+/* =====================================================
+   CONTROLES
+===================================================== */
+
+let joyX=0;
+let joyY=0;
+
+let running=false;
+
+let yaw=0;
+let pitch=-.1;
+
+let looking=false;
+let lastX=0;
+let lastY=0;
+
+
+/* joystick */
+
+const joyBase=
+ document.getElementById("joyBase");
+
+const joy=
+ document.getElementById("joy");
+
+
+function updateJoy(e){
+
+ const r=
+  joyBase.getBoundingClientRect();
+
+ const cx=
+  r.left+r.width/2;
+
+ const cy=
+  r.top+r.height/2;
+
+ let dx=
+  e.clientX-cx;
+
+ let dy=
+  e.clientY-cy;
+
+ const max=45;
+
+ const len=
+  Math.hypot(dx,dy);
+
+ if(len>max){
+
+  dx=
+   dx/len*max;
+
+  dy=
+   dy/len*max;
+ }
+
+ joyX=
+  dx/max;
+
+ joyY=
+  dy/max;
+
+ joy.style.transform=
+  "translate("+dx+"px,"+dy+"px)";
+}
+
+
+joyBase.addEventListener(
+ "pointerdown",
+ e=>{
+  joyBase.setPointerCapture(
+   e.pointerId
+  );
+
+  updateJoy(e);
+ }
+);
+
+
+joyBase.addEventListener(
+ "pointermove",
+ e=>{
+  if(e.buttons){
+   updateJoy(e);
+  }
+ }
+);
+
+
+function resetJoy(){
+
+ joyX=0;
+ joyY=0;
+
+ joy.style.transform="";
+}
+
+joyBase.addEventListener(
+ "pointerup",
+ resetJoy
+);
+
+joyBase.addEventListener(
+ "pointercancel",
+ resetJoy
+);
+
+
+/* correr */
+
+const run=
+ document.getElementById("run");
+
+run.addEventListener(
+ "pointerdown",
+ ()=>{
+  running=true;
+ }
+);
+
+run.addEventListener(
+ "pointerup",
+ ()=>{
+  running=false;
+ }
+);
+
+run.addEventListener(
+ "pointercancel",
+ ()=>{
+  running=false;
+ }
+);
+
+
+/* =====================================================
+   CÁMARA
+===================================================== */
+
+const look=
+ document.getElementById("look");
+
+look.addEventListener(
+ "pointerdown",
+ e=>{
+
+  looking=true;
+
+  look.setPointerCapture(
+   e.pointerId
+  );
+
+  lastX=
+   e.clientX;
+
+  lastY=
+   e.clientY;
+ }
+);
+
+
+look.addEventListener(
+ "pointermove",
+ e=>{
+
+  if(!looking)return;
+
+  const dx=
+   e.clientX-lastX;
+
+  const dy=
+   e.clientY-lastY;
+
+  lastX=
+   e.clientX;
+
+  lastY=
+   e.clientY;
+
+  yaw-=
+   dx*.006;
+
+  pitch-=
+   dy*.004;
+
+  pitch=
+   Math.max(
+    -1.1,
+    Math.min(.7,pitch)
+   );
+ }
+);
+
+
+look.addEventListener(
+ "pointerup",
+ ()=>{
+  looking=false;
+ }
+);
+
+look.addEventListener(
+ "pointercancel",
+ ()=>{
+  looking=false;
+ }
+);
+
+
+/* =====================================================
+   ARMAS
+===================================================== */
+
+let currentWeapon="none";
+
+function weaponName(){
+
+ if(currentWeapon==="none")
+  return "MANOS VACÍAS";
+
+ return currentWeapon.toUpperCase();
+}
+
+
+function equipWeapon(type){
+
+ if(
+  !inventory[type] ||
+  inventory[type]<=0
+ ){
+
+  return;
+ }
+
+ currentWeapon=type;
+
+ document.getElementById(
+  "weapon"
+ ).innerHTML=
+  weaponName()+
+  "<br><span id='ammo'>"+
+  inventory.ammo+
+  "</span>";
+
+ message(
+  "Equipaste "+
+  weaponName()
+ );
+}
+
+
+/* =====================================================
+   USAR
+===================================================== */
+
+function useAction(){
+
+ /* recoger objeto */
+
+ for(
+  const p of pickups
+ ){
+
+  if(
+   p.visible &&
+   Math.hypot(
+    p.position.x-player.x,
+    p.position.z-player.z
+   )<6
+  ){
+
+   const type=
+    p.userData.type;
+
+   if(
+    type==="pistol" ||
+    type==="shotgun" ||
+    type==="rifle" ||
+    type==="knife"
+   ){
+
+    inventory[type]=1;
+
+    equipWeapon(type);
+
+   }else{
+
+    inventory[type]=
+     (inventory[type]||0)+1;
+
+    message(
+     "Encontraste: "+
+     type
+    );
+   }
+
+   p.visible=false;
+
+   return;
+  }
+ }
+
+
+ /* ataque cuerpo a cuerpo */
+
+ let nearest=null;
+ let dist=6;
+
+ for(
+  const z of zombies
+ ){
+
+  const d=
+   Math.hypot(
+    z.g.position.x-player.x,
+    z.g.position.z-player.z
+   );
+
+  if(d<dist){
+
+   dist=d;
+   nearest=z;
+  }
+ }
+
+ if(
+  nearest &&
+  (
+   currentWeapon==="none" ||
+   currentWeapon==="knife"
+  )
+ ){
+
+  nearest.hp-=
+   currentWeapon==="knife"
+   ?60
+   :25;
+
+  if(nearest.hp<=0){
+
+   scene.remove(
+    nearest.g
+   );
+
+   zombies.splice(
+    zombies.indexOf(nearest),
+    1
+   );
+
+   player.kills++;
+
+   player.xp+=10;
+
+   message(
+    "Zombie eliminado"
+   );
+  }else{
+
+   message(
+    "Golpeaste al zombie"
+   );
+  }
+
+  return;
+ }
+
+
+ /* arma */
+
+ if(
+  currentWeapon!=="none" &&
+  currentWeapon!=="knife"
+ ){
+
+  if(inventory.ammo<=0){
+
+   message(
+    "No tenés munición"
+   );
+
+   return;
+  }
+
+  inventory.ammo--;
+
+  let target=null;
+  let best=65;
+
+  for(
+   const z of zombies
+  ){
+
+   const d=
+    Math.hypot(
+     z.g.position.x-player.x,
+     z.g.position.z-player.z
+    );
+
+   if(d<best){
+
+    best=d;
+    target=z;
+   }
+  }
+
+  if(target){
+
+   target.hp-=
+    currentWeapon==="shotgun"
+    ?100
+    :60;
+
+   if(target.hp<=0){
+
+    scene.remove(
+     target.g
+    );
+
+    zombies.splice(
+     zombies.indexOf(target),
+     1
+    );
+
+    player.kills++;
+
+    player.xp+=10;
+
+    message(
+     "¡Zombie abatido!"
+    );
+
+   }else{
+
+    message(
+     "Disparo acertado"
+    );
+   }
+
+  }else{
+
+   message("Disparo");
+  }
+
+  save();
+ }
+}
+
+
+/* =====================================================
+   MENSAJES
+===================================================== */
+
+function message(t){
+
+ const m=
+  document.getElementById(
+   "message"
+  );
+
+ m.textContent=t;
+
+ m.style.display=
+  "block";
+
+ clearTimeout(
+  message.timer
+ );
+
+ message.timer=
+  setTimeout(
+   ()=>{
+    m.style.display=
+     "none";
+   },
+   1800
+  );
+}
+
+
+/* =====================================================
+   SUPERVIVENCIA
+===================================================== */
+
+function eat(){
+
+ if(inventory.food<=0){
+
+  message(
+   "No tenés comida"
+  );
+
+  return;
+ }
+
+ inventory.food--;
+
+ player.hunger=
+  Math.min(
+   100,
+   player.hunger+30
+  );
+
+ message("Comiste");
+
+ save();
+ updateInventory();
+}
+
+
+function drink(){
+
+ if(inventory.water<=0){
+
+  message(
+   "No tenés agua"
+  );
+
+  return;
+ }
+
+ inventory.water--;
+
+ player.thirst=
+  Math.min(
+   100,
+   player.thirst+35
+  );
+
+ message("Tomaste agua");
+
+ save();
+ updateInventory();
+}
+
+
+function heal(){
+
+ if(inventory.medkit>0){
+
+  inventory.medkit--;
+
+  player.health=
+   Math.min(
+    100,
+    player.health+60
+   );
+
+ }else if(
+  inventory.bandage>0
+ ){
+
+  inventory.bandage--;
+
+  player.health=
+   Math.min(
+    100,
+    player.health+25
+   );
+
+ }else{
+
+  message(
+   "No tenés curaciones"
+  );
+
+  return;
+ }
+
+ message("Te curaste");
+
+ save();
+ updateInventory();
+}
+
+
+/* =====================================================
+   CRAFTEO
+===================================================== */
+
+function craft(type){
+
+ if(
+  type==="axe" &&
+  inventory.wood>=5 &&
+  inventory.metal>=2
+ ){
+
+  inventory.wood-=5;
+  inventory.metal-=2;
+  inventory.axe++;
+
+  message(
+   "Hacha fabricada"
+  );
+
+ }else if(
+  type==="pickaxe" &&
+  inventory.stone>=5 &&
+  inventory.metal>=2
+ ){
+
+  inventory.stone-=5;
+  inventory.metal-=2;
+  inventory.pickaxe++;
+
+  message(
+   "Pico fabricado"
+  );
+
+ }else if(
+  type==="bandage" &&
+  inventory.cloth>=3
+ ){
+
+  inventory.cloth-=3;
+  inventory.bandage++;
+
+  message(
+   "Venda fabricada"
+  );
+
+ }else if(
+  type==="medkit" &&
+  inventory.cloth>=2 &&
+  inventory.medicine>=1
+ ){
+
+  inventory.cloth-=2;
+  inventory.medicine--;
+  inventory.medkit++;
+
+  message(
+   "Botiquín fabricado"
+  );
+
+ }else if(
+  type==="ammo" &&
+  inventory.metal>=2
+ ){
+
+  inventory.metal-=2;
+  inventory.ammo+=6;
+
+  message(
+   "Fabricaste 6 balas"
+  );
+
+ }else{
+
+  message(
+   "Faltan materiales"
+  );
+ }
+
+ save();
+ updateInventory();
+}
+
+
+/* =====================================================
+   GUARDADO
+===================================================== */
+
+function save(){
+
+ try{
+
+  localStorage.setItem(
+   "survival132",
+   JSON.stringify(
+    inventory
+   )
+  );
+
+ }catch(e){}
+}
+
+
+/* =====================================================
+   INVENTARIO
+===================================================== */
+
+function updateInventory(){
+
+ const el=
+  document.getElementById(
+   "inventory"
+  );
+
+ el.innerHTML="";
+
+ for(
+  const [key,value]
+  of Object.entries(inventory)
+ ){
+
+  const d=
+   document.createElement(
+    "div"
+   );
+
+  d.className="card";
+
+  d.textContent=
+   key.toUpperCase()+
+   ": "+
+   value;
+
+  el.appendChild(d);
+ }
+}
+
+
+/* =====================================================
+   PANELES
+===================================================== */
+
+function closePanels(){
+
+ document
+  .querySelectorAll(".panel")
+  .forEach(
+   p=>{
+    p.style.display="none";
+   }
+  );
+}
+
+window.closePanels=
+ closePanels;
+
+document.getElementById(
+ "mapBtn"
+).onclick=()=>{
+
+ updateMap();
+
+ document.getElementById(
+  "mapPanel"
+ ).style.display="block";
+};
+
+document.getElementById(
+ "invBtn"
+).onclick=()=>{
+
+ updateInventory();
+
+ document.getElementById(
+  "invPanel"
+ ).style.display="block";
+};
+
+document.getElementById(
+ "craftBtn"
+).onclick=()=>{
+
+ document.getElementById(
+  "craftPanel"
+ ).style.display="block";
+};
+
+
+/* =====================================================
+   MAPA / DESCUBRIMIENTO
+===================================================== */
+
+const locations=[
+
+ {x:0,z:0,name:"CENTRO DE LA CIUDAD"},
+ {x:0,z:-650,name:"HOSPITAL"},
+ {x:900,z:900,name:"COMISARÍA"},
+ {x:-900,z:900,name:"ESCUELA"},
+ {x:-1200,z:-1200,name:"FÁBRICA"},
+ {x:1200,z:-1200,name:"BASE MILITAR"},
+ {x:1200,z:700,name:"SUPERMERCADO"},
+ {x:1500,z:0,name:"LAGO"},
+ {x:0,z:-2200,name:"BOSQUE PROFUNDO"}
+];
+
+const discovered=
+ new Set();
+
+
+function locationName(){
+
+ let name="???";
+ let best=999999;
+
+ for(
+  const l of locations
+ ){
+
+  const d=
+   Math.hypot(
+    player.x-l.x,
+    player.z-l.z
+   );
+
+  if(d<220){
+
+   discovered.add(
+    l.name
+   );
+
+   if(d<best){
+
+    best=d;
+    name=l.name;
+   }
+  }
+ }
+
+ return name;
+}
+
+
+function updateMap(){
+
+ const canvas=
+  document.getElementById(
+   "map"
+  );
+
+ const ctx=
+  canvas.getContext("2d");
+
+ ctx.clearRect(
+  0,0,600,600
+ );
+
+ ctx.fillStyle=
+  "#29432d";
+
+ ctx.fillRect(
+  0,0,600,600
+ );
+
+ ctx.fillStyle=
+  "#555";
+
+ ctx.fillRect(
+  295,0,10,600
+ );
+
+ ctx.fillRect(
+  0,295,600,10
+ );
+
+ ctx.fillStyle=
+  "#237e9d";
+
+ ctx.fillRect(
+  450,0,100,600
+ );
+
+
+ for(
+  const l of locations
+ ){
+
+  const x=
+   300+
+   l.x/HALF*300;
+
+  const y=
+   300+
+   l.z/HALF*300;
+
+  if(
+   discovered.has(
+    l.name
+   )
+  ){
+
+   ctx.fillStyle=
+    "#e0c23c";
+
+   ctx.fillRect(
+    x-5,
+    y-5,
+    10,
+    10
+   );
+
+   ctx.fillStyle=
+    "white";
+
+   ctx.font=
+    "10px Arial";
+
+   ctx.fillText(
+    l.name,
+    x+7,
+    y+3
+   );
+
+  }else{
+
+   ctx.fillStyle=
+    "#aaa";
+
+   ctx.font=
+    "11px Arial";
+
+   ctx.fillText(
+    "???",
+    x-8,
+    y+3
+   );
+  }
+ }
+
+
+ const px=
+ 300+
+  player.x/HALF*300;
+
+ const py=
+ 300+
+  player.z/HALF*300;
+
+ ctx.fillStyle=
+  "white";
+
+ ctx.beginPath();
+
+ ctx.arc(
+  px,
+  py,
+  6,
+  0,
+  Math.PI*2
+ );
+
+ ctx.fill();
+}
+
+
+/* =====================================================
+   LOOP
+===================================================== */
+
+let gameTime=
+ 8*60;
+
+let day=1;
+
+let last=
+ performance.now();
+
+
+function update(dt){
+
+ const portrait=
+  innerHeight>innerWidth;
+
+ document.getElementById(
+  "portrait"
+ ).style.display=
+  portrait?"flex":"none";
+
+ if(portrait)return;
+
+
+ /* movimiento */
+
+ const moving=
+  Math.hypot(
+   joyX,
+   joyY
+  )>.08;
+
+ let speed=4;
+
+ if(
+  running &&
+  moving &&
+  player.stamina>1
+ ){
+
+  speed=7;
+
+  player.stamina=
+   Math.max(
+    0,
+    player.stamina-
+    dt*18
+   );
+
+ }else{
+
+  player.stamina=
+   Math.min(
+    100,
+    player.stamina+
+    dt*10
+   );
+ }
+
+
+ const forward=
+  -joyY;
+
+ const right=
+  joyX;
+
+ const fx=
+  -Math.sin(yaw);
+
+ const fz=
+  -Math.cos(yaw);
+
+ const rx=
+  Math.cos(yaw);
+
+ const rz=
+  -Math.sin(yaw);
+
+
+ player.x+=
+  (
+   fx*forward+
+   rx*right
+  )*
+  speed*
+  dt;
+
+ player.z+=
+  (
+   fz*forward+
+   rz*right
+  )*
+  speed*
+  dt;
+
+
+ player.x=
+  Math.max(
+   -HALF+30,
+   Math.min(
+    HALF-30,
+    player.x
+   )
+  );
+
+ player.z=
+  Math.max(
+   -HALF+30,
+   Math.min(
+    HALF-30,
+    player.z
+   )
+  );
+
+
+ playerBody.position.set(
+  player.x,
+  0,
+  player.z
+ );
+
+ playerBody.rotation.y=
+  yaw;
+
+
+ /* supervivencia */
+
+ player.hunger=
+  Math.max(
+   0,
+   player.hunger-
+   dt*.07
+  );
+
+ player.thirst=
+  Math.max(
+   0,
+   player.thirst-
+   dt*.12
+  );
+
+
+ if(
+  player.hunger<5 ||
+  player.thirst<5
+ ){
+
+  player.health=
+   Math.max(
+    0,
+    player.health-
+    dt*.7
+   );
+ }
+
+
+ if(player.health<=0){
+
+  message(
+   "MORISTE. Volviste al inicio."
+  );
+
+  player.health=100;
+  player.hunger=70;
+  player.thirst=70;
+
+  player.x=0;
+  player.z=80;
+ }
+
+
+ /* tiempo */
+
+ gameTime+=
+  dt*2;
+
+ if(
+  gameTime>=1440
+ ){
+
+  gameTime=0;
+  day++;
+ }
+
+
+ const hour=
+  Math.floor(
+   gameTime/60
+  );
+
+ const night=
+  hour>=20 ||
+  hour<6;
+
+
+ if(night){
+
+  scene.background.set(
+   0x111827
+  );
+
+  scene.fog.color.set(
+   0x111827
+  );
+
+  sun.intensity=
+   .35;
+
+ }else{
+
+  scene.background.set(
+   0x71899a
+  );
+
+  scene.fog.color.set(
+   0x71899a
+  );
+
+  sun.intensity=
+   1.25;
+ }
+
+
+ /* zombies */
+
+ for(
+  const z of zombies
+ ){
+
+  const dx=
+   player.x-
+   z.g.position.x;
+
+  const dz=
+   player.z-
+   z.g.position.z;
+
+  const d=
+   Math.hypot(
+    dx,dz
+   );
+
+  if(d<650){
+
+   z.g.position.x+=
+    dx/d*
+    z.speed*
+    dt;
+
+   z.g.position.z+=
+    dz/d*
+    z.speed*
+    dt;
+  }
+
+  if(d<2.8){
+
+   player.health=
+    Math.max(
+     0,
+     player.health-
+     dt*
+     (
+      z.type==="Mutante"
+      ?15
+      :5
+     )
+    );
+  }
+ }
+
+
+ /* respawn */
+
+ const max=
+  night?100:60;
+
+ if(
+  zombies.length<max &&
+  Math.random()<
+  dt*.5
+ ){
+
+  spawnZombie();
+ }
+
+
+ /* pickups */
+
+ for(
+  const p of pickups
+ ){
+
+  if(!p.visible)continue;
+
+  p.rotation.y+=
+   dt*2;
+
+  p.position.y=
+   1+
+   Math.sin(
+    performance.now()*.003+
+    p.id
+   )*.35;
+ }
+
+
+ /* cámara */
+
+ const distance=5;
+
+ const cx=
+  player.x-
+  Math.sin(yaw)*
+  distance;
+
+ const cz=
+  player.z-
+  Math.cos(yaw)*
+  distance;
+
+ const cy=
+  4+
+  pitch*2;
+
+
+ camera.position.x+=
+  (cx-camera.position.x)*.2;
+
+ camera.position.z+=
+  (cz-camera.position.z)*.2;
+
+ camera.position.y+=
+  (cy-camera.position.y)*.2;
+
+
+ camera.lookAt(
+  player.x,
+  3.2+pitch*2,
+  player.z
+ );
+
+
+ /* HUD */
+
+ const h=
+  Math.floor(
+   gameTime/60
+  );
+
+ const min=
+  Math.floor(
+   gameTime%60
+  );
+
+ document.getElementById(
+  "info"
+ ).innerHTML=
+  "DÍA "+
+  day+
+  " — "+
+  String(h).padStart(2,"0")+
+  ":"+
+  String(min).padStart(2,"0")+
+  "<br>"+
+  locationName()+
+  "<br>ZOMBIES: "+
+  zombies.length+
+  "<br>BAJAS: "+
+  player.kills+
+  "<br>NIVEL: "+
+  player.level;
+
+
+ document.getElementById(
+  "hp"
+ ).style.width=
+  player.health+"%";
+
+ document.getElementById(
+  "food"
+ ).style.width=
+  player.hunger+"%";
+
+ document.getElementById(
+  "water"
+ ).style.width=
+  player.thirst+"%";
+
+ document.getElementById(
+  "stamina"
+ ).style.width=
+  player.stamina+"%";
+
+
+ document.getElementById(
+  "mission"
+ ).textContent=
+  player.kills<10
+  ?
+  "MISIÓN: Eliminá 10 zombies. "+
+  player.kills+"/10"
+  :
+  discovered.size<5
+  ?
+  "MISIÓN: Descubrí 5 lugares. "+
+  discovered.size+"/5"
+  :
+  "MISIÓN: Explorá, conseguí armas y sobreviví.";
+}
+
+
+function animate(t){
+
+ requestAnimationFrame(
+  animate
+ );
+
+ const dt=
+  Math.min(
+   .05,
+   (t-last)/1000
+  );
+
+ last=t;
+
+ update(dt);
+
+ renderer.render(
+  scene,
+  camera
+ );
+}
+
+
+/* =====================================================
+   BOTONES
+===================================================== */
+
+document.getElementById(
+ "use"
+).onclick=useAction;
+
+
+document.getElementById(
+ "reload"
+).onclick=()=>{
+
+ if(
+  currentWeapon==="none" ||
+  currentWeapon==="knife"
+ ){
+
+  message(
+   "No tenés un arma para recargar"
+  );
+
+  return;
+ }
+
+ message(
+  "Todavía no hay cargador automático"
+ );
+};
+
+
+let lightOn=false;
+
+document.getElementById(
+ "light"
+).onclick=()=>{
+
+ lightOn=!lightOn;
+
+ sun.intensity=
+  lightOn?1.8:1.25;
+
+ message(
+  lightOn?
+  "Luz encendida":
+  "Luz apagada"
+ );
+};
+
+
+/* =====================================================
+   RESIZE
+===================================================== */
+
+function resize(){
+
+ camera.aspect=
+  innerWidth/innerHeight;
+
+ camera.updateProjectionMatrix();
+
+ renderer.setSize(
+  innerWidth,
+  innerHeight
+ );
+}
+
+addEventListener(
+ "resize",
+ resize
+);
+
+addEventListener(
+ "orientationchange",
+ resize
+);
+
+
+/* =====================================================
+   ARRANQUE
+===================================================== */
+
+resize();
+
+updateInventory();
+
+setTimeout(
+ ()=>{
+  document.getElementById(
+   "loading"
+  ).style.display="none";
+ },
+ 500
+);
+
+animate(
+ performance.now()
+);
+
+})();
+</script>
+
+</body>
+</html>
