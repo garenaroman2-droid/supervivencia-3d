@@ -1,0 +1,2378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Supervivencia 3D V9.0</title>
+
+<style>
+*{box-sizing:border-box}
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#79aeca;
+  font-family:Arial,sans-serif;
+  touch-action:none;
+}
+#game{
+  position:fixed;
+  inset:0;
+}
+#ui{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+}
+.panel{
+  background:rgba(0,0,0,.68);
+  color:white;
+  padding:8px 11px;
+  border-radius:10px;
+  font-size:13px;
+}
+#top{
+  position:absolute;
+  top:9px;
+  left:9px;
+  right:9px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+}
+#controls{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:12px;
+  height:175px;
+}
+#joystick{
+  position:absolute;
+  left:18px;
+  bottom:18px;
+  width:125px;
+  height:125px;
+  border-radius:50%;
+  background:rgba(255,255,255,.14);
+  border:2px solid rgba(255,255,255,.35);
+  pointer-events:auto;
+}
+#stick{
+  position:absolute;
+  left:33px;
+  top:33px;
+  width:55px;
+  height:55px;
+  border-radius:50%;
+  background:rgba(255,255,255,.58);
+}
+.buttons{
+  position:absolute;
+  right:12px;
+  bottom:12px;
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:8px;
+  width:250px;
+  pointer-events:auto;
+}
+button{
+  width:76px;
+  height:48px;
+  border:0;
+  border-radius:12px;
+  background:rgba(0,0,0,.7);
+  color:white;
+  font-size:11px;
+  font-weight:bold;
+}
+button:active{
+  transform:scale(.94);
+}
+#map{
+  display:none;
+  position:absolute;
+  top:65px;
+  right:9px;
+  width:230px;
+  height:230px;
+  border:2px solid white;
+  border-radius:10px;
+  background:#284f2e;
+}
+#message{
+  display:none;
+  position:absolute;
+  left:50%;
+  bottom:195px;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,.72);
+  color:white;
+  padding:8px 13px;
+  border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game"></div>
+
+<div id="ui">
+
+  <div id="top">
+    <div class="panel">
+      <b>SUPERVIVENCIA 3D — V9.0</b><br>
+      <span id="mode">Cámara: 1ª PERSONA</span><br>
+      <span id="stats">Vida: 100 | Resistencia: 100</span>
+    </div>
+
+    <div class="panel">
+      <span id="position">X: 0 | Z: 0</span><br>
+      <span id="distance">Base: 0 m</span>
+    </div>
+  </div>
+
+  <canvas id="map" width="230" height="230"></canvas>
+
+  <div id="message"></div>
+
+  <div id="controls">
+
+    <div id="joystick">
+      <div id="stick"></div>
+    </div>
+
+    <div class="buttons">
+      <button id="cameraBtn">CAMBIAR<br>CÁMARA</button>
+      <button id="jump">SALTAR</button>
+      <button id="run">CORRER</button>
+      <button id="mapBtn">MAPA</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+"use strict";
+
+/* =====================================================
+   ESCENA
+===================================================== */
+
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0x83b7d0);
+
+scene.fog = new THREE.Fog(
+  0x83b7d0,
+  100,
+  850
+);
+
+
+/* =====================================================
+   CÁMARA
+===================================================== */
+
+const camera = new THREE.PerspectiveCamera(
+  70,
+  innerWidth / innerHeight,
+  0.05,
+  3000
+);
+
+camera.position.set(0,5,8);
+
+
+/* =====================================================
+   RENDER
+===================================================== */
+
+const renderer = new THREE.WebGLRenderer({
+  antialias:true
+});
+
+renderer.setSize(
+  innerWidth,
+  innerHeight
+);
+
+renderer.setPixelRatio(
+  Math.min(devicePixelRatio,1.8)
+);
+
+renderer.shadowMap.enabled=true;
+
+document
+.getElementById("game")
+.appendChild(renderer.domElement);
+
+
+/* =====================================================
+   LUCES
+===================================================== */
+
+const hemi = new THREE.HemisphereLight(
+  0xffffff,
+  0x49603e,
+  1.8
+);
+
+scene.add(hemi);
+
+const sun = new THREE.DirectionalLight(
+  0xffffff,
+  2
+);
+
+sun.position.set(
+  250,
+  350,
+  180
+);
+
+sun.castShadow=true;
+
+scene.add(sun);
+
+
+/* =====================================================
+   SUELO
+===================================================== */
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(
+    2200,
+    2200
+  ),
+  new THREE.MeshLambertMaterial({
+    color:0x4d853f
+  })
+);
+
+ground.rotation.x=-Math.PI/2;
+
+ground.receiveShadow=true;
+
+scene.add(ground);
+
+
+/* =====================================================
+   CAMINOS
+===================================================== */
+
+function createRoad(x,z,w,d){
+
+  const road = new THREE.Mesh(
+    new THREE.BoxGeometry(
+      w,
+      .04,
+      d
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x756a53
+    })
+  );
+
+  road.position.set(
+    x,
+    .025,
+    z
+  );
+
+  scene.add(road);
+}
+
+createRoad(0,0,14,2200);
+createRoad(0,0,2200,14);
+
+createRoad(450,-350,700,8);
+createRoad(-450,350,8,700);
+
+
+/* =====================================================
+   PASTO
+===================================================== */
+
+function createGrass(x,z){
+
+  const h=.25+Math.random()*.55;
+
+  const grass = new THREE.Mesh(
+    new THREE.ConeGeometry(
+      .08,
+      h,
+      4
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x3e7d36
+    })
+  );
+
+  grass.position.set(
+    x,
+    h/2,
+    z
+  );
+
+  grass.rotation.y=Math.random()*6;
+
+  scene.add(grass);
+}
+
+for(let i=0;i<1800;i++){
+
+  const x=(Math.random()-.5)*1900;
+  const z=(Math.random()-.5)*1900;
+
+  if(Math.abs(x)<30 && Math.abs(z)<30){
+    i--;
+    continue;
+  }
+
+  createGrass(x,z);
+}
+
+
+/* =====================================================
+   ARBUSTOS
+===================================================== */
+
+function createBush(x,z){
+
+  const bush = new THREE.Mesh(
+    new THREE.SphereGeometry(
+      .8+Math.random()*1,
+      7,
+      6
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x2f6e32
+    })
+  );
+
+  bush.scale.y=.65;
+
+  bush.position.set(
+    x,
+    .55,
+    z
+  );
+
+  bush.castShadow=true;
+
+  scene.add(bush);
+}
+
+for(let i=0;i<300;i++){
+
+  createBush(
+    (Math.random()-.5)*1700,
+    (Math.random()-.5)*1700
+  );
+}
+
+
+/* =====================================================
+   ÁRBOLES
+===================================================== */
+
+function createTree(x,z,s=1){
+
+  const tree=new THREE.Group();
+
+  const trunk=new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      .4*s,
+      .62*s,
+      4*s,
+      8
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x654024
+    })
+  );
+
+  trunk.position.y=2*s;
+
+  tree.add(trunk);
+
+
+  const crown=new THREE.Mesh(
+    new THREE.SphereGeometry(
+      2.2*s,
+      9,
+      8
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x245b2c
+    })
+  );
+
+  crown.position.y=5*s;
+
+  tree.add(crown);
+
+
+  tree.position.set(
+    x,
+    0,
+    z
+  );
+
+  tree.traverse(o=>{
+    if(o.isMesh)o.castShadow=true;
+  });
+
+  scene.add(tree);
+}
+
+for(let i=0;i<240;i++){
+
+  const x=(Math.random()-.5)*1800;
+  const z=(Math.random()-.5)*1800;
+
+  if(Math.abs(x)<45 && Math.abs(z)<45){
+    i--;
+    continue;
+  }
+
+  createTree(
+    x,
+    z,
+    .7+Math.random()*1
+  );
+}
+
+
+/* =====================================================
+   ROCAS
+===================================================== */
+
+function createRock(x,z,s=1){
+
+  const rock=new THREE.Mesh(
+    new THREE.DodecahedronGeometry(
+      1.2*s,
+      0
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x696969
+    })
+  );
+
+  rock.position.set(
+    x,
+    .8*s,
+    z
+  );
+
+  rock.rotation.set(
+    Math.random(),
+    Math.random(),
+    Math.random()
+  );
+
+  rock.castShadow=true;
+
+  scene.add(rock);
+}
+
+for(let i=0;i<100;i++){
+
+  createRock(
+    (Math.random()-.5)*1800,
+    (Math.random()-.5)*1800,
+    .6+Math.random()*1
+  );
+}
+
+
+/* =====================================================
+   LAGO
+===================================================== */
+
+function createLake(x,z,w,d){
+
+  const lake=new THREE.Mesh(
+    new THREE.PlaneGeometry(w,d),
+    new THREE.MeshPhongMaterial({
+      color:0x267ba5,
+      transparent:true,
+      opacity:.82,
+      shininess:90
+    })
+  );
+
+  lake.rotation.x=-Math.PI/2;
+
+  lake.position.set(
+    x,
+    .035,
+    z
+  );
+
+  scene.add(lake);
+
+
+  const shore=new THREE.Mesh(
+    new THREE.RingGeometry(
+      1,
+      1.02,
+      32
+    ),
+    new THREE.MeshBasicMaterial({
+      color:0x7c9a4b,
+      side:THREE.DoubleSide
+    })
+  );
+
+  shore.scale.set(
+    w/2,
+    d/2,
+    1
+  );
+}
+
+
+/* lagos */
+
+createLake(
+  360,
+  -520,
+  210,
+  150
+);
+
+createLake(
+  -720,
+  650,
+  160,
+  110
+);
+
+
+/* =====================================================
+   RÍOS
+===================================================== */
+
+function createRiver(){
+
+  const river=new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      70,
+      1500
+    ),
+    new THREE.MeshPhongMaterial({
+      color:0x2a83a9,
+      transparent:true,
+      opacity:.8,
+      shininess:100
+    })
+  );
+
+  river.rotation.x=-Math.PI/2;
+
+  river.position.set(
+    -250,
+    .04,
+    300
+  );
+
+  river.rotation.z=.18;
+
+  scene.add(river);
+}
+
+createRiver();
+
+
+/* =====================================================
+   PUENTES
+===================================================== */
+
+function createBridge(x,z){
+
+  const bridge=new THREE.Mesh(
+    new THREE.BoxGeometry(
+      90,
+      1,
+      16
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x65452e
+    })
+  );
+
+  bridge.position.set(
+    x,
+    .8,
+    z
+  );
+
+  scene.add(bridge);
+
+
+  for(let i=-35;i<=35;i+=14){
+
+    const post=new THREE.Mesh(
+      new THREE.BoxGeometry(
+        1,
+        3,
+        1
+      ),
+      new THREE.MeshLambertMaterial({
+        color:0x4a3223
+      })
+    );
+
+    post.position.set(
+      x+i,
+      -.4,
+      z
+    );
+
+    scene.add(post);
+  }
+}
+
+createBridge(-250,300);
+
+
+/* =====================================================
+   CASA
+===================================================== */
+
+function createHouse(
+  x,
+  z,
+  scale=1,
+  abandoned=false
+){
+
+  const group=new THREE.Group();
+
+  const wallColor=
+    abandoned
+    ? 0x716557
+    : 0xb6976c;
+
+  const roofColor=
+    abandoned
+    ? 0x39332e
+    : 0x574034;
+
+
+  const wallMat=
+    new THREE.MeshLambertMaterial({
+      color:wallColor
+    });
+
+  const roofMat=
+    new THREE.MeshLambertMaterial({
+      color:roofColor
+    });
+
+
+  const back=new THREE.Mesh(
+    new THREE.BoxGeometry(
+      12*scale,
+      6*scale,
+      .5*scale
+    ),
+    wallMat
+  );
+
+  back.position.set(
+    0,
+    3*scale,
+    -6*scale
+  );
+
+  group.add(back);
+
+
+  const left=new THREE.Mesh(
+    new THREE.BoxGeometry(
+      .5*scale,
+      6*scale,
+      12*scale
+    ),
+    wallMat
+  );
+
+  left.position.set(
+    -6*scale,
+    3*scale,
+    0
+  );
+
+  group.add(left);
+
+
+  const right=left.clone();
+
+  right.position.x=6*scale;
+
+  group.add(right);
+
+
+  const frontLeft=new THREE.Mesh(
+    new THREE.BoxGeometry(
+      4.5*scale,
+      6*scale,
+      .5*scale
+    ),
+    wallMat
+  );
+
+  frontLeft.position.set(
+    -3.75*scale,
+    3*scale,
+    6*scale
+  );
+
+  group.add(frontLeft);
+
+
+  const frontRight=frontLeft.clone();
+
+  frontRight.position.x=
+    3.75*scale;
+
+  group.add(frontRight);
+
+
+  const roof=new THREE.Mesh(
+    new THREE.BoxGeometry(
+      14*scale,
+      .8*scale,
+      14*scale
+    ),
+    roofMat
+  );
+
+  roof.position.y=
+    6.4*scale;
+
+  roof.rotation.z=.07;
+
+  group.add(roof);
+
+
+  /* ventana */
+
+  for(const side of [-1,1]){
+
+    const windowMesh=new THREE.Mesh(
+      new THREE.BoxGeometry(
+        1.8*scale,
+        1.4*scale,
+        .08
+      ),
+      new THREE.MeshLambertMaterial({
+        color:0x7ab4c8
+      })
+    );
+
+    windowMesh.position.set(
+      side*6.27*scale,
+      3.5*scale,
+      -1.5*scale
+    );
+
+    windowMesh.rotation.y=Math.PI/2;
+
+    group.add(windowMesh);
+  }
+
+
+  /* puerta */
+
+  const door=new THREE.Mesh(
+    new THREE.BoxGeometry(
+      2*scale,
+      3.7*scale,
+      .15
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x402b20
+    })
+  );
+
+  door.position.set(
+    0,
+    1.85*scale,
+    6.28*scale
+  );
+
+  group.add(door);
+
+
+  group.position.set(
+    x,
+    0,
+    z
+  );
+
+  group.traverse(o=>{
+    if(o.isMesh)o.castShadow=true;
+  });
+
+  scene.add(group);
+}
+
+
+/* =====================================================
+   BASE
+===================================================== */
+
+createHouse(
+  0,
+  -14,
+  1.1,
+  false
+);
+
+
+/* =====================================================
+   ZONA ABANDONADA
+===================================================== */
+
+createHouse(
+  650,
+  -420,
+  1,
+  true
+);
+
+createHouse(
+  710,
+  -480,
+  .8,
+  true
+);
+
+createHouse(
+  590,
+  -500,
+  .7,
+  true
+);
+
+
+/* =====================================================
+   GRANJA
+===================================================== */
+
+function createFarm(x,z){
+
+  for(let i=0;i<7;i++){
+
+    const row=new THREE.Mesh(
+      new THREE.BoxGeometry(
+        4,
+        .12,
+        30
+      ),
+      new THREE.MeshLambertMaterial({
+        color:0x72502c
+      })
+    );
+
+    row.position.set(
+      x+i*7,
+      .08,
+      z
+    );
+
+    scene.add(row);
+  }
+
+
+  createHouse(
+    x+30,
+    z-25,
+    .8,
+    false
+  );
+}
+
+createFarm(
+  -620,
+  520
+);
+
+
+/* =====================================================
+   CIUDAD
+===================================================== */
+
+function createCity(){
+
+  for(let i=0;i<12;i++){
+
+    const x=
+      850+
+      (i%4)*55;
+
+    const z=
+      -700+
+      Math.floor(i/4)*65;
+
+    createHouse(
+      x,
+      z,
+      .8+Math.random()*.35,
+      i%3===0
+    );
+  }
+
+
+  createRoad(
+    950,
+    -620,
+    300,
+    10
+  );
+
+  createRoad(
+    950,
+    -750,
+    10,
+    300
+  );
+}
+
+createCity();
+
+
+/* =====================================================
+   CUEVAS
+===================================================== */
+
+function createCave(x,z){
+
+  const cave=new THREE.Group();
+
+
+  const rockMat=
+    new THREE.MeshLambertMaterial({
+      color:0x3c3936
+    });
+
+
+  const left=new THREE.Mesh(
+    new THREE.DodecahedronGeometry(
+      7,
+      1
+    ),
+    rockMat
+  );
+
+  left.scale.set(
+    1,
+    1.2,
+    1.3
+  );
+
+  left.position.set(
+    -5,
+    5,
+    0
+  );
+
+  cave.add(left);
+
+
+  const right=left.clone();
+
+  right.position.x=5;
+
+  cave.add(right);
+
+
+  const top=new THREE.Mesh(
+    new THREE.DodecahedronGeometry(
+      8,
+      1
+    ),
+    rockMat
+  );
+
+  top.scale.set(
+    1.5,
+    .7,
+    1.4
+  );
+
+  top.position.y=10;
+
+  cave.add(top);
+
+
+  const darkness=new THREE.Mesh(
+    new THREE.CircleGeometry(
+      4,
+      24
+    ),
+    new THREE.MeshBasicMaterial({
+      color:0x090909
+    })
+  );
+
+  darkness.position.set(
+    0,
+    4,
+    -5
+  );
+
+  darkness.rotation.x=
+    Math.PI/2;
+
+  cave.add(darkness);
+
+
+  cave.position.set(
+    x,
+    0,
+    z
+  );
+
+  scene.add(cave);
+}
+
+createCave(
+  -500,
+  -600
+);
+
+createCave(
+  750,
+  450
+);
+
+
+/* =====================================================
+   COFRES
+===================================================== */
+
+function createChest(x,z){
+
+  const chest=new THREE.Group();
+
+  const body=new THREE.Mesh(
+    new THREE.BoxGeometry(
+      2.4,
+      1.1,
+      1.5
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x75451f
+    })
+  );
+
+  body.position.y=.6;
+
+  chest.add(body);
+
+
+  const band=new THREE.Mesh(
+    new THREE.BoxGeometry(
+      .18,
+      1.2,
+      1.6
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0xb38a39
+    })
+  );
+
+  band.position.y=.62;
+
+  chest.add(band);
+
+
+  chest.position.set(
+    x,
+    0,
+    z
+  );
+
+  scene.add(chest);
+}
+
+createChest(
+  675,
+  -455
+);
+
+createChest(
+  -530,
+  -600
+);
+
+createChest(
+  760,
+  420
+);
+
+
+/* =====================================================
+   BANDERA
+===================================================== */
+
+function createFlag(x,z,color=0xd71920){
+
+  const g=new THREE.Group();
+
+  const pole=new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      .08,
+      .08,
+      5,
+      8
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0xd0d0d0
+    })
+  );
+
+  pole.position.y=2.5;
+
+  g.add(pole);
+
+
+  const flag=new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      2.4,
+      1.3
+    ),
+    new THREE.MeshLambertMaterial({
+      color:color,
+      side:THREE.DoubleSide
+    })
+  );
+
+  flag.position.set(
+    1.05,
+    3.8,
+    0
+  );
+
+  g.add(flag);
+
+  g.position.set(
+    x,
+    0,
+    z
+  );
+
+  scene.add(g);
+}
+
+createFlag(
+  0,
+  8
+);
+
+
+/* =====================================================
+   PERSONA
+===================================================== */
+
+const player=new THREE.Group();
+
+player.position.set(
+  0,
+  0,
+  0
+);
+
+scene.add(player);
+
+
+/* materiales */
+
+const skinMat=
+  new THREE.MeshLambertMaterial({
+    color:0xc98d67
+  });
+
+const shirtMat=
+  new THREE.MeshLambertMaterial({
+    color:0x20252b
+  });
+
+const pantsMat=
+  new THREE.MeshLambertMaterial({
+    color:0x202020
+  });
+
+const shoeMat=
+  new THREE.MeshLambertMaterial({
+    color:0x111111
+  });
+
+const hairMat=
+  new THREE.MeshLambertMaterial({
+    color:0x17120d
+  });
+
+
+/* torso */
+
+const torso=new THREE.Mesh(
+  new THREE.BoxGeometry(
+    1.5,
+    2.2,
+    .8
+  ),
+  shirtMat
+);
+
+torso.position.y=3.1;
+
+player.add(torso);
+
+
+/* cuello */
+
+const neck=new THREE.Mesh(
+  new THREE.CylinderGeometry(
+    .25,
+    .25,
+    .35,
+    10
+  ),
+  skinMat
+);
+
+neck.position.y=4.35;
+
+player.add(neck);
+
+
+/* cabeza */
+
+const head=new THREE.Mesh(
+  new THREE.SphereGeometry(
+    .67,
+    16,
+    12
+  ),
+  skinMat
+);
+
+head.position.y=4.95;
+
+player.add(head);
+
+
+/* pelo */
+
+const hair=new THREE.Mesh(
+  new THREE.SphereGeometry(
+    .7,
+    16,
+    8
+  ),
+  hairMat
+);
+
+hair.scale.y=.55;
+
+hair.position.y=5.4;
+
+player.add(hair);
+
+
+/* brazos */
+
+const leftArm=new THREE.Mesh(
+  new THREE.BoxGeometry(
+    .45,
+    2,
+    .45
+  ),
+  shirtMat
+);
+
+leftArm.position.set(
+  -1.05,
+  3.1,
+  0
+);
+
+player.add(leftArm);
+
+
+const rightArm=leftArm.clone();
+
+rightArm.position.x=1.05;
+
+player.add(rightArm);
+
+
+/* manos */
+
+const leftHand=new THREE.Mesh(
+  new THREE.SphereGeometry(
+    .29,
+    10,
+    8
+  ),
+  skinMat
+);
+
+leftHand.position.set(
+  -1.05,
+  2,
+  0
+);
+
+player.add(leftHand);
+
+
+const rightHand=leftHand.clone();
+
+rightHand.position.x=1.05;
+
+player.add(rightHand);
+
+
+/* piernas */
+
+const leftLeg=new THREE.Mesh(
+  new THREE.BoxGeometry(
+    .55,
+    2.2,
+    .55
+  ),
+  pantsMat
+);
+
+leftLeg.position.set(
+  -.43,
+  1.05,
+  0
+);
+
+player.add(leftLeg);
+
+
+const rightLeg=leftLeg.clone();
+
+rightLeg.position.x=.43;
+
+player.add(rightLeg);
+
+
+/* pies */
+
+const leftFoot=new THREE.Mesh(
+  new THREE.BoxGeometry(
+    .62,
+    .35,
+    1
+  ),
+  shoeMat
+);
+
+leftFoot.position.set(
+  -.43,
+  -.05,
+  -.2
+);
+
+player.add(leftFoot);
+
+
+const rightFoot=leftFoot.clone();
+
+rightFoot.position.x=.43;
+
+player.add(rightFoot);
+
+
+player.traverse(o=>{
+  if(o.isMesh)o.castShadow=true;
+});
+
+
+/* =====================================================
+   BRAZOS DE PRIMERA PERSONA
+===================================================== */
+
+const firstPerson=new THREE.Group();
+
+camera.add(firstPerson);
+
+scene.add(camera);
+
+
+/* brazo izquierdo */
+
+const fpLeftArm=new THREE.Mesh(
+  new THREE.BoxGeometry(
+    .28,
+    1.15,
+    .28
+  ),
+  shirtMat
+);
+
+fpLeftArm.position.set(
+  -.52,
+  -.55,
+  -.85
+);
+
+fpLeftArm.rotation.z=.15;
+
+firstPerson.add(fpLeftArm);
+
+
+/* mano izquierda */
+
+const fpLeftHand=new THREE.Mesh(
+  new THREE.SphereGeometry(
+    .22,
+    10,
+    8
+  ),
+  skinMat
+);
+
+fpLeftHand.position.set(
+  -.52,
+  -1.12,
+  -.85
+);
+
+firstPerson.add(fpLeftHand);
+
+
+/* brazo derecho */
+
+const fpRightArm=new THREE.Mesh(
+  new THREE.BoxGeometry(
+    .28,
+    1.15,
+    .28
+  ),
+  shirtMat
+);
+
+fpRightArm.position.set(
+  .52,
+  -.55,
+  -.85
+);
+
+fpRightArm.rotation.z=-.15;
+
+firstPerson.add(fpRightArm);
+
+
+/* mano derecha */
+
+const fpRightHand=new THREE.Mesh(
+  new THREE.SphereGeometry(
+    .22,
+    10,
+    8
+  ),
+  skinMat
+);
+
+fpRightHand.position.set(
+  .52,
+  -1.12,
+  -.85
+);
+
+firstPerson.add(fpRightHand);
+
+
+/* =====================================================
+   CÁMARA / CONTROLES
+===================================================== */
+
+let firstPersonMode=true;
+
+let cameraYaw=0;
+
+let cameraPitch=-.08;
+
+let cameraDistance=10;
+
+let draggingCamera=false;
+
+let lastTouchX=0;
+
+let lastTouchY=0;
+
+
+/* joystick */
+
+let joyX=0;
+let joyY=0;
+let joyActive=false;
+
+const joystick=
+  document.getElementById("joystick");
+
+const stick=
+  document.getElementById("stick");
+
+
+function updateJoystick(x,y){
+
+  const r=
+    joystick.getBoundingClientRect();
+
+  const cx=
+    r.left+r.width/2;
+
+  const cy=
+    r.top+r.height/2;
+
+  let dx=x-cx;
+  let dy=y-cy;
+
+  const max=43;
+
+  const len=
+    Math.sqrt(dx*dx+dy*dy);
+
+  if(len>max){
+
+    dx=dx/len*max;
+    dy=dy/len*max;
+  }
+
+  joyX=dx/max;
+  joyY=dy/max;
+
+  stick.style.transform=
+    `translate(${dx}px,${dy}px)`;
+}
+
+
+joystick.addEventListener(
+  "pointerdown",
+  e=>{
+    joyActive=true;
+    joystick.setPointerCapture(
+      e.pointerId
+    );
+    updateJoystick(
+      e.clientX,
+      e.clientY
+    );
+  }
+);
+
+joystick.addEventListener(
+  "pointermove",
+  e=>{
+    if(joyActive){
+      updateJoystick(
+        e.clientX,
+        e.clientY
+      );
+    }
+  }
+);
+
+function resetJoystick(){
+
+  joyActive=false;
+  joyX=0;
+  joyY=0;
+
+  stick.style.transform=
+    "translate(0,0)";
+}
+
+joystick.addEventListener(
+  "pointerup",
+  resetJoystick
+);
+
+joystick.addEventListener(
+  "pointercancel",
+  resetJoystick
+);
+
+
+/* =====================================================
+   CÁMARA CON DEDO
+===================================================== */
+
+renderer.domElement.addEventListener(
+  "pointerdown",
+  e=>{
+
+    draggingCamera=true;
+
+    lastTouchX=e.clientX;
+    lastTouchY=e.clientY;
+  }
+);
+
+
+renderer.domElement.addEventListener(
+  "pointermove",
+  e=>{
+
+    if(!draggingCamera)return;
+
+    const dx=
+      e.clientX-lastTouchX;
+
+    const dy=
+      e.clientY-lastTouchY;
+
+    cameraYaw-=dx*.008;
+
+    cameraPitch-=dy*.006;
+
+    cameraPitch=
+      THREE.MathUtils.clamp(
+        cameraPitch,
+        -.9,
+        .6
+      );
+
+    lastTouchX=e.clientX;
+    lastTouchY=e.clientY;
+  }
+);
+
+
+renderer.domElement.addEventListener(
+  "pointerup",
+  ()=>{
+    draggingCamera=false;
+  }
+);
+
+renderer.domElement.addEventListener(
+  "pointercancel",
+  ()=>{
+    draggingCamera=false;
+  }
+);
+
+
+/* =====================================================
+   CAMBIAR CÁMARA
+===================================================== */
+
+const modeText=
+  document.getElementById("mode");
+
+document
+.getElementById("cameraBtn")
+.addEventListener(
+  "pointerdown",
+  ()=>{
+
+    firstPersonMode=
+      !firstPersonMode;
+
+    if(firstPersonMode){
+
+      modeText.textContent=
+        "Cámara: 1ª PERSONA";
+
+      firstPerson.visible=true;
+
+      showMessage(
+        "PRIMERA PERSONA"
+      );
+
+    }else{
+
+      modeText.textContent=
+        "Cámara: 3ª PERSONA";
+
+      firstPerson.visible=false;
+
+      showMessage(
+        "TERCERA PERSONA"
+      );
+    }
+  }
+);
+
+
+/* =====================================================
+   SALTO
+===================================================== */
+
+let velocityY=0;
+
+let grounded=true;
+
+const gravity=-20;
+
+document
+.getElementById("jump")
+.addEventListener(
+  "pointerdown",
+  ()=>{
+
+    if(grounded){
+
+      velocityY=8.5;
+
+      grounded=false;
+    }
+  }
+);
+
+
+/* =====================================================
+   CORRER
+===================================================== */
+
+let running=false;
+
+const runButton=
+  document.getElementById("run");
+
+runButton.addEventListener(
+  "pointerdown",
+  ()=>{
+    running=true;
+  }
+);
+
+runButton.addEventListener(
+  "pointerup",
+  ()=>{
+    running=false;
+  }
+);
+
+runButton.addEventListener(
+  "pointercancel",
+  ()=>{
+    running=false;
+  }
+);
+
+
+/* =====================================================
+   MOVIMIENTO
+===================================================== */
+
+let walkTime=0;
+
+function updatePlayer(dt){
+
+  const moving=
+    Math.abs(joyX)>.05 ||
+    Math.abs(joyY)>.05;
+
+
+  const speed=
+    running
+    ? 11
+    : 6.5;
+
+
+  if(moving){
+
+    /*
+      Movimiento relativo a la cámara.
+    */
+
+    const forwardX=
+      -Math.sin(cameraYaw);
+
+    const forwardZ=
+      -Math.cos(cameraYaw);
+
+    const rightX=
+      Math.cos(cameraYaw);
+
+    const rightZ=
+      -Math.sin(cameraYaw);
+
+
+    const moveX=
+      (rightX*joyX+
+       forwardX*(-joyY))
+      *speed*dt;
+
+    const moveZ=
+      (rightZ*joyX+
+       forwardZ*(-joyY))
+      *speed*dt;
+
+
+    player.position.x+=moveX;
+
+    player.position.z+=moveZ;
+
+
+    /*
+      Rotación del personaje.
+    */
+
+    if(!firstPersonMode){
+
+      const angle=
+        Math.atan2(
+          moveX,
+          moveZ
+        );
+
+      player.rotation.y=
+        THREE.MathUtils.lerp(
+          player.rotation.y,
+          angle,
+          .2
+        );
+    }
+
+
+    walkTime+=
+      dt*(running?14:9);
+
+
+    const swing=
+      Math.sin(walkTime)*.55;
+
+
+    leftLeg.rotation.x=
+      swing;
+
+    rightLeg.rotation.x=
+      -swing;
+
+    leftArm.rotation.x=
+      -swing;
+
+    rightArm.rotation.x=
+      swing;
+
+
+    fpLeftArm.rotation.x=
+      .15+Math.sin(walkTime)*.12;
+
+    fpRightArm.rotation.x=
+      -.15-Math.sin(walkTime)*.12;
+
+
+  }else{
+
+    leftLeg.rotation.x*=.8;
+    rightLeg.rotation.x*=.8;
+
+    leftArm.rotation.x*=.8;
+    rightArm.rotation.x*=.8;
+
+    fpLeftArm.rotation.x=
+      THREE.MathUtils.lerp(
+        fpLeftArm.rotation.x,
+        .15,
+        .1
+      );
+
+    fpRightArm.rotation.x=
+      THREE.MathUtils.lerp(
+        fpRightArm.rotation.x,
+        -.15,
+        .1
+      );
+  }
+
+
+  /* gravedad */
+
+  velocityY+=gravity*dt;
+
+  player.position.y+=
+    velocityY*dt;
+
+
+  if(player.position.y<=0){
+
+    player.position.y=0;
+
+    velocityY=0;
+
+    grounded=true;
+  }
+
+
+  /* límites */
+
+  player.position.x=
+    THREE.MathUtils.clamp(
+      player.position.x,
+      -1000,
+      1000
+    );
+
+  player.position.z=
+    THREE.MathUtils.clamp(
+      player.position.z,
+      -1000,
+      1000
+    );
+
+
+  /* interfaz */
+
+  const x=
+    Math.round(
+      player.position.x
+    );
+
+  const z=
+    Math.round(
+      player.position.z
+    );
+
+
+  document
+  .getElementById("position")
+  .textContent=
+    `X: ${x} | Z: ${z}`;
+
+
+  const dist=
+    Math.sqrt(
+      x*x+z*z
+    );
+
+
+  document
+  .getElementById("distance")
+  .textContent=
+    `Base: ${
+      dist>=1000
+      ?(dist/1000).toFixed(1)+" km"
+      :Math.round(dist)+" m"
+    }`;
+
+
+  document
+  .getElementById("stats")
+  .textContent=
+    `Vida: 100 | Resistencia: ${
+      running?65:100
+    }`;
+}
+
+
+/* =====================================================
+   ACTUALIZAR CÁMARA
+===================================================== */
+
+function updateCamera(){
+
+  if(firstPersonMode){
+
+    /*
+      Cámara desde los ojos.
+    */
+
+    camera.position.x=
+      player.position.x;
+
+    camera.position.y=
+      player.position.y+4.65;
+
+    camera.position.z=
+      player.position.z;
+
+
+    const lookDistance=10;
+
+    const lookX=
+      camera.position.x-
+      Math.sin(cameraYaw)*
+      Math.cos(cameraPitch)*
+      lookDistance;
+
+    const lookY=
+      camera.position.y+
+      Math.sin(cameraPitch)*
+      lookDistance;
+
+    const lookZ=
+      camera.position.z-
+      Math.cos(cameraYaw)*
+      Math.cos(cameraPitch)*
+      lookDistance;
+
+
+    camera.lookAt(
+      lookX,
+      lookY,
+      lookZ
+    );
+
+
+  }else{
+
+    /*
+      Tercera persona.
+    */
+
+    const targetX=
+      player.position.x+
+      Math.sin(cameraYaw)*
+      cameraDistance;
+
+    const targetZ=
+      player.position.z+
+      Math.cos(cameraYaw)*
+      cameraDistance;
+
+    const targetY=
+      player.position.y+
+      5.8;
+
+
+    camera.position.x=
+      THREE.MathUtils.lerp(
+        camera.position.x,
+        targetX,
+        .12
+      );
+
+    camera.position.z=
+      THREE.MathUtils.lerp(
+        camera.position.z,
+        targetZ,
+        .12
+      );
+
+    camera.position.y=
+      THREE.MathUtils.lerp(
+        camera.position.y,
+        targetY,
+        .12
+      );
+
+
+    camera.lookAt(
+      player.position.x,
+      player.position.y+2.7,
+      player.position.z
+    );
+  }
+}
+
+
+/* =====================================================
+   MAPA
+===================================================== */
+
+const map=
+  document.getElementById("map");
+
+const mapCtx=
+  map.getContext("2d");
+
+
+document
+.getElementById("mapBtn")
+.addEventListener(
+  "pointerdown",
+  ()=>{
+
+    map.style.display=
+      map.style.display==="none"
+      ?"block"
+      :"none";
+  }
+);
+
+
+function drawMap(){
+
+  mapCtx.clearRect(
+    0,
+    0,
+    230,
+    230
+  );
+
+
+  mapCtx.fillStyle=
+    "#365e35";
+
+  mapCtx.fillRect(
+    0,
+    0,
+    230,
+    230
+  );
+
+
+  const scale=.09;
+
+  const cx=115;
+
+  const cy=115;
+
+
+  /* río */
+
+  mapCtx.fillStyle=
+    "#318bb0";
+
+  mapCtx.fillRect(
+    80,
+    0,
+    18,
+    230
+  );
+
+
+  /* lago */
+
+  mapCtx.beginPath();
+
+  mapCtx.ellipse(
+    155,
+    68,
+    22,
+    16,
+    0,
+    0,
+    Math.PI*2
+  );
+
+  mapCtx.fill();
+
+
+  /* base */
+
+  mapCtx.fillStyle=
+    "red";
+
+  mapCtx.beginPath();
+
+  mapCtx.arc(
+    cx,
+    cy,
+    5,
+    0,
+    Math.PI*2
+  );
+
+  mapCtx.fill();
+
+
+  /* ciudad */
+
+  mapCtx.fillStyle=
+    "orange";
+
+  mapCtx.fillRect(
+    cx+850*scale-5,
+    cy-700*scale-5,
+    10,
+    10
+  );
+
+
+  /* granja */
+
+  mapCtx.fillStyle=
+    "yellow";
+
+  mapCtx.fillRect(
+    cx-620*scale-5,
+    cy+520*scale-5,
+    10,
+    10
+  );
+
+
+  /* zona abandonada */
+
+  mapCtx.fillStyle=
+    "purple";
+
+  mapCtx.fillRect(
+    cx+650*scale-5,
+    cy-420*scale-5,
+    10,
+    10
+  );
+
+
+  /* cuevas */
+
+  mapCtx.fillStyle=
+    "gray";
+
+  mapCtx.fillRect(
+    cx-500*scale-4,
+    cy-600*scale-4,
+    8,
+    8
+  );
+
+  mapCtx.fillRect(
+    cx+750*scale-4,
+    cy+450*scale-4,
+    8,
+    8
+  );
+
+
+  /* jugador */
+
+  const px=
+    cx+
+    player.position.x*scale;
+
+  const pz=
+    cy+
+    player.position.z*scale;
+
+
+  mapCtx.fillStyle=
+    "white";
+
+  mapCtx.beginPath();
+
+  mapCtx.arc(
+    px,
+    pz,
+    5,
+    0,
+    Math.PI*2
+  );
+
+  mapCtx.fill();
+}
+
+
+/* =====================================================
+   MENSAJES
+===================================================== */
+
+let messageTimer=0;
+
+function showMessage(text){
+
+  const box=
+    document.getElementById("message");
+
+  box.textContent=text;
+
+  box.style.display="block";
+
+  messageTimer=2;
+}
+
+
+/* =====================================================
+   RESIZE
+===================================================== */
+
+addEventListener(
+  "resize",
+  ()=>{
+
+    camera.aspect=
+      innerWidth/innerHeight;
+
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(
+      innerWidth,
+      innerHeight
+    );
+  }
+);
+
+
+/* =====================================================
+   LOOP
+===================================================== */
+
+let previous=
+  performance.now();
+
+
+function animate(now){
+
+  requestAnimationFrame(
+    animate
+  );
+
+
+  const dt=
+    Math.min(
+      (now-previous)/1000,
+      .05
+    );
+
+  previous=now;
+
+
+  updatePlayer(dt);
+
+  updateCamera();
+
+  drawMap();
+
+
+  if(messageTimer>0){
+
+    messageTimer-=dt;
+
+    if(messageTimer<=0){
+
+      document
+      .getElementById("message")
+      .style.display="none";
+    }
+  }
+
+
+  renderer.render(
+    scene,
+    camera
+  );
+}
+
+
+/* =====================================================
+   INICIO
+===================================================== */
+
+firstPersonMode=true;
+
+firstPerson.visible=true;
+
+updateCamera();
+
+animate(
+  performance.now()
+);
+
+</script>
+
+</body>
+</html>
