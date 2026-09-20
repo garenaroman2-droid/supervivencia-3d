@@ -2,100 +2,120 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <title>Supervivencia 3D</title>
 
 <style>
-*{box-sizing:border-box}
-html,body{
-  margin:0;
-  width:100%;
-  height:100%;
-  overflow:hidden;
-  background:#000;
-  touch-action:none;
-  font-family:Arial,sans-serif;
-}
-canvas{display:block}
-
-#hud{
-  position:fixed;
-  top:12px;
-  left:12px;
-  z-index:10;
-  color:#fff;
-  background:#0009;
-  padding:10px 14px;
-  border-radius:12px;
-  line-height:1.5;
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
-#info{
-  position:fixed;
-  top:12px;
-  right:12px;
-  z-index:10;
-  color:#fff;
-  background:#0009;
-  padding:9px;
-  border-radius:12px;
-  font-size:12px;
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    touch-action: none;
+    user-select: none;
 }
 
-#crosshair{
-  position:fixed;
-  left:50%;
-  top:50%;
-  transform:translate(-50%,-50%);
-  color:#fff;
-  font-size:25px;
-  z-index:5;
-  pointer-events:none;
+canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
 }
 
-#joystick{
-  position:fixed;
-  left:22px;
-  bottom:25px;
-  width:125px;
-  height:125px;
-  border-radius:50%;
-  background:#ffffff25;
-  border:2px solid #ffffff45;
-  z-index:20;
+/* HUD */
+#hud {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 10;
+    color: white;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    text-shadow: 2px 2px 3px black;
+    pointer-events: none;
 }
 
-#stick{
-  position:absolute;
-  width:55px;
-  height:55px;
-  left:33px;
-  top:33px;
-  border-radius:50%;
-  background:#ffffff90;
+#mensaje {
+    margin-top: 8px;
+    font-size: 13px;
 }
 
-#build{
-  position:fixed;
-  right:20px;
-  bottom:35px;
-  width:105px;
-  height:55px;
-  border:0;
-  border-radius:15px;
-  background:#e39a2f;
-  color:#fff;
-  font-weight:bold;
-  z-index:20;
+/* Joystick */
+#joystick {
+    position: fixed;
+    left: 25px;
+    bottom: 30px;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,.5);
+    background: rgba(255,255,255,.12);
+    z-index: 20;
+    touch-action: none;
 }
 
-#lookArea{
-  position:fixed;
-  right:0;
-  top:0;
-  width:65%;
-  height:100%;
-  z-index:2;
+#stick {
+    position: absolute;
+    width: 55px;
+    height: 55px;
+    left: 37px;
+    top: 37px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.55);
+    box-shadow: 0 0 15px rgba(255,255,255,.3);
+}
+
+/* Botón */
+#boton {
+    position: fixed;
+    right: 25px;
+    bottom: 35px;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 3px solid white;
+    background: rgba(255,80,20,.65);
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    z-index: 20;
+    touch-action: none;
+}
+
+/* Mira */
+#crosshair {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 25px;
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* Ayuda */
+#ayuda {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-family: Arial;
+    font-size: 12px;
+    text-shadow: 2px 2px 3px black;
+    z-index: 10;
+    pointer-events: none;
 }
 </style>
 </head>
@@ -103,594 +123,585 @@ canvas{display:block}
 <body>
 
 <div id="hud">
-🪵 Madera: <span id="wood">0</span><br>
-🪨 Piedra: <span id="stone">0</span>
-</div>
-
-<div id="info">
-Arrastrá el lado derecho<br>
-para mirar
+    Madera: <span id="madera">0</span><br>
+    Piedra: <span id="piedra">0</span><br>
+    Comida: <span id="comida">0</span>
+    <div id="mensaje">Explorá el bosque</div>
 </div>
 
 <div id="crosshair">+</div>
 
-<div id="lookArea"></div>
-
-<div id="joystick">
-  <div id="stick"></div>
+<div id="ayuda">
+    Izquierda: caminar · Derecha: mirar
 </div>
 
-<button id="build">🔥 FOGATA</button>
+<div id="joystick">
+    <div id="stick"></div>
+</div>
+
+<button id="boton">FOGATA</button>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
 
-let scene;
-let camera;
-let renderer;
+//////////////////////////////////////////////////
+// ESCENA
+//////////////////////////////////////////////////
 
-let player;
+const scene = new THREE.Scene();
 
-let trees=[];
-let rocks=[];
-let campfires=[];
+scene.background = new THREE.Color(0x87ceeb);
 
-let wood=0;
-let stone=0;
+//////////////////////////////////////////////////
+// CÁMARA
+//////////////////////////////////////////////////
 
-let moveX=0;
-let moveZ=0;
+const camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+);
 
-let yaw=0;
-let pitch=0;
+camera.position.set(0, 1.7, 0);
 
-let looking=false;
-let lastX=0;
-let lastY=0;
+//////////////////////////////////////////////////
+// RENDER
+//////////////////////////////////////////////////
 
-const joystick=document.getElementById("joystick");
-const stick=document.getElementById("stick");
-const lookArea=document.getElementById("lookArea");
+const renderer = new THREE.WebGLRenderer({
+    antialias: true
+});
 
-init();
-animate();
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-function init(){
+renderer.domElement.style.touchAction = "none";
 
-  scene=new THREE.Scene();
+document.body.appendChild(renderer.domElement);
 
-  scene.background=new THREE.Color(0x87ceeb);
+//////////////////////////////////////////////////
+// LUZ
+//////////////////////////////////////////////////
 
-  scene.fog=new THREE.Fog(
-    0x87ceeb,
-    30,
-    150
-  );
-
-  camera=new THREE.PerspectiveCamera(
-    70,
-    innerWidth/innerHeight,
-    .1,
-    500
-  );
-
-  renderer=new THREE.WebGLRenderer({
-    antialias:true
-  });
-
-  renderer.setSize(
-    innerWidth,
-    innerHeight
-  );
-
-  renderer.setPixelRatio(
-    Math.min(devicePixelRatio,2)
-  );
-
-  document.body.appendChild(
-    renderer.domElement
-  );
-
-  const hemi=new THREE.HemisphereLight(
+const luz = new THREE.HemisphereLight(
     0xffffff,
-    0x557755,
-    2
-  );
+    0x444444,
+    1.5
+);
 
-  scene.add(hemi);
+scene.add(luz);
 
-  const sun=new THREE.DirectionalLight(
+const sol = new THREE.DirectionalLight(
     0xffffff,
-    2
-  );
-
-  sun.position.set(
-    30,
-    60,
-    20
-  );
-
-  scene.add(sun);
-
-  // SUELO
-
-  const ground=new THREE.Mesh(
-    new THREE.PlaneGeometry(300,300),
-    new THREE.MeshStandardMaterial({
-      color:0x4d8a45
-    })
-  );
-
-  ground.rotation.x=-Math.PI/2;
-
-  scene.add(ground);
-
-  // JUGADOR
-
-  player=new THREE.Object3D();
-
-  player.position.set(
-    0,
-    1.7,
-    8
-  );
-
-  scene.add(player);
-
-  player.add(camera);
-
-  camera.position.set(
-    0,
-    0,
-    0
-  );
-
-  createWorld();
-
-  setupJoystick();
-
-  setupCameraControls();
-
-  document
-    .getElementById("build")
-    .addEventListener(
-      "click",
-      buildCampfire
-    );
-
-  window.addEventListener(
-    "resize",
-    resize
-  );
-}
-
-function createWorld(){
-
-  for(let i=0;i<55;i++){
-
-    const x=
-      (Math.random()-.5)*140;
-
-    const z=
-      (Math.random()-.5)*140;
-
-    if(
-      Math.abs(x)<10 &&
-      Math.abs(z)<10
-    ) continue;
-
-    createTree(x,z);
-  }
-
-  for(let i=0;i<40;i++){
-
-    const x=
-      (Math.random()-.5)*140;
-
-    const z=
-      (Math.random()-.5)*140;
-
-    if(
-      Math.abs(x)<10 &&
-      Math.abs(z)<10
-    ) continue;
-
-    createRock(x,z);
-  }
-}
-
-function createTree(x,z){
-
-  const tree=new THREE.Group();
-
-  const trunk=new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      .35,
-      .45,
-      4
-    ),
-    new THREE.MeshStandardMaterial({
-      color:0x6b3e1e
-    })
-  );
-
-  trunk.position.y=2;
-
-  tree.add(trunk);
-
-  const leaves=new THREE.Mesh(
-    new THREE.SphereGeometry(
-      2.2,
-      10,
-      10
-    ),
-    new THREE.MeshStandardMaterial({
-      color:0x176b2c
-    })
-  );
-
-  leaves.position.y=4.5;
-
-  tree.add(leaves);
-
-  tree.position.set(
-    x,
-    0,
-    z
-  );
-
-  scene.add(tree);
-
-  trees.push(tree);
-}
-
-function createRock(x,z){
-
-  const rock=new THREE.Mesh(
-    new THREE.DodecahedronGeometry(1),
-    new THREE.MeshStandardMaterial({
-      color:0x777777
-    })
-  );
-
-  rock.position.set(
-    x,
-    .7,
-    z
-  );
-
-  rock.scale.set(
-    1.2,
-    .8,
     1
-  );
+);
 
-  scene.add(rock);
+sol.position.set(50, 100, 50);
+scene.add(sol);
 
-  rocks.push(rock);
-}
+//////////////////////////////////////////////////
+// SUELO
+//////////////////////////////////////////////////
 
-function setupJoystick(){
+const sueloGeo = new THREE.PlaneGeometry(500, 500);
 
-  function updateStick(touch){
+const sueloMat = new THREE.MeshStandardMaterial({
+    color: 0x3c7a3c
+});
 
-    const rect=
-      joystick.getBoundingClientRect();
+const suelo = new THREE.Mesh(
+    sueloGeo,
+    sueloMat
+);
 
-    let x=
-      touch.clientX -
-      (rect.left+rect.width/2);
+suelo.rotation.x = -Math.PI / 2;
 
-    let y=
-      touch.clientY -
-      (rect.top+rect.height/2);
+scene.add(suelo);
 
-    const max=45;
+//////////////////////////////////////////////////
+// JUGADOR
+//////////////////////////////////////////////////
 
-    const distance=
-      Math.sqrt(x*x+y*y);
+const jugador = new THREE.Object3D();
 
-    if(distance>max){
+jugador.position.set(0, 1.7, 0);
 
-      x=x/distance*max;
-      y=y/distance*max;
+scene.add(jugador);
 
-    }
+jugador.add(camera);
 
-    stick.style.left=
-      (33+x)+"px";
+//////////////////////////////////////////////////
+// RECURSOS
+//////////////////////////////////////////////////
 
-    stick.style.top=
-      (33+y)+"px";
+let madera = 0;
+let piedra = 0;
+let comida = 0;
 
-    moveX=x/max;
-    moveZ=y/max;
-  }
+const maderaTexto = document.getElementById("madera");
+const piedraTexto = document.getElementById("piedra");
+const comidaTexto = document.getElementById("comida");
+const mensaje = document.getElementById("mensaje");
 
-  joystick.addEventListener(
-    "touchstart",
-    e=>{
-      e.preventDefault();
-      updateStick(e.touches[0]);
-    },
-    {passive:false}
-  );
+//////////////////////////////////////////////////
+// ÁRBOLES
+//////////////////////////////////////////////////
 
-  joystick.addEventListener(
-    "touchmove",
-    e=>{
-      e.preventDefault();
-      updateStick(e.touches[0]);
-    },
-    {passive:false}
-  );
+const objetos = [];
 
-  joystick.addEventListener(
-    "touchend",
-    e=>{
-      e.preventDefault();
+function crearArbol(x, z) {
 
-      moveX=0;
-      moveZ=0;
+    const grupo = new THREE.Group();
 
-      stick.style.left="33px";
-      stick.style.top="33px";
-    },
-    {passive:false}
-  );
-}
-
-function setupCameraControls(){
-
-  lookArea.addEventListener(
-    "touchstart",
-    e=>{
-
-      e.preventDefault();
-
-      looking=true;
-
-      lastX=e.touches[0].clientX;
-      lastY=e.touches[0].clientY;
-
-    },
-    {passive:false}
-  );
-
-  lookArea.addEventListener(
-    "touchmove",
-    e=>{
-
-      e.preventDefault();
-
-      if(!looking)return;
-
-      const touch=e.touches[0];
-
-      const dx=
-        touch.clientX-lastX;
-
-      const dy=
-        touch.clientY-lastY;
-
-      lastX=touch.clientX;
-      lastY=touch.clientY;
-
-      yaw-=dx*0.006;
-
-      pitch-=dy*0.006;
-
-      const limit=1.35;
-
-      pitch=Math.max(
-        -limit,
-        Math.min(limit,pitch)
-      );
-
-      player.rotation.y=yaw;
-
-      camera.rotation.x=pitch;
-
-    },
-    {passive:false}
-  );
-
-  lookArea.addEventListener(
-    "touchend",
-    e=>{
-      e.preventDefault();
-      looking=false;
-    },
-    {passive:false}
-  );
-}
-
-function collect(){
-
-  for(
-    let i=trees.length-1;
-    i>=0;
-    i--
-  ){
-
-    if(
-      player.position.distanceTo(
-        trees[i].position
-      )<3
-    ){
-
-      wood+=2;
-
-      document.getElementById(
-        "wood"
-      ).textContent=wood;
-
-      scene.remove(
-        trees[i]
-      );
-
-      trees.splice(i,1);
-
-      return;
-    }
-  }
-
-  for(
-    let i=rocks.length-1;
-    i>=0;
-    i--
-  ){
-
-    if(
-      player.position.distanceTo(
-        rocks[i].position
-      )<3
-    ){
-
-      stone+=2;
-
-      document.getElementById(
-        "stone"
-      ).textContent=stone;
-
-      scene.remove(
-        rocks[i]
-      );
-
-      rocks.splice(i,1);
-
-      return;
-    }
-  }
-}
-
-function buildCampfire(){
-
-  if(
-    wood<3 ||
-    stone<2
-  ){
-
-    alert(
-      "Necesitás 3 madera y 2 piedra"
+    // Tronco
+    const troncoGeo = new THREE.CylinderGeometry(
+        0.25,
+        0.35,
+        3,
+        8
     );
 
-    return;
-  }
+    const troncoMat = new THREE.MeshStandardMaterial({
+        color: 0x6b3f20
+    });
 
-  wood-=3;
-  stone-=2;
+    const tronco = new THREE.Mesh(
+        troncoGeo,
+        troncoMat
+    );
 
-  document.getElementById(
-    "wood"
-  ).textContent=wood;
+    tronco.position.y = 1.5;
 
-  document.getElementById(
-    "stone"
-  ).textContent=stone;
+    grupo.add(tronco);
 
-  const fire=new THREE.Group();
+    // Copa
+    const hojasGeo = new THREE.SphereGeometry(
+        1.5,
+        8,
+        8
+    );
 
-  const base=new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      .7,
-      .8,
-      .3,
-      10
-    ),
-    new THREE.MeshStandardMaterial({
-      color:0x555555
-    })
-  );
+    const hojasMat = new THREE.MeshStandardMaterial({
+        color: 0x145214
+    });
 
-  fire.add(base);
+    const hojas = new THREE.Mesh(
+        hojasGeo,
+        hojasMat
+    );
 
-  const flame=new THREE.Mesh(
-    new THREE.ConeGeometry(
-      .45,
-      1.5,
-      8
-    ),
-    new THREE.MeshBasicMaterial({
-      color:0xff6a00
-    })
-  );
+    hojas.position.y = 3.5;
 
-  flame.position.y=.9;
+    grupo.add(hojas);
 
-  fire.add(flame);
+    grupo.position.set(x, 0, z);
 
-  fire.position.copy(
-    player.position
-  );
+    scene.add(grupo);
 
-  fire.position.y=0;
-
-  scene.add(fire);
-
-  campfires.push(fire);
+    objetos.push({
+        objeto: grupo,
+        tipo: "madera"
+    });
 }
 
-function update(){
+//////////////////////////////////////////////////
+// PIEDRAS
+//////////////////////////////////////////////////
 
-  const speed=.13;
+function crearPiedra(x, z) {
 
-  // MOVIMIENTO SEGÚN LA CÁMARA
+    const geo = new THREE.DodecahedronGeometry(
+        0.6,
+        0
+    );
 
-  const forwardX=
-    -Math.sin(yaw);
+    const mat = new THREE.MeshStandardMaterial({
+        color: 0x777777
+    });
 
-  const forwardZ=
-    -Math.cos(yaw);
+    const piedraObj = new THREE.Mesh(
+        geo,
+        mat
+    );
 
-  const rightX=
-    Math.cos(yaw);
+    piedraObj.position.set(
+        x,
+        0.5,
+        z
+    );
 
-  const rightZ=
-    -Math.sin(yaw);
+    scene.add(piedraObj);
 
-  player.position.x +=
-    (
-      rightX*moveX +
-      forwardX*(-moveZ)
-    )*speed;
-
-  player.position.z +=
-    (
-      rightZ*moveX +
-      forwardZ*(-moveZ)
-    )*speed;
-
-  collect();
+    objetos.push({
+        objeto: piedraObj,
+        tipo: "piedra"
+    });
 }
 
-function animate(){
+//////////////////////////////////////////////////
+// GENERAR MUNDO
+//////////////////////////////////////////////////
 
-  requestAnimationFrame(
-    animate
-  );
+for (let i = 0; i < 70; i++) {
 
-  update();
+    const x = (Math.random() - 0.5) * 180;
+    const z = (Math.random() - 0.5) * 180;
 
-  renderer.render(
-    scene,
-    camera
-  );
+    crearArbol(x, z);
 }
 
-function resize(){
+for (let i = 0; i < 40; i++) {
 
-  camera.aspect=
-    innerWidth/innerHeight;
+    const x = (Math.random() - 0.5) * 180;
+    const z = (Math.random() - 0.5) * 180;
 
-  camera.updateProjectionMatrix();
-
-  renderer.setSize(
-    innerWidth,
-    innerHeight
-  );
+    crearPiedra(x, z);
 }
+
+//////////////////////////////////////////////////
+// JOYSTICK
+//////////////////////////////////////////////////
+
+const joystick = document.getElementById("joystick");
+const stick = document.getElementById("stick");
+
+let joyPointer = null;
+
+let joyX = 0;
+let joyY = 0;
+
+function actualizarJoystick(e) {
+
+    const rect = joystick.getBoundingClientRect();
+
+    let x = e.clientX - (rect.left + rect.width / 2);
+    let y = e.clientY - (rect.top + rect.height / 2);
+
+    const distancia = Math.sqrt(
+        x * x + y * y
+    );
+
+    const max = 45;
+
+    if (distancia > max) {
+
+        x = x / distancia * max;
+        y = y / distancia * max;
+
+    }
+
+    joyX = x / max;
+    joyY = y / max;
+
+    stick.style.transform =
+        `translate(${x}px, ${y}px)`;
+}
+
+function resetJoystick() {
+
+    joyPointer = null;
+
+    joyX = 0;
+    joyY = 0;
+
+    stick.style.transform =
+        "translate(0px, 0px)";
+}
+
+joystick.addEventListener("pointerdown", e => {
+
+    e.preventDefault();
+
+    joyPointer = e.pointerId;
+
+    joystick.setPointerCapture(e.pointerId);
+
+    actualizarJoystick(e);
+});
+
+joystick.addEventListener("pointermove", e => {
+
+    if (e.pointerId !== joyPointer) return;
+
+    e.preventDefault();
+
+    actualizarJoystick(e);
+});
+
+joystick.addEventListener("pointerup", e => {
+
+    if (e.pointerId === joyPointer) {
+        resetJoystick();
+    }
+});
+
+joystick.addEventListener("pointercancel", e => {
+
+    if (e.pointerId === joyPointer) {
+        resetJoystick();
+    }
+});
+
+//////////////////////////////////////////////////
+// CÁMARA
+//////////////////////////////////////////////////
+
+let lookPointer = null;
+
+let lastX = 0;
+let lastY = 0;
+
+let yaw = 0;
+let pitch = 0;
+
+const sensibilidad = 0.006;
+
+renderer.domElement.addEventListener(
+    "pointerdown",
+    e => {
+
+        if (lookPointer !== null) return;
+
+        lookPointer = e.pointerId;
+
+        lastX = e.clientX;
+        lastY = e.clientY;
+
+        renderer.domElement.setPointerCapture(
+            e.pointerId
+        );
+
+    },
+    { passive: false }
+);
+
+renderer.domElement.addEventListener(
+    "pointermove",
+    e => {
+
+        if (e.pointerId !== lookPointer) return;
+
+        e.preventDefault();
+
+        const dx = e.clientX - lastX;
+        const dy = e.clientY - lastY;
+
+        lastX = e.clientX;
+        lastY = e.clientY;
+
+        yaw -= dx * sensibilidad;
+
+        pitch -= dy * sensibilidad;
+
+        pitch = Math.max(
+            -1.35,
+            Math.min(1.35, pitch)
+        );
+
+        jugador.rotation.y = yaw;
+
+        camera.rotation.x = pitch;
+
+        mensaje.textContent = "CÁMARA ACTIVA";
+
+    },
+    { passive: false }
+);
+
+function terminarCamara(e) {
+
+    if (e.pointerId === lookPointer) {
+
+        lookPointer = null;
+
+        mensaje.textContent =
+            "Explorá el bosque";
+    }
+}
+
+renderer.domElement.addEventListener(
+    "pointerup",
+    terminarCamara
+);
+
+renderer.domElement.addEventListener(
+    "pointercancel",
+    terminarCamara
+);
+
+//////////////////////////////////////////////////
+// MOVIMIENTO
+//////////////////////////////////////////////////
+
+function moverJugador() {
+
+    const velocidad = 0.10;
+
+    // Derecha respecto a la cámara
+    const derechaX = Math.cos(yaw);
+    const derechaZ = -Math.sin(yaw);
+
+    // Adelante respecto a la cámara
+    const adelanteX = -Math.sin(yaw);
+    const adelanteZ = -Math.cos(yaw);
+
+    const movimientoX =
+        derechaX * joyX +
+        adelanteX * (-joyY);
+
+    const movimientoZ =
+        derechaZ * joyX +
+        adelanteZ * (-joyY);
+
+    jugador.position.x +=
+        movimientoX * velocidad;
+
+    jugador.position.z +=
+        movimientoZ * velocidad;
+}
+
+//////////////////////////////////////////////////
+// RECOGER RECURSOS
+//////////////////////////////////////////////////
+
+function recogerRecursos() {
+
+    for (let i = objetos.length - 1; i >= 0; i--) {
+
+        const obj = objetos[i];
+
+        const dx =
+            jugador.position.x -
+            obj.objeto.position.x;
+
+        const dz =
+            jugador.position.z -
+            obj.objeto.position.z;
+
+        const distancia =
+            Math.sqrt(dx * dx + dz * dz);
+
+        if (distancia < 2.5) {
+
+            if (obj.tipo === "madera") {
+
+                madera += 1;
+
+                maderaTexto.textContent =
+                    madera;
+
+            }
+
+            if (obj.tipo === "piedra") {
+
+                piedra += 1;
+
+                piedraTexto.textContent =
+                    piedra;
+
+            }
+
+            scene.remove(obj.objeto);
+
+            objetos.splice(i, 1);
+        }
+    }
+}
+
+//////////////////////////////////////////////////
+// FOGATA
+//////////////////////////////////////////////////
+
+document.getElementById("boton")
+.addEventListener("pointerdown", e => {
+
+    e.preventDefault();
+
+    if (madera < 3) {
+
+        mensaje.textContent =
+            "Necesitás 3 de madera";
+
+        return;
+    }
+
+    madera -= 3;
+
+    maderaTexto.textContent =
+        madera;
+
+    const fuegoGeo =
+        new THREE.SphereGeometry(
+            0.5,
+            8,
+            8
+        );
+
+    const fuegoMat =
+        new THREE.MeshBasicMaterial({
+            color: 0xff5500
+        });
+
+    const fuego =
+        new THREE.Mesh(
+            fuegoGeo,
+            fuegoMat
+        );
+
+    fuego.position.copy(
+        jugador.position
+    );
+
+    fuego.position.y = 0.5;
+
+    scene.add(fuego);
+
+    mensaje.textContent =
+        "FOGATA CONSTRUIDA";
+});
+
+//////////////////////////////////////////////////
+// ANIMACIÓN
+//////////////////////////////////////////////////
+
+function animar() {
+
+    requestAnimationFrame(animar);
+
+    moverJugador();
+
+    recogerRecursos();
+
+    renderer.render(
+        scene,
+        camera
+    );
+}
+
+animar();
+
+//////////////////////////////////////////////////
+// RESIZE
+//////////////////////////////////////////////////
+
+window.addEventListener(
+    "resize",
+    () => {
+
+        camera.aspect =
+            window.innerWidth /
+            window.innerHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+            window.innerWidth,
+            window.innerHeight
+        );
+    }
+);
 
 </script>
 
