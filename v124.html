@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Supervivencia 3D V12.4</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none;touch-action:none}
+html,body,#game{width:100%;height:100%;overflow:hidden;background:#111}
+canvas{display:block;width:100%;height:100%}
+
+#hud{
+ position:fixed;top:10px;left:10px;z-index:20;color:white;
+ font:13px Arial;text-shadow:2px 2px 4px #000;pointer-events:none
+}
+#title{font-size:18px;font-weight:bold;margin-bottom:4px}
+
+#buttons{
+ position:fixed;top:10px;right:10px;z-index:30;
+ display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end
+}
+button{
+ border:1px solid #aaa;background:rgba(0,0,0,.7);color:white;
+ border-radius:9px;padding:9px 11px;font-weight:bold
+}
+
+#joystick{
+ position:fixed;left:24px;bottom:27px;width:145px;height:145px;
+ border-radius:50%;background:rgba(255,255,255,.1);
+ border:2px solid rgba(255,255,255,.3);z-index:40
+}
+#stick{
+ position:absolute;width:62px;height:62px;left:39px;top:39px;
+ border-radius:50%;background:rgba(255,255,255,.3);
+ border:2px solid rgba(255,255,255,.5)
+}
+
+#runBtn{
+ position:fixed;left:190px;bottom:45px;width:72px;height:72px;
+ border-radius:50%;z-index:40;padding:0;font-size:12px
+}
+
+#actionBtn{
+ position:fixed;right:28px;bottom:45px;width:82px;height:65px;
+ border-radius:14px;z-index:40;display:none
+}
+
+#lookHelp{
+ position:fixed;right:18px;bottom:18px;color:white;
+ opacity:.45;font:11px Arial;text-shadow:1px 1px 3px #000;
+ pointer-events:none
+}
+
+#crosshair{
+ position:fixed;left:50%;top:50%;width:11px;height:11px;
+ transform:translate(-50%,-50%);z-index:25;pointer-events:none
+}
+#crosshair:before,#crosshair:after{
+ content:"";position:absolute;background:rgba(255,255,255,.8)
+}
+#crosshair:before{width:11px;height:1px;top:5px}
+#crosshair:after{width:1px;height:11px;left:5px}
+
+#map{
+ position:fixed;display:none;z-index:60;top:55px;left:50%;
+ transform:translateX(-50%);width:min(92vw,430px);
+ height:min(75vh,430px);background:rgba(10,15,10,.95);
+ border:2px solid #aaa;border-radius:12px;color:white;padding:12px
+}
+#map h2{font:18px Arial;margin-bottom:8px}
+#mapCanvas{width:100%;height:calc(100% - 35px);background:#1b271b}
+</style>
+</head>
+
+<body>
+
+<div id="game"></div>
+
+<div id="hud">
+ <div id="title">SUPERVIVENCIA 3D — V12.4</div>
+ <div id="info">Día 1 · Explorando</div>
+</div>
+
+<div id="buttons">
+ <button id="mapBtn">MAPA</button>
+ <button id="timeBtn">NOCHE</button>
+</div>
+
+<button id="runBtn">CORRER</button>
+<button id="actionBtn">ABRIR</button>
+
+<div id="joystick"><div id="stick"></div></div>
+<div id="lookHelp">Deslizá para mirar</div>
+<div id="crosshair"></div>
+
+<div id="map">
+ <h2>Mapa — Supervivencia</h2>
+ <canvas id="mapCanvas"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+/* =========================================================
+   V12.4
+   PRIMERA PERSONA
+   CÁMARA LIBRE TIPO ROBLOX
+   CORRER
+   PUERTAS ABRIBLES
+   CASAS 1/2/3 PISOS
+   MANSIONES
+========================================================= */
+
+const scene=new THREE.Scene();
+
+scene.background=new THREE.Color(0x91b4cf);
+scene.fog=new THREE.Fog(0x91b4cf,900,6000);
+
+const camera=new THREE.PerspectiveCamera(
+  72,innerWidth/innerHeight,.1,10000
+);
+
+const renderer=new THREE.WebGLRenderer({
+  antialias:false,
+  powerPreference:"high-performance"
+});
+
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+
+document.getElementById("game").appendChild(renderer.domElement);
+
+
+/* =========================================================
+ LUCES
+========================================================= */
+
+const hemi=new THREE.HemisphereLight(0xc8ddff,0x35402c,1.8);
+scene.add(hemi);
+
+const sun=new THREE.DirectionalLight(0xffffff,1.5);
+sun.position.set(300,700,200);
+scene.add(sun);
+
+
+/* =========================================================
+ MATERIALES
+========================================================= */
+
+const groundMat=new THREE.MeshLambertMaterial({color:0x59664a});
+const roadMat=new THREE.MeshLambertMaterial({color:0x303030});
+const lineMat=new THREE.MeshLambertMaterial({color:0xd0c85a});
+
+const wallMat=new THREE.MeshLambertMaterial({color:0x9a8065});
+const wall2Mat=new THREE.MeshLambertMaterial({color:0x80705d});
+const wall3Mat=new THREE.MeshLambertMaterial({color:0x6c6870});
+
+const woodMat=new THREE.MeshLambertMaterial({color:0x704323});
+const woodDark=new THREE.MeshLambertMaterial({color:0x402817});
+const roofMat=new THREE.MeshLambertMaterial({color:0x3d403d});
+const frameMat=new THREE.MeshLambertMaterial({color:0x54321e});
+
+const treeMat=new THREE.MeshLambertMaterial({color:0x284d29});
+const trunkMat=new THREE.MeshLambertMaterial({color:0x573d27});
+const stoneMat=new THREE.MeshLambertMaterial({color:0x666666});
+const waterMat=new THREE.MeshLambertMaterial({color:0x397c9e});
+
+const skinMat=new THREE.MeshLambertMaterial({color:0xb87858});
+const shirtMat=new THREE.MeshLambertMaterial({color:0x304b77});
+const pantsMat=new THREE.MeshLambertMaterial({color:0x22252d});
+
+
+/* =========================================================
+ SUELO
+========================================================= */
+
+const ground=new THREE.Mesh(
+ new THREE.PlaneGeometry(10000,10000),
+ groundMat
+);
+ground.rotation.x=-Math.PI/2;
+scene.add(ground);
+
+
+/* =========================================================
+ COLLISIONES
+========================================================= */
+
+const colliders=[];
+
+function addCollider(x,z,w,d){
+ colliders.push({
+  minX:x-w/2,maxX:x+w/2,
+  minZ:z-d/2,maxZ:z+d/2
+ });
+}
+
+function blocked(x,z,r=.55){
+
+ for(const c of colliders){
+  if(
+   x+r>c.minX &&
+   x-r<c.maxX &&
+   z+r>c.minZ &&
+   z-r<c.maxZ
+  ) return true;
+ }
+
+ return false;
+}
+
+
+/* =========================================================
+ PUERTAS
+========================================================= */
+
+const doors=[];
+
+function createDoor(x,z,w=3,h=3.8,rot=0){
+
+ const group=new THREE.Group();
+
+ const slab=new THREE.Mesh(
+  new THREE.BoxGeometry(w,.15,h),
+  woodMat
+ );
+
+ slab.position.y=h/2;
+ slab.rotation.z=Math.PI/2;
+
+ /*
+  La geometría se construye como una puerta vertical
+  sobre el eje X local.
+ */
+ const actual=new THREE.Mesh(
+  new THREE.BoxGeometry(w,.35,h),
+  woodMat
+ );
+
+ actual.position.y=h/2;
+
+ group.add(actual);
+
+ group.position.set(x,0,z);
+ group.rotation.y=rot;
+
+ scene.add(group);
+
+ const door={
+  group,
+  mesh:actual,
+  x,z,w,h,rot,
+  open:false,
+  collider:null
+ };
+
+ doors.push(door);
+
+ return door;
+}
+
+
+/* =========================================================
+ PUERTA CORRECTA + MARCOS
+========================================================= */
+
+function doorSet(x,z,rot=0,w=3){
+
+ const door=createDoor(x,z,w,3.8,rot);
+
+ // Marcos visuales
+ const a=box(.28,4.1,.65,woodDark,x-w/2,2.05,z);
+ const b=box(.28,4.1,.65,woodDark,x+w/2,2.05,z);
+ const top=box(w+.55,.28,.65,woodDark,x,4,z);
+
+ a.rotation.y=rot;
+ b.rotation.y=rot;
+ top.rotation.y=rot;
+
+ return door;
+}
+
+
+/* =========================================================
+ BOX
+========================================================= */
+
+function box(w,h,d,mat,x,y,z){
+
+ const m=new THREE.Mesh(
+  new THREE.BoxGeometry(w,h,d),
+  mat
+ );
+
+ m.position.set(x,y,z);
+ scene.add(m);
+
+ return m;
+}
+
+
+/* =========================================================
+ CASA SIMPLE
+========================================================= */
+
+function simpleHouse(x,z){
+
+ const W=22,D=18,H=4;
+ const doorW=3;
+
+ // piso
+ box(W,.2,D,woodDark,x,.1,z);
+
+ // frente: izquierda
+ box((W-doorW)/2,H,.5,wallMat,
+     x-(W+doorW)/4,H/2,z-D/2);
+
+ addCollider(
+  x-(W+doorW)/4,z-D/2,
+  (W-doorW)/2,.5
+ );
+
+ // frente: derecha
+ box((W-doorW)/2,H,.5,wallMat,
+     x+(W+doorW)/4,H/2,z-D/2);
+
+ addCollider(
+  x+(W+doorW)/4,z-D/2,
+  (W-doorW)/2,.5
+ );
+
+ // puerta cerrada
+ const door=doorSet(x,z-D/2,0,doorW);
+
+ addDoorCollider(door);
+
+ // atrás
+ wallWithWindowX(x,z+D/2,W,H,0,4,wallMat);
+
+ // laterales
+ wallWithWindowZ(x-W/2,z,D,H,0,4,wallMat);
+ wallWithWindowZ(x+W/2,z,D,H,0,4,wallMat);
+
+ roof(W,D,H,x,z);
+
+ return door;
+}
+
+
+/* =========================================================
+ VENTANA ABIERTA
+========================================================= */
+
+function wallWithWindowX(x,z,w,h,cx,ww,mat){
+
+ const bottom=1.15;
+ const top=3.25;
+
+ box(w,bottom,.5,mat,x,bottom/2,z);
+ addCollider(x,z,w,.5);
+
+ box(w,h-top,.5,mat,x,top+(h-top)/2,z);
+ addCollider(x,z,w,.5);
+
+ const left=cx-ww/2+w/2;
+
+ if(left>0){
+  const px=x-w/2+left/2;
+
+  box(left,top-bottom,.5,mat,
+      px,bottom+(top-bottom)/2,z);
+
+  addCollider(px,z,left,.5);
+ }
+
+ const right=w-left-ww;
+
+ if(right>0){
+  const px=x+w/2-right/2;
+
+  box(right,top-bottom,.5,mat,
+      px,bottom+(top-bottom)/2,z);
+
+  addCollider(px,z,right,.5);
+ }
+
+ // marco
+ box(ww+.4,.18,.7,frameMat,x+cx,bottom,z);
+ box(ww+.4,.18,.7,frameMat,x+cx,top,z);
+
+ box(.18,top-bottom,.7,frameMat,
+     x+cx-ww/2,bottom+(top-bottom)/2,z);
+
+ box(.18,top-bottom,.7,frameMat,
+     x+cx+ww/2,bottom+(top-bottom)/2,z);
+
+ // cruz
+ box(ww,.15,.65,frameMat,x+cx,(bottom+top)/2,z);
+ box(.15,top-bottom,.65,frameMat,x+cx,(bottom+top)/2,z);
+}
+
+
+function wallWithWindowZ(x,z,w,h,cz,ww,mat){
+
+ const bottom=1.15;
+ const top=3.25;
+
+ box(.5,bottom,w,mat,x,bottom/2,z);
+ addCollider(x,z,.5,w);
+
+ box(.5,h-top,w,mat,x,top+(h-top)/2,z);
+ addCollider(x,z,.5,w);
+
+ const left=cz-ww/2+w/2;
+
+ if(left>0){
+  const pz=z-w/2+left/2;
+
+  box(.5,top-bottom,left,mat,
+      x,bottom+(top-bottom)/2,pz);
+
+  addCollider(x,pz,.5,left);
+ }
+
+ const right=w-left-ww;
+
+ if(right>0){
+  const pz=z+w/2-right/2;
+
+  box(.5,top-bottom,right,mat,
+      x,bottom+(top-bottom)/2,pz);
+
+  addCollider(x,pz,.5,right);
+ }
+
+ box(.7,.18,ww+.4,frameMat,x,bottom,z+cz);
+ box(.7,.18,ww+.4,frameMat,x,top,z+cz);
+
+ box(.7,top-bottom,.18,frameMat,
+     x,bottom+(top-bottom)/2,z+cz-ww/2);
+
+ box(.7,top-bottom,.18,frameMat,
+     x,bottom+(top-bottom)/2,z+cz+ww/2);
+
+ box(.65,.15,ww,frameMat,x,(bottom+top)/2,z+cz);
+ box(.65,top-bottom,.15,frameMat,x,(bottom+top)/2,z+cz);
+}
+
+
+/* =========================================================
+ TECHO
+========================================================= */
+
+function roof(w,d,h,x,z){
+
+ box(
+  w+1,.4,d+1,
+  roofMat,
+  x,h+.2,z
+ );
+}
+
+
+/* =========================================================
+ PUERTA COLLIDER
+========================================================= */
+
+function addDoorCollider(door){
+
+ const c={
+  door,
+  minX:door.x-door.w/2,
+  maxX:door.x+door.w/2,
+  minZ:door.z-.4,
+  maxZ:door.z+.4,
+  dynamic:true
+ };
+
+ door.collider=c;
+ colliders.push(c);
+}
+
+
+/* =========================================================
+ CASA DE 2 PISOS
+========================================================= */
+
+function twoFloorHouse(x,z){
+
+ const W=24,D=20;
+ const H=4;
+
+ simpleHouse(x,z);
+
+ // segundo piso
+ const y=4;
+
+ box(W,4,.5,wall2Mat,x,y+2,z-D/2);
+ box(W,4,.5,wall2Mat,x,y+2,z+D/2);
+
+ box(.5,4,D,wall2Mat,x-W/2,y+2,z);
+ box(.5,4,D,wall2Mat,x+W/2,y+2,z);
+
+ addCollider(x,z-D/2,W,.5);
+ addCollider(x,z+D/2,W,.5);
+ addCollider(x-W/2,z,.5,D);
+ addCollider(x+W/2,z,.5,D);
+
+ roof(W,D,8,x,z);
+
+ // ventanas del segundo piso
+ for(const side of [-1,1]){
+  for(const xx of [-6,0,6]){
+   const fx=x+xx;
+   const fz=z+side*(D/2+.28);
+
+   box(3,2.1,.12,frameMat,fx,5.8,fz);
+  }
+ }
+
+ // escalera exterior sencilla
+ for(let i=0;i<9;i++){
+  box(
+   4,
+   .35,
+   1.1,
+   woodMat,
+   x+W/2+2,
+   .2+i*.43,
+   z-D/2+1+i*1.1
+  );
+ }
+
+ return;
+}
+
+
+/* =========================================================
+ CASA DE 3 PISOS
+========================================================= */
+
+function threeFloorHouse(x,z){
+
+ const W=28,D=22;
+
+ simpleHouse(x,z);
+
+ for(let floor=1;floor<3;floor++){
+
+  const y=floor*4;
+
+  box(W,4,.5,wall3Mat,x,y+2,z-D/2);
+  box(W,4,.5,wall3Mat,x,y+2,z+D/2);
+  box(.5,4,D,wall3Mat,x-W/2,y+2,z);
+  box(.5,4,D,wall3Mat,x+W/2,y+2,z);
+
+  addCollider(x,z-D/2,W,.5);
+  addCollider(x,z+D/2,W,.5);
+  addCollider(x-W/2,z,.5,D);
+  addCollider(x+W/2,z,.5,D);
+
+  // ventanas
+  for(const xx of [-8,0,8]){
+   box(3,2,.15,frameMat,x+xx,y+2,z-D/2-.1);
+   box(3,2,.15,frameMat,x+xx,y+2,z+D/2+.1);
+  }
+ }
+
+ roof(W,D,12,x,z);
+}
+
+
+/* =========================================================
+ MANSIÓN
+========================================================= */
+
+function mansion(x,z){
+
+ const W=42,D=32,H=5;
+
+ // planta baja
+ box(W,H,.6,wallMat,x,H/2,z-D/2);
+ box(W,H,.6,wallMat,x,H/2,z+D/2);
+ box(.6,H,D,wallMat,x-W/2,H/2,z);
+ box(.6,H,D,wallMat,x+W/2,H/2,z);
+
+ addCollider(x,z-D/2,W,.6);
+ addCollider(x,z+D/2,W,.6);
+ addCollider(x-W/2,z,.6,D);
+ addCollider(x+W/2,z,.6,D);
+
+ // entrada central
+ const door=doorSet(x,z-D/2,0,4);
+ addDoorCollider(door);
+
+ // segundo piso
+ box(W,4,.6,wall2Mat,x,7,z-D/2);
+ box(W,4,.6,wall2Mat,x,7,z+D/2);
+ box(.6,4,D,wall2Mat,x-W/2,7,z);
+ box(.6,4,D,wall2Mat,x+W/2,7,z);
+
+ addCollider(x,z-D/2,W,.6);
+ addCollider(x,z+D/2,W,.6);
+ addCollider(x-W/2,z,.6,D);
+ addCollider(x+W/2,z,.6,D);
+
+ roof(W,D,9,x,z);
+
+ // columnas
+ for(const xx of [-15,15]){
+  box(.9,9,.9,woodDark,x+xx,4.5,z-D/2-1);
+ }
+
+ // ventanas grandes
+ for(const xx of [-13,-4,5,14]){
+  box(3.5,2.5,.2,frameMat,x+xx,2.7,z-D/2-.35);
+  box(3.5,2.5,.2,frameMat,x+xx,7,z-D/2-.35);
+ }
+}
+
+
+/* =========================================================
+ EDIFICIOS DEL MAPA
+========================================================= */
+
+// zona residencial
+simpleHouse(450,-250);
+simpleHouse(-680,700);
+simpleHouse(3600,-500);
+simpleHouse(1400,3000);
+simpleHouse(-2200,-900);
+
+twoFloorHouse(800,-450);
+twoFloorHouse(550,450);
+twoFloorHouse(-350,850);
+
+threeFloorHouse(2600,-2200);
+threeFloorHouse(3000,-2450);
+threeFloorHouse(3500,-2150);
+
+mansion(1700,-900);
+mansion(-900,1400);
+
+
+/* =========================================================
+ EDIFICIOS GRANDES
+========================================================= */
+
+function building(x,z,w,d,h,mat=wall2Mat){
+
+ box(w,h,d,mat,x,h/2,z);
+ addCollider(x,z,w,d);
+
+ box(w+.5,.4,d+.5,roofMat,x,h+.2,z);
+}
+
+building(3800,-2200,30,25,9);
+building(3900,-2200,25,20,7);
+building(3000,-3000,35,30,10);
+building(-3000,-2300,40,30,9);
+building(-3600,-1800,25,20,7);
+
+
+/* =========================================================
+ LAGOS
+========================================================= */
+
+function lake(x,z,w,d){
+
+ const m=new THREE.Mesh(
+  new THREE.PlaneGeometry(w,d),
+  waterMat
+ );
+
+ m.rotation.x=-Math.PI/2;
+ m.position.set(x,.03,z);
+ scene.add(m);
+}
+
+lake(-1800,1000,420,280);
+lake(3000,1200,300,220);
+
+
+/* =========================================================
+ CARRETERAS
+========================================================= */
+
+function road(x,z,w,d){
+
+ box(w,.08,d,roadMat,x,.05,z);
+
+ const vertical=d>w;
+ const length=vertical?d:w;
+
+ for(let i=-length/2+15;i<length/2;i+=30){
+
+  if(vertical)
+   box(.7,.1,14,lineMat,x,.11,z+i);
+  else
+   box(14,.1,.7,lineMat,x+i,.11,z);
+ }
+}
+
+road(0,-3000,120,1700);
+road(2600,-2200,1800,100);
+road(-3600,-1800,100,1300);
+road(0,-900,120,1800);
+
+
+/* =========================================================
+ ÁRBOLES
+========================================================= */
+
+function tree(x,z,s=1){
+
+ box(.8*s,5*s,.8*s,trunkMat,x,2.5*s,z);
+
+ const c=new THREE.Mesh(
+  new THREE.ConeGeometry(3.1*s,6*s,7),
+  treeMat
+ );
+
+ c.position.set(x,7*s,z);
+ scene.add(c);
+}
+
+const zones=[
+ [700,-2100,45],
+ [-3000,2500,55],
+ [2500,3500,45],
+ [-3300,3000,40],
+ [-2500,2200,30],
+ [1400,3000,25]
+];
+
+for(const q of zones){
+
+ for(let i=0;i<q[2];i++){
+
+  tree(
+   q[0]+(Math.random()-.5)*700,
+   q[1]+(Math.random()-.5)*700,
+   .7+Math.random()*.7
+  );
+ }
+}
+
+
+/* =========================================================
+ PUENTE
+========================================================= */
+
+box(100,2,420,stoneMat,-700,1,-1600);
+
+for(let i=-180;i<=180;i+=60){
+
+ box(7,10,7,stoneMat,-748,-4,-1600+i);
+ box(7,10,7,stoneMat,-652,-4,-1600+i);
+}
+
+
+/* =========================================================
+ JUGADOR
+========================================================= */
+
+const player={
+ x:0,
+ y:0,
+ z:0,
+ yaw:0,
+ moving:false
+};
+
+
+/* =========================================================
+ CUERPO COMPLETO
+========================================================= */
+
+const playerGroup=new THREE.Group();
+
+const torso=new THREE.Mesh(
+ new THREE.BoxGeometry(1.05,1.6,.6),
+ shirtMat
+);
+torso.position.y=1.55;
+playerGroup.add(torso);
+
+const head=new THREE.Mesh(
+ new THREE.SphereGeometry(.4,12,8),
+ skinMat
+);
+head.position.y=2.7;
+playerGroup.add(head);
+
+function limb(w,h,d,mat,x,y,z){
+
+ const m=new THREE.Mesh(
+  new THREE.BoxGeometry(w,h,d),
+  mat
+ );
+
+ m.position.set(x,y,z);
+ playerGroup.add(m);
+
+ return m;
+}
+
+const armL=limb(.28,1.35,.28,shirtMat,-.72,1.6,0);
+const armR=limb(.28,1.35,.28,shirtMat,.72,1.6,0);
+
+const legL=limb(.35,1.55,.4,pantsMat,-.3,.65,0);
+const legR=limb(.35,1.55,.4,pantsMat,.3,.65,0);
+
+playerGroup.position.set(0,0,0);
+scene.add(playerGroup);
+
+
+/*
+ Primera persona:
+ ocultamos el cuerpo completo para no verlo atravesar
+ la cámara. Las manos/brazos se crean delante.
+*/
+
+playerGroup.visible=false;
+
+const viewArms=new THREE.Group();
+
+const viewArmL=new THREE.Mesh(
+ new THREE.BoxGeometry(.28,1.15,.28),
+ shirtMat
+);
+
+viewArmL.position.set(-.48,-.55,-.75);
+viewArmL.rotation.z=-.15;
+
+const viewArmR=new THREE.Mesh(
+ new THREE.BoxGeometry(.28,1.15,.28),
+ shirtMat
+);
+
+viewArmR.position.set(.48,-.55,-.75);
+viewArmR.rotation.z=.15;
+
+viewArms.add(viewArmL,viewArmR);
+camera.add(viewArms);
+scene.add(camera);
+
+
+/* =========================================================
+ CÁMARA
+========================================================= */
+
+let cameraYaw=0;
+let cameraPitch=-.05;
+
+
+/* =========================================================
+ JOYSTICK
+========================================================= */
+
+const joystick=document.getElementById("joystick");
+const stick=document.getElementById("stick");
+
+let joyX=0;
+let joyY=0;
+let joyActive=false;
+let joyId=null;
+
+function moveStick(x,y){
+
+ const r=joystick.getBoundingClientRect();
+
+ let dx=x-(r.left+r.width/2);
+ let dy=y-(r.top+r.height/2);
+
+ const max=48;
+ const len=Math.hypot(dx,dy);
+
+ if(len>max){
+  dx=dx/len*max;
+  dy=dy/len*max;
+ }
+
+ joyX=dx/max;
+ joyY=dy/max;
+
+ stick.style.transform=`translate(${dx}px,${dy}px)`;
+}
+
+function resetStick(){
+
+ joyX=0;
+ joyY=0;
+ joyActive=false;
+ joyId=null;
+ stick.style.transform="translate(0,0)";
+}
+
+joystick.addEventListener("pointerdown",e=>{
+
+ joyActive=true;
+ joyId=e.pointerId;
+
+ joystick.setPointerCapture(e.pointerId);
+ moveStick(e.clientX,e.clientY);
+});
+
+joystick.addEventListener("pointermove",e=>{
+
+ if(joyActive&&e.pointerId===joyId)
+  moveStick(e.clientX,e.clientY);
+});
+
+joystick.addEventListener("pointerup",resetStick);
+joystick.addEventListener("pointercancel",resetStick);
+
+
+/* =========================================================
+ CORRER
+========================================================= */
+
+const runBtn=document.getElementById("runBtn");
+let running=false;
+
+runBtn.addEventListener("pointerdown",e=>{
+ e.preventDefault();
+ running=true;
+ runBtn.style.background="rgba(70,150,70,.8)";
+});
+
+runBtn.addEventListener("pointerup",()=>{
+ running=false;
+ runBtn.style.background="rgba(0,0,0,.7)";
+});
+
+runBtn.addEventListener("pointercancel",()=>{
+ running=false;
+ runBtn.style.background="rgba(0,0,0,.7)";
+});
+
+
+/* =========================================================
+ CÁMARA TÁCTIL TIPO ROBLOX
+========================================================= */
+
+let look=false;
+let lookId=null;
+let lx=0;
+let ly=0;
+
+renderer.domElement.addEventListener("pointerdown",e=>{
+
+ const jr=joystick.getBoundingClientRect();
+ const rr=runBtn.getBoundingClientRect();
+ const ar=document.getElementById("actionBtn").getBoundingClientRect();
+
+ if(
+  e.clientX>=jr.left&&e.clientX<=jr.right&&
+  e.clientY>=jr.top&&e.clientY<=jr.bottom
+ )return;
+
+ if(
+  e.clientX>=rr.left&&e.clientX<=rr.right&&
+  e.clientY>=rr.top&&e.clientY<=rr.bottom
+ )return;
+
+ if(
+  e.clientX>=ar.left&&e.clientX<=ar.right&&
+  e.clientY>=ar.top&&e.clientY<=ar.bottom
+ )return;
+
+ look=true;
+ lookId=e.pointerId;
+ lx=e.clientX;
+ ly=e.clientY;
+
+ renderer.domElement.setPointerCapture(e.pointerId);
+});
+
+renderer.domElement.addEventListener("pointermove",e=>{
+
+ if(!look||e.pointerId!==lookId)return;
+
+ const dx=e.clientX-lx;
+ const dy=e.clientY-ly;
+
+ lx=e.clientX;
+ ly=e.clientY;
+
+ cameraYaw-=dx*.006;
+ cameraPitch-=dy*.005;
+
+ cameraPitch=Math.max(-1.25,Math.min(1.15,cameraPitch));
+});
+
+renderer.domElement.addEventListener("pointerup",()=>{
+ look=false;
+ lookId=null;
+});
+
+renderer.domElement.addEventListener("pointercancel",()=>{
+ look=false;
+ lookId=null;
+});
+
+
+/* =========================================================
+ MOVIMIENTO
+========================================================= */
+
+function updateMovement(dt){
+
+ const mag=Math.hypot(joyX,joyY);
+
+ if(mag<.08){
+  player.moving=false;
+  return;
+ }
+
+ const forward=-joyY;
+ const right=joyX;
+
+ const dx=
+  Math.sin(cameraYaw)*forward+
+  Math.cos(cameraYaw)*right;
+
+ const dz=
+  -Math.cos(cameraYaw)*forward+
+  Math.sin(cameraYaw)*right;
+
+ const len=Math.hypot(dx,dz);
+
+ if(!len)return;
+
+ const nx=dx/len;
+ const nz=dz/len;
+
+ const speed=running?15:7;
+
+ const amount=speed*dt;
+
+ const nextX=player.x+nx*amount;
+ const nextZ=player.z+nz*amount;
+
+ if(!blocked(nextX,player.z,.55))
+  player.x=nextX;
+
+ if(!blocked(player.x,nextZ,.55))
+  player.z=nextZ;
+
+ player.moving=true;
+
+ // orientación del jugador, aunque no vemos el cuerpo
+ player.yaw=Math.atan2(nx,nz);
+ playerGroup.rotation.y=player.yaw;
+}
+
+
+/* =========================================================
+ PUERTAS — ACTUALIZACIÓN DE COLISIÓN
+========================================================= */
+
+function updateDoors(){
+
+ for(const d of doors){
+
+  if(d.open){
+
+   d.collider.minX=999999;
+   d.collider.maxX=-999999;
+   d.collider.minZ=999999;
+   d.collider.maxZ=-999999;
+
+  }else{
+
+   const hw=d.w/2;
+
+   /*
+    Para las puertas principales, todas están alineadas
+    con el frente de la casa.
+   */
+
+   d.collider.minX=d.x-hw;
+   d.collider.maxX=d.x+hw;
+   d.collider.minZ=d.z-.45;
+   d.collider.maxZ=d.z+.45;
+  }
+ }
+}
+
+
+/* =========================================================
+ INTERACCIÓN PUERTA
+========================================================= */
+
+const actionBtn=document.getElementById("actionBtn");
+
+let nearestDoor=null;
+
+function distanceToDoor(d){
+
+ return Math.hypot(
+  player.x-d.x,
+  player.z-d.z
+ );
+}
+
+function findDoor(){
+
+ let best=null;
+ let bestDist=3.2;
+
+ for(const d of doors){
+
+  const dist=distanceToDoor(d);
+
+  if(dist<bestDist){
+
+   best=d;
+   bestDist=dist;
+  }
+ }
+
+ return best;
+}
+
+function toggleDoor(d){
+
+ if(!d)return;
+
+ d.open=!d.open;
+
+ if(d.open){
+
+  // animación simple de apertura hacia un lado
+  d.group.rotation.y=d.rot+Math.PI/2;
+
+ }else{
+
+  d.group.rotation.y=d.rot;
+ }
+
+ updateDoors();
+}
+
+actionBtn.addEventListener("click",()=>{
+ toggleDoor(nearestDoor);
+});
+
+
+function updateAction(){
+
+ nearestDoor=findDoor();
+
+ if(nearestDoor){
+
+  actionBtn.style.display="block";
+  actionBtn.textContent=
+   nearestDoor.open?"CERRAR":"ABRIR";
+
+ }else{
+
+  actionBtn.style.display="none";
+  nearestDoor=null;
+ }
+}
+
+
+/* =========================================================
+ CÁMARA PRIMERA PERSONA
+========================================================= */
+
+function updateCamera(){
+
+ camera.position.set(
+  player.x,
+  2.45,
+  player.z
+ );
+
+ const targetX=
+  camera.position.x+
+  Math.sin(cameraYaw)*Math.cos(cameraPitch);
+
+ const targetY=
+  camera.position.y+
+  Math.sin(cameraPitch);
+
+ const targetZ=
+  camera.position.z-
+  Math.cos(cameraYaw)*Math.cos(cameraPitch);
+
+ camera.lookAt(
+  targetX,
+  targetY,
+  targetZ
+ );
+
+ /*
+  Brazos siguen la cámara porque son hijos de camera.
+ */
+}
+
+
+/* =========================================================
+ DÍA/NOCHE
+========================================================= */
+
+let night=false;
+
+document.getElementById("timeBtn").onclick=()=>{
+
+ night=!night;
+
+ if(night){
+
+  scene.background.set(0x101827);
+  scene.fog.color.set(0x101827);
+  hemi.intensity=.45;
+  sun.intensity=.25;
+
+ }else{
+
+  scene.background.set(0x91b4cf);
+  scene.fog.color.set(0x91b4cf);
+  hemi.intensity=1.8;
+  sun.intensity=1.5;
+ }
+};
+
+
+/* =========================================================
+ MAPA
+========================================================= */
+
+const map=document.getElementById("map");
+
+document.getElementById("mapBtn").onclick=()=>{
+
+ if(map.style.display==="block")
+  map.style.display="none";
+ else{
+  map.style.display="block";
+  drawMap();
+ }
+};
+
+function drawMap(){
+
+ const c=document.getElementById("mapCanvas");
+ const ctx=c.getContext("2d");
+
+ const w=c.width=c.clientWidth*devicePixelRatio;
+ const h=c.height=c.clientHeight*devicePixelRatio;
+
+ ctx.fillStyle="#263226";
+ ctx.fillRect(0,0,w,h);
+
+ const scale=w/9000;
+
+ const places=[
+  [0,0,"Base"],
+  [450,-250,"Casa"],
+  [-700,700,"Granja"],
+  [700,-2100,"Bosque"],
+  [-1800,1000,"Lago"],
+  [-2200,-900,"Ruinas"],
+  [2600,-2200,"Ciudad"],
+  [2200,1900,"Mina"],
+  [-3000,2500,"Bosque"],
+  [3000,1200,"Lago"],
+  [3600,-500,"Pueblo"],
+  [-3000,-2300,"Fábrica"],
+  [0,-3000,"Autopista"],
+  [-700,-1600,"Puente"],
+  [1400,3000,"Campamento"],
+  [3300,2800,"Cantera"],
+  [-2500,2200,"Cultivo"],
+  [-3800,500,"Fuerte"],
+  [3000,-3000,"Hospital"],
+  [3800,-2200,"Industrial"],
+  [-3600,-1800,"Tren"],
+  [1200,-3600,"Cementerio"],
+  [2500,3500,"Reserva"]
+ ];
+
+ ctx.font="11px Arial";
+
+ for(const p of places){
+
+  const px=w/2+p[0]*scale;
+  const py=h/2+p[1]*scale;
+
+  ctx.fillStyle="white";
+  ctx.beginPath();
+  ctx.arc(px,py,p[2]==="Base"?6:3,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillText(p[2],px+7,py+4);
+ }
+
+ const px=w/2+player.x*scale;
+ const py=h/2+player.z*scale;
+
+ ctx.fillStyle="#ff3333";
+ ctx.beginPath();
+ ctx.arc(px,py,7,0,Math.PI*2);
+ ctx.fill();
+}
+
+
+/* =========================================================
+ HUD
+========================================================= */
+
+function updateHUD(){
+
+ const dist=Math.round(
+  Math.hypot(player.x,player.z)
+ );
+
+ document.getElementById("info").textContent=
+  `${night?"Noche":"Día"} · Posición ${Math.round(player.x)}, ${Math.round(player.z)} · ${running&&player.moving?"CORRIENDO":"Caminando"} · Base ${dist}m`;
+}
+
+
+/* =========================================================
+ RESIZE
+========================================================= */
+
+addEventListener("resize",()=>{
+
+ camera.aspect=innerWidth/innerHeight;
+ camera.updateProjectionMatrix();
+
+ renderer.setSize(innerWidth,innerHeight);
+});
+
+
+/* =========================================================
+ LOOP
+========================================================= */
+
+let last=performance.now();
+
+function animate(now){
+
+ requestAnimationFrame(animate);
+
+ const dt=Math.min(
+  (now-last)/1000,
+  .05
+ );
+
+ last=now;
+
+ updateMovement(dt);
+ updateDoors();
+ updateAction();
+ updateCamera();
+ updateHUD();
+
+ renderer.render(scene,camera);
+}
+
+animate(performance.now());
+
+
+/* =========================================================
+ PREVENIR MENÚ/ZOOM
+========================================================= */
+
+document.addEventListener(
+ "contextmenu",
+ e=>e.preventDefault()
+);
+
+document.addEventListener(
+ "touchmove",
+ e=>e.preventDefault(),
+ {passive:false}
+);
+
+</script>
+</body>
+</html>
