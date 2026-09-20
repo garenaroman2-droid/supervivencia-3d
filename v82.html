@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SUPERVIVENCIA 3D V8.2</title>
+
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{
+ margin:0;width:100%;height:100%;overflow:hidden;
+ background:#101812;font-family:Arial,sans-serif;touch-action:none
+}
+#game{position:fixed;inset:0}
+canvas{display:block}
+
+#version{
+ position:fixed;top:8px;left:50%;transform:translateX(-50%);
+ z-index:20;color:white;background:rgba(0,0,0,.65);
+ padding:7px 14px;border-radius:20px;font-size:13px;font-weight:bold
+}
+
+#stats{
+ position:fixed;top:48px;left:10px;z-index:20;color:white;
+ background:rgba(0,0,0,.55);border-radius:12px;
+ padding:9px 11px;font-size:13px;line-height:1.5
+}
+
+#location{
+ position:fixed;top:48px;right:10px;z-index:20;color:white;
+ background:rgba(0,0,0,.55);border-radius:12px;
+ padding:9px 11px;text-align:right;font-size:12px;line-height:1.5
+}
+
+#message{
+ position:fixed;left:50%;bottom:145px;transform:translateX(-50%);
+ z-index:30;color:white;background:rgba(0,0,0,.78);
+ border-radius:12px;padding:10px 15px;text-align:center;
+ font-size:14px;max-width:90%;opacity:0;transition:.25s;
+ pointer-events:none
+}
+
+#joystick{
+ position:fixed;left:22px;bottom:25px;width:125px;height:125px;
+ border-radius:50%;background:rgba(255,255,255,.10);
+ border:2px solid rgba(255,255,255,.25);z-index:50
+}
+
+#stick{
+ position:absolute;width:55px;height:55px;left:33px;top:33px;
+ border-radius:50%;background:rgba(255,255,255,.35);
+ border:2px solid rgba(255,255,255,.55)
+}
+
+.btn{
+ position:fixed;z-index:50;width:62px;height:62px;border-radius:50%;
+ border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.58);
+ color:white;font-weight:bold;font-size:10px;
+ display:flex;align-items:center;justify-content:center;
+ text-align:center;user-select:none
+}
+
+#run{right:22px;bottom:28px}
+#jump{right:98px;bottom:28px;background:rgba(35,80,130,.7)}
+#hit{right:98px;bottom:98px;background:rgba(120,40,20,.7)}
+#mapBtn{right:22px;top:120px}
+#flagBtn{right:22px;top:192px}
+#invBtn{right:22px;top:264px}
+
+.panel{
+ display:none;position:fixed;z-index:100;left:50%;top:50%;
+ transform:translate(-50%,-50%);width:min(92vw,390px);
+ max-height:82vh;overflow:auto;background:rgba(12,18,14,.97);
+ color:white;border:1px solid rgba(255,255,255,.25);
+ border-radius:18px;padding:15px;box-shadow:0 10px 50px rgba(0,0,0,.6)
+}
+
+.panelTitle{font-size:19px;font-weight:bold;margin-bottom:8px}
+
+.close{
+ float:right;border:0;background:#772b2b;color:white;
+ border-radius:8px;padding:6px 10px
+}
+
+#mapCanvas{
+ width:100%;aspect-ratio:1;background:#17251a;
+ border-radius:12px;border:1px solid #526653;margin-top:10px
+}
+
+.item{
+ padding:9px;margin:6px 0;background:rgba(255,255,255,.07);
+ border-radius:9px
+}
+
+.action{
+ width:100%;padding:11px;border:0;border-radius:9px;
+ background:#315d36;color:white;font-weight:bold
+}
+
+#help{
+ position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+ z-index:110;background:rgba(0,0,0,.93);color:white;
+ width:min(90vw,380px);padding:20px;border-radius:18px;display:none
+}
+</style>
+</head>
+
+<body>
+
+<div id="game"></div>
+
+<div id="version">SUPERVIVENCIA 3D — V8.2</div>
+
+<div id="stats">
+❤️ <span id="hp">100</span><br>
+🪵 <span id="wood">0</span>
+🪨 <span id="stone">0</span>
+⛓️ <span id="iron">0</span><br>
+🥩 <span id="food">0</span>
+</div>
+
+<div id="location">
+📍 <span id="place">Base</span><br>
+🧭 <span id="distance">0 m</span>
+</div>
+
+<div id="message"></div>
+
+<div id="joystick"><div id="stick"></div></div>
+
+<div class="btn" id="jump">SALTAR</div>
+<div class="btn" id="run">CORRER</div>
+<div class="btn" id="hit">GOLPEAR</div>
+<div class="btn" id="mapBtn">MAPA</div>
+<div class="btn" id="flagBtn">⚑<br>BANDERA</div>
+<div class="btn" id="invBtn">MOCHILA</div>
+
+<div class="panel" id="mapPanel">
+<button class="close" onclick="closeMap()">X</button>
+<div class="panelTitle">🗺️ MAPA DEL MUNDO</div>
+<div id="mapInfo"></div>
+<canvas id="mapCanvas" width="600" height="600"></canvas>
+<div id="placesList"></div>
+</div>
+
+<div class="panel" id="inventoryPanel">
+<button class="close" onclick="closeInventory()">X</button>
+<div class="panelTitle">🎒 MOCHILA</div>
+<div id="inventoryList"></div>
+</div>
+
+<div id="help">
+<b>SUPERVIVENCIA 3D V8.2</b>
+<br><br>
+🧍 Ahora controlás una persona completa.<br><br>
+🕹️ Joystick para caminar.<br><br>
+👆 Arrastrá la pantalla para mirar.<br><br>
+🏃 Mantené CORRER para correr.<br><br>
+⬆️ SALTAR para saltar.<br><br>
+🪓 GOLPEAR para recolectar recursos.
+<br><br>
+<button class="action"
+onclick="document.getElementById('help').style.display='none'">
+JUGAR
+</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+
+/* =====================================================
+   SUPERVIVENCIA 3D V8.2
+   PERSONA EN TERCERA PERSONA
+   ===================================================== */
+
+let scene,camera,renderer,clock;
+
+let player;
+let body;
+let leftArm,rightArm,leftLeg,rightLeg;
+let leftHand,rightHand;
+
+let yaw=0;
+let cameraYaw=0;
+let cameraPitch=.28;
+
+let moveX=0;
+let moveY=0;
+
+let running=false;
+let stamina=100;
+
+let verticalVelocity=0;
+let grounded=true;
+
+let walkTime=0;
+
+let hp=100;
+
+let resources={
+ wood:0,
+ stone:0,
+ iron:0,
+ food:0
+};
+
+const WORLD=5000;
+
+let trees=[];
+let rocks=[];
+let flags=[];
+
+let discovered=JSON.parse(
+ localStorage.getItem("survival_v82_discovered")||"[]"
+);
+
+let savedFlags=JSON.parse(
+ localStorage.getItem("survival_v82_flags")||"[]"
+);
+
+const places=[
+ {id:"city",name:"Ciudad Vieja",x:900,z:-700,radius:130},
+ {id:"farm",name:"Granja Verde",x:-650,z:550,radius:110},
+ {id:"forest",name:"Bosque del Norte",x:250,z:-1150,radius:160},
+ {id:"lake",name:"Lago Perdido",x:-1100,z:-500,radius:150},
+ {id:"house",name:"Casa Abandonada",x:650,z:350,radius:80},
+ {id:"mine",name:"Mina Vieja",x:-1250,z:900,radius:100}
+];
+
+/* ================= UTILIDADES ================= */
+
+function msg(t){
+ const e=document.getElementById("message");
+ e.innerHTML=t;
+ e.style.opacity=1;
+ clearTimeout(window.mt);
+ window.mt=setTimeout(()=>e.style.opacity=0,2400);
+}
+
+function dist(x,z){
+ return Math.sqrt(x*x+z*z);
+}
+
+function formatDistance(d){
+ return d>=1000?(d/1000).toFixed(1)+" km":Math.round(d)+" m";
+}
+
+function rand(a,b){
+ return Math.random()*(b-a)+a;
+}
+
+function save(){
+ localStorage.setItem(
+  "survival_v82_discovered",
+  JSON.stringify(discovered)
+ );
+ localStorage.setItem(
+  "survival_v82_flags",
+  JSON.stringify(savedFlags)
+ );
+}
+
+/* ================= INICIO ================= */
+
+function init(){
+
+ scene=new THREE.Scene();
+
+ scene.background=new THREE.Color(0x87a8b8);
+
+ scene.fog=new THREE.Fog(
+  0x87a8b8,
+  500,
+  2600
+ );
+
+ camera=new THREE.PerspectiveCamera(
+  65,
+  innerWidth/innerHeight,
+  .1,
+  4000
+ );
+
+ renderer=new THREE.WebGLRenderer({
+  antialias:true,
+  powerPreference:"high-performance"
+ });
+
+ renderer.setSize(innerWidth,innerHeight);
+
+ renderer.setPixelRatio(
+  Math.min(devicePixelRatio,1.5)
+ );
+
+ renderer.shadowMap.enabled=true;
+
+ document.getElementById("game")
+ .appendChild(renderer.domElement);
+
+ clock=new THREE.Clock();
+
+ lights();
+ terrain();
+ base();
+ city();
+ farm();
+ placesWorld();
+ resources();
+ createPlayer();
+ loadFlags();
+ controls();
+
+ addEventListener("resize",resize);
+
+ document.getElementById("help").style.display="block";
+
+ animate();
+}
+
+/* ================= LUCES ================= */
+
+function lights(){
+
+ const hemi=new THREE.HemisphereLight(
+  0xcceaff,
+  0x26351f,
+  1.5
+ );
+
+ scene.add(hemi);
+
+ const sun=new THREE.DirectionalLight(
+  0xffffff,
+  2
+ );
+
+ sun.position.set(300,600,200);
+ sun.castShadow=true;
+
+ sun.shadow.mapSize.width=1024;
+ sun.shadow.mapSize.height=1024;
+
+ scene.add(sun);
+}
+
+/* ================= TERRENO ================= */
+
+function terrain(){
+
+ const geo=new THREE.PlaneGeometry(
+  WORLD,WORLD,40,40
+ );
+
+ const mat=new THREE.MeshStandardMaterial({
+  color:0x4d713c,
+  roughness:1
+ });
+
+ const ground=new THREE.Mesh(geo,mat);
+
+ ground.rotation.x=-Math.PI/2;
+ ground.receiveShadow=true;
+
+ scene.add(ground);
+
+ road(0,0,0,-900,16);
+ road(0,0,900,-700,18);
+ road(0,0,-650,550,14);
+}
+
+function road(x1,z1,x2,z2,w){
+
+ const dx=x2-x1;
+ const dz=z2-z1;
+ const len=Math.sqrt(dx*dx+dz*dz);
+
+ const r=new THREE.Mesh(
+  new THREE.PlaneGeometry(w,len),
+  new THREE.MeshStandardMaterial({
+   color:0x70624b
+  })
+ );
+
+ r.rotation.x=-Math.PI/2;
+ r.rotation.z=-Math.atan2(dx,dz);
+
+ r.position.set(
+  (x1+x2)/2,
+  .015,
+  (z1+z2)/2
+ );
+
+ scene.add(r);
+}
+
+/* ================= EDIFICIOS ================= */
+
+function building(x,y,z,w,h,d){
+
+ const g=new THREE.Group();
+ g.position.set(x,y,z);
+
+ const wall=new THREE.MeshStandardMaterial({
+  color:0x806546,
+  roughness:1
+ });
+
+ const roofMat=new THREE.MeshStandardMaterial({
+  color:0x39302a
+ });
+
+ const back=new THREE.Mesh(
+  new THREE.BoxGeometry(w,h,.25),wall
+ );
+ back.position.z=d/2;
+ g.add(back);
+
+ const s1=new THREE.Mesh(
+  new THREE.BoxGeometry(.25,h,d),wall
+ );
+ s1.position.x=-w/2;
+ g.add(s1);
+
+ const s2=s1.clone();
+ s2.position.x=w/2;
+ g.add(s2);
+
+ const f1=new THREE.Mesh(
+  new THREE.BoxGeometry(w*.42,h,.25),wall
+ );
+ f1.position.set(-w*.29,0,-d/2);
+ g.add(f1);
+
+ const f2=f1.clone();
+ f2.position.x=w*.29;
+ g.add(f2);
+
+ const door=new THREE.Mesh(
+  new THREE.BoxGeometry(1.5,2.7,.2),
+  new THREE.MeshStandardMaterial({
+   color:0x432719
+  })
+ );
+
+ door.position.set(
+  0,-h/2+1.35,-d/2-.12
+ );
+
+ g.add(door);
+
+ const roof=new THREE.Mesh(
+  new THREE.ConeGeometry(
+   Math.max(w,d)*.72,
+   2.4,
+   4
+  ),
+  roofMat
+ );
+
+ roof.rotation.y=Math.PI/4;
+ roof.position.y=h/2+1;
+ g.add(roof);
+
+ for(const sx of [-1,1]){
+
+  const win=new THREE.Mesh(
+   new THREE.BoxGeometry(1.6,1.2,.12),
+   new THREE.MeshStandardMaterial({
+    color:0x75a7b5
+   })
+  );
+
+  win.position.set(
+   sx*(w/2+.08),
+   .3,
+   0
+  );
+
+  win.rotation.y=Math.PI/2;
+  g.add(win);
+ }
+
+ scene.add(g);
+ return g;
+}
+
+/* ================= BASE ================= */
+
+function base(){
+
+ building(0,2.5,0,10,6,7);
+
+ const fire=new THREE.Mesh(
+  new THREE.CylinderGeometry(.8,.8,.3,8),
+  new THREE.MeshStandardMaterial({
+   color:0x4d2d19
+  })
+ );
+
+ fire.position.set(-7,.2,0);
+ scene.add(fire);
+
+ const light=new THREE.PointLight(
+  0xff8b30,2,20
+ );
+
+ light.position.set(-7,2,0);
+ scene.add(light);
+
+ createFlag(7,0,"BASE",true);
+}
+
+/* ================= CIUDAD ================= */
+
+function city(){
+
+ const cx=900;
+ const cz=-700;
+
+ const plaza=new THREE.Mesh(
+  new THREE.CylinderGeometry(35,35,.15,32),
+  new THREE.MeshStandardMaterial({
+   color:0x777066
+  })
+ );
+
+ plaza.position.set(cx,.08,cz);
+ scene.add(plaza);
+
+ const p=[
+  [-95,-80],[0,-100],[95,-80],
+  [-110,0],[110,0],
+  [-95,85],[0,105],[95,85],
+  [-210,-40],[210,-40],
+  [-210,100],[210,100],
+  [-190,-150],[190,-150],
+  [0,200],[-100,200],[100,200]
+ ];
+
+ p.forEach((a,i)=>{
+  building(
+   cx+a[0],
+   2.5,
+   cz+a[1],
+   i%4===0?15:11,
+   i%4===0?7:6,
+   i%4===0?11:8
+  );
+ });
+
+ building(cx+280,4,cz+20,30,9,20);
+}
+
+/* ================= GRANJA ================= */
+
+function farm(){
+
+ const x=-650,z=550;
+
+ building(x,2.5,z,13,6,9);
+ building(x+35,3,z+20,18,7,14);
+
+ for(let r=0;r<5;r++){
+  for(let c=0;c<8;c++){
+
+   const plant=new THREE.Mesh(
+    new THREE.ConeGeometry(.22,.8,5),
+    new THREE.MeshStandardMaterial({
+     color:0x3f762d
+    })
+   );
+
+   plant.position.set(
+    x-18+c*5,
+    .45,
+    z+18+r*4
+   );
+
+   scene.add(plant);
+  }
+ }
+}
+
+/* ================= LUGARES ================= */
+
+function placesWorld(){
+
+ const lake=new THREE.Mesh(
+  new THREE.CircleGeometry(75,32),
+  new THREE.MeshStandardMaterial({
+   color:0x397f9c,
+   transparent:true,
+   opacity:.85
+  })
+ );
+
+ lake.rotation.x=-Math.PI/2;
+ lake.position.set(-1100,.03,-500);
+ scene.add(lake);
+
+ building(650,2,350,11,5,8);
+
+ const mine=new THREE.Mesh(
+  new THREE.BoxGeometry(16,10,12),
+  new THREE.MeshStandardMaterial({
+   color:0x33302c
+  })
+ );
+
+ mine.position.set(-1250,5,900);
+ scene.add(mine);
+
+ for(let i=0;i<90;i++){
+  createTree(
+   rand(100,420),
+   rand(-1350,-950),
+   2
+  );
+ }
+}
+
+/* ================= ÁRBOLES ================= */
+
+function createTree(x,z,h=1){
+
+ const g=new THREE.Group();
+
+ g.position.set(x,0,z);
+
+ const scale=h===1?1:h===2?1.25:1.55;
+ g.scale.setScalar(scale);
+
+ const trunk=new THREE.Mesh(
+  new THREE.CylinderGeometry(.45,.65,5,8),
+  new THREE.MeshStandardMaterial({
+   color:h===1?0x70492c:h===2?0x573a25:0x402d20
+  })
+ );
+
+ trunk.position.y=2.5;
+ trunk.castShadow=true;
+ g.add(trunk);
+
+ const crown=new THREE.Mesh(
+  new THREE.ConeGeometry(3,6,8),
+  new THREE.MeshStandardMaterial({
+   color:h===1?0x2f6b32:h===2?0x245a2a:0x17451e
+  })
+ );
+
+ crown.position.y=6.2;
+ crown.castShadow=true;
+ g.add(crown);
+
+ scene.add(g);
+
+ trees.push({
+  mesh:g,
+  x:x,
+  z:z,
+  hardness:h,
+  health:h*3
+ });
+}
+
+/* ================= ROCAS ================= */
+
+function createRock(x,z,h,iron){
+
+ const r=new THREE.Mesh(
+  new THREE.DodecahedronGeometry(
+   h===1?1.1:h===2?1.45:1.8
+  ),
+  new THREE.MeshStandardMaterial({
+   color:iron?0x7b5547:
+   h===1?0x77736b:
+   h===2?0x5f625f:0x45494a,
+   roughness:1
+  })
+ );
+
+ r.position.set(x,.8,z);
+ r.rotation.set(
+  rand(0,2),rand(0,2),rand(0,2)
+ );
+
+ r.castShadow=true;
+ scene.add(r);
+
+ rocks.push({
+  mesh:r,x:x,z:z,
+  hardness:h,
+  iron:iron,
+  health:h*3
+ });
+}
+
+/* ================= RECURSOS ================= */
+
+function resources(){
+
+ for(let i=0;i<90;i++){
+
+  const x=rand(-2200,2200);
+  const z=rand(-2200,2200);
+
+  if(Math.abs(x)<100&&Math.abs(z)<100)continue;
+
+  let h=1;
+  const r=Math.random();
+
+  if(r>.8)h=2;
+  if(r>.95)h=3;
+
+  createTree(x,z,h);
+ }
+
+ for(let i=0;i<70;i++){
+
+  createRock(
+   rand(-2200,2200),
+   rand(-2200,2200),
+   Math.random()>.82?2:1,
+   false
+  );
+ }
+
+ for(let i=0;i<35;i++){
+
+  createRock(
+   rand(-1800,1800),
+   rand(-1800,1800),
+   2,
+   true
+  );
+ }
+
+ for(let i=0;i<260;i++){
+
+  const bush=new THREE.Mesh(
+   new THREE.SphereGeometry(
+    rand(.4,.9),7,6
+   ),
+   new THREE.MeshStandardMaterial({
+    color:0x315f2c
+   })
+  );
+
+  bush.scale.y=.65;
+
+  bush.position.set(
+   rand(-2300,2300),
+   .45,
+   rand(-2300,2300)
+  );
+
+  scene.add(bush);
+ }
+}
+
+/* =====================================================
+   PERSONA
+   ===================================================== */
+
+function createPlayer(){
+
+ player=new THREE.Group();
+
+ player.position.set(0,0,12);
+
+ scene.add(player);
+
+ /* piernas */
+
+ leftLeg=humanPart(
+  .25,
+  1.35,
+  .25,
+  0x202a31
+ );
+
+ rightLeg=humanPart(
+  .25,
+  1.35,
+  .25,
+  0x202a31
+ );
+
+ leftLeg.position.set(-.23,.7,0);
+ rightLeg.position.set(.23,.7,0);
+
+ player.add(leftLeg);
+ player.add(rightLeg);
+
+ /* pies */
+
+ const lf=humanPart(.3,.25,.5,0x17191b);
+ const rf=humanPart(.3,.25,.5,0x17191b);
+
+ lf.position.set(-.23,.05,-.08);
+ rf.position.set(.23,.05,-.08);
+
+ player.add(lf);
+ player.add(rf);
+
+ /* torso */
+
+ body=humanPart(
+  .75,
+  1.45,
+  .42,
+  0x354451
+ );
+
+ body.position.y=1.75;
+
+ player.add(body);
+
+ /* cabeza */
+
+ const head=new THREE.Mesh(
+  new THREE.SphereGeometry(.43,16,12),
+  new THREE.MeshStandardMaterial({
+   color:0xc58d6c
+  })
+ );
+
+ head.position.y=2.8;
+ head.castShadow=true;
+
+ player.add(head);
+
+ /* pelo */
+
+ const hair=new THREE.Mesh(
+  new THREE.SphereGeometry(.45,16,8,0,Math.PI*2,0,Math.PI*.55),
+  new THREE.MeshStandardMaterial({
+   color:0x191613
+  })
+ );
+
+ hair.position.y=3.02;
+
+ player.add(hair);
+
+ /* brazos */
+
+ leftArm=humanPart(
+  .22,
+  1.15,
+  .22,
+  0x354451
+ );
+
+ rightArm=humanPart(
+  .22,
+  1.15,
+  .22,
+  0x354451
+ );
+
+ leftArm.position.set(-.58,2.0,0);
+ rightArm.position.set(.58,2.0,0);
+
+ player.add(leftArm);
+ player.add(rightArm);
+
+ /* manos */
+
+ leftHand=humanPart(
+  .24,.28,.24,0xc58d6c
+ );
+
+ rightHand=humanPart(
+  .24,.28,.24,0xc58d6c
+ );
+
+ leftHand.position.set(-.58,1.38,0);
+ rightHand.position.set(.58,1.38,0);
+
+ player.add(leftHand);
+ player.add(rightHand);
+}
+
+function humanPart(x,y,z,color){
+
+ const m=new THREE.Mesh(
+  new THREE.BoxGeometry(x,y,z),
+  new THREE.MeshStandardMaterial({
+   color:color,
+   roughness:.85
+  })
+ );
+
+ m.castShadow=true;
+
+ return m;
+}
+
+/* =====================================================
+   ANIMACIÓN PERSONA
+   ===================================================== */
+
+function animatePerson(moving,dt){
+
+ if(!moving){
+
+  leftLeg.rotation.x*=.85;
+  rightLeg.rotation.x*=.85;
+  leftArm.rotation.x*=.85;
+  rightArm.rotation.x*=.85;
+
+  return;
+ }
+
+ walkTime+=dt*(running?13:8);
+
+ const swing=Math.sin(walkTime)*(
+  running?.75:.45
+ );
+
+ leftLeg.rotation.x=swing;
+ rightLeg.rotation.x=-swing;
+
+ leftArm.rotation.x=-swing*.8;
+ rightArm.rotation.x=swing*.8;
+}
+
+/* =====================================================
+   TERCERA PERSONA
+   ===================================================== */
+
+function updateCamera(dt){
+
+ const targetY=2.1;
+
+ const desiredDistance=6;
+
+ const horizontal=Math.cos(cameraPitch)*
+  desiredDistance;
+
+ const vertical=Math.sin(cameraPitch)*
+  desiredDistance;
+
+ const angle=player.rotation.y+cameraYaw;
+
+ const targetX=
+  player.position.x-
+  Math.sin(angle)*horizontal;
+
+ const targetZ=
+  player.position.z-
+  Math.cos(angle)*horizontal;
+
+ const target=new THREE.Vector3(
+  targetX,
+  player.position.y+
+  targetY+
+  vertical,
+  targetZ
+ );
+
+ camera.position.lerp(
+  target,
+  1-Math.pow(.001,dt)
+ );
+
+ const lookAt=new THREE.Vector3(
+  player.position.x,
+  player.position.y+1.55,
+  player.position.z
+ );
+
+ camera.lookAt(lookAt);
+}
+
+/* =====================================================
+   MOVIMIENTO
+   ===================================================== */
+
+function movement(dt){
+
+ const moving=
+  Math.abs(moveX)>.05||
+  Math.abs(moveY)>.05;
+
+ if(!moving){
+
+  stamina=Math.min(
+   100,
+   stamina+18*dt
+  );
+
+  animatePerson(false,dt);
+
+  return;
+ }
+
+ let speed=running&&stamina>0?11:5.5;
+
+ if(running&&stamina>0){
+
+  stamina-=32*dt;
+
+  if(stamina<0)stamina=0;
+
+ }else{
+
+  stamina+=15*dt;
+
+  if(stamina>100)stamina=100;
+ }
+
+ /* dirección según cámara */
+
+ const angle=player.rotation.y+cameraYaw;
+
+ const forward=new THREE.Vector3(
+  -Math.sin(angle),
+  0,
+  -Math.cos(angle)
+ );
+
+ const right=new THREE.Vector3(
+  Math.cos(angle),
+  0,
+  -Math.sin(angle)
+ );
+
+ const dir=new THREE.Vector3();
+
+ dir.addScaledVector(
+  right,
+  moveX
+ );
+
+ dir.addScaledVector(
+  forward,
+  -moveY
+ );
+
+ if(dir.length()>0){
+
+  dir.normalize();
+
+  player.position.addScaledVector(
+   dir,
+   speed*dt
+  );
+
+  /* personaje mira hacia donde camina */
+
+  const targetRot=Math.atan2(
+   dir.x,
+   dir.z
+  );
+
+  let diff=targetRot-player.rotation.y;
+
+  while(diff>Math.PI)diff-=Math.PI*2;
+  while(diff<-Math.PI)diff+=Math.PI*2;
+
+  player.rotation.y+=diff*
+   Math.min(1,dt*12);
+ }
+
+ const limit=WORLD/2-30;
+
+ player.position.x=
+  THREE.MathUtils.clamp(
+   player.position.x,
+   -limit,
+   limit
+  );
+
+ player.position.z=
+  THREE.MathUtils.clamp(
+   player.position.z,
+   -limit,
+   limit
+  );
+
+ animatePerson(true,dt);
+}
+
+/* =====================================================
+   SALTO
+   ===================================================== */
+
+function jump(){
+
+ if(!grounded)return;
+
+ verticalVelocity=9;
+ grounded=false;
+
+ msg("⬆️ ¡SALTO!");
+}
+
+function gravity(dt){
+
+ verticalVelocity-=24*dt;
+
+ player.position.y+=
+  verticalVelocity*dt;
+
+ if(player.position.y<=0){
+
+  player.position.y=0;
+  verticalVelocity=0;
+  grounded=true;
+ }
+}
+
+/* =====================================================
+   CONTROLES
+   ===================================================== */
+
+function controls(){
+
+ const joy=document.getElementById("joystick");
+ const stick=document.getElementById("stick");
+
+ let joyActive=false;
+
+ function joyMove(e){
+
+  const r=joy.getBoundingClientRect();
+
+  let x=e.clientX-(r.left+r.width/2);
+  let y=e.clientY-(r.top+r.height/2);
+
+  const max=45;
+  const len=Math.sqrt(x*x+y*y);
+
+  if(len>max){
+   x=x/len*max;
+   y=y/len*max;
+  }
+
+  stick.style.left=(33+x)+"px";
+  stick.style.top=(33+y)+"px";
+
+  moveX=x/max;
+  moveY=y/max;
+ }
+
+ joy.addEventListener("pointerdown",e=>{
+  joyActive=true;
+  joy.setPointerCapture(e.pointerId);
+  joyMove(e);
+ });
+
+ joy.addEventListener("pointermove",e=>{
+  if(joyActive)joyMove(e);
+ });
+
+ function joyReset(){
+
+  joyActive=false;
+  moveX=0;
+  moveY=0;
+
+  stick.style.left="33px";
+  stick.style.top="33px";
+ }
+
+ joy.addEventListener("pointerup",joyReset);
+ joy.addEventListener("pointercancel",joyReset);
+
+ /* correr */
+
+ const run=document.getElementById("run");
+
+ run.addEventListener("pointerdown",()=>{
+  running=true;
+ });
+
+ run.addEventListener("pointerup",()=>{
+  running=false;
+ });
+
+ run.addEventListener("pointercancel",()=>{
+  running=false;
+ });
+
+ /* salto */
+
+ document.getElementById("jump")
+ .addEventListener("pointerdown",jump);
+
+ /* cámara */
+
+ let look=false;
+ let lastX=0;
+ let lastY=0;
+
+ renderer.domElement.addEventListener(
+  "pointerdown",
+  e=>{
+
+   if(
+    e.clientX<170&&
+    e.clientY>innerHeight-180
+   )return;
+
+   look=true;
+   lastX=e.clientX;
+   lastY=e.clientY;
+  }
+ );
+
+ renderer.domElement.addEventListener(
+  "pointermove",
+  e=>{
+
+   if(!look)return;
+
+   const dx=e.clientX-lastX;
+   const dy=e.clientY-lastY;
+
+   lastX=e.clientX;
+   lastY=e.clientY;
+
+   cameraYaw-=dx*.006;
+   cameraPitch+=dy*.004;
+
+   cameraPitch=THREE.MathUtils.clamp(
+    cameraPitch,
+    -.05,
+    .75
+   );
+  }
+ );
+
+ renderer.domElement.addEventListener(
+  "pointerup",
+  ()=>look=false
+ );
+
+ renderer.domElement.addEventListener(
+  "pointercancel",
+  ()=>look=false
+ );
+}
+
+/* =====================================================
+   RECOLECCIÓN
+   ===================================================== */
+
+document.getElementById("hit")
+.addEventListener("pointerdown",harvest);
+
+function harvest(){
+
+ const px=player.position.x;
+ const pz=player.position.z;
+
+ let best=6;
+ let target=null;
+
+ trees.forEach(t=>{
+
+  if(!t.mesh.parent)return;
+
+  const d=Math.sqrt(
+   (px-t.x)**2+
+   (pz-t.z)**2
+  );
+
+  if(d<best){
+   best=d;
+   target=t;
+  }
+ });
+
+ if(target){
+
+  target.health--;
+
+  if(target.health<=0){
+
+   const amount=
+    target.hardness===1?4:
+    target.hardness===2?7:10;
+
+   resources.wood+=amount;
+
+   scene.remove(target.mesh);
+
+   msg("🪵 Madera +"+amount);
+
+  }else{
+
+   msg(
+    "🪓 Árbol golpeado — dureza "+
+    target.hardness
+   );
+  }
+
+  updateUI();
+  return;
+ }
+
+ best=6;
+ target=null;
+
+ rocks.forEach(r=>{
+
+  if(!r.mesh.parent)return;
+
+  const d=Math.sqrt(
+   (px-r.x)**2+
+   (pz-r.z)**2
+  );
+
+  if(d<best){
+   best=d;
+   target=r;
+  }
+ });
+
+ if(target){
+
+  target.health--;
+
+  if(target.health<=0){
+
+   if(target.iron){
+
+    resources.iron+=3;
+    msg("⛓️ Hierro +3");
+
+   }else{
+
+    resources.stone+=
+     target.hardness===1?3:6;
+
+    msg("🪨 Piedra recolectada");
+   }
+
+   scene.remove(target.mesh);
+
+  }else{
+
+   msg("⛏️ Roca golpeada");
+  }
+
+  updateUI();
+  return;
+ }
+
+ msg("No hay recursos cerca.");
+}
+
+/* =====================================================
+   BANDERAS
+   ===================================================== */
+
+function createLabel(text){
+
+ const c=document.createElement("canvas");
+
+ c.width=512;
+ c.height=128;
+
+ const ctx=c.getContext("2d");
+
+ ctx.fillStyle="rgba(0,0,0,.65)";
+ ctx.fillRect(0,0,512,128);
+
+ ctx.fillStyle="white";
+ ctx.font="bold 42px Arial";
+ ctx.textAlign="center";
+ ctx.textBaseline="middle";
+
+ ctx.fillText(text,256,64);
+
+ const tex=new THREE.CanvasTexture(c);
+
+ const sprite=new THREE.Sprite(
+  new THREE.SpriteMaterial({
+   map:tex,
+   transparent:true
+  })
+ );
+
+ sprite.scale.set(5,1.25,1);
+
+ return sprite;
+}
+
+function createFlag(x,z,name,base=false){
+
+ const g=new THREE.Group();
+
+ g.position.set(x,0,z);
+
+ scene.add(g);
+
+ const pole=new THREE.Mesh(
+  new THREE.CylinderGeometry(.06,.08,4,8),
+  new THREE.MeshStandardMaterial({
+   color:0x5b4630
+  })
+ );
+
+ pole.position.y=2;
+ g.add(pole);
+
+ const cloth=new THREE.Mesh(
+  new THREE.PlaneGeometry(1.4,.8),
+  new THREE.MeshStandardMaterial({
+   color:base?0xb51f24:0xe4b52e,
+   side:THREE.DoubleSide
+  })
+ );
+
+ cloth.position.set(.7,3.2,0);
+ g.add(cloth);
+
+ const label=createLabel(name);
+
+ label.position.y=4.3;
+ g.add(label);
+
+ flags.push({
+  mesh:g,x:x,z:z,name:name,base:base
+ });
+}
+
+function loadFlags(){
+
+ savedFlags.forEach(f=>{
+  createFlag(f.x,f.z,f.name,false);
+ });
+}
+
+document.getElementById("flagBtn")
+.addEventListener("pointerdown",()=>{
+
+ const x=player.position.x;
+ const z=player.position.z;
+
+ const d=dist(x,z);
+
+ if(d<30){
+  msg("Alejate de la base para poner otra bandera.");
+  return;
+ }
+
+ const name=prompt("Nombre de este lugar:");
+
+ if(!name||!name.trim())return;
+
+ createFlag(x,z,name.trim(),false);
+
+ savedFlags.push({
+  x:x,
+  z:z,
+  name:name.trim()
+ });
+
+ save();
+
+ msg(
+  "⚑ "+name.trim()+
+  " — "+formatDistance(d)+
+  " desde la base"
+ );
+});
+
+/* =====================================================
+   DESCUBRIMIENTO
+   ===================================================== */
+
+function discoveries(){
+
+ places.forEach(p=>{
+
+  const d=Math.sqrt(
+   (player.position.x-p.x)**2+
+   (player.position.z-p.z)**2
+  );
+
+  if(
+   d<p.radius&&
+   !discovered.includes(p.id)
+  ){
+
+   discovered.push(p.id);
+   save();
+
+   msg(
+    "📍 LUGAR DESCUBIERTO<br><b>"+
+    p.name+
+    "</b><br>"+
+    formatDistance(dist(p.x,p.z))+
+    " desde la base"
+   );
+  }
+ });
+}
+
+/* =====================================================
+   MAPA
+   ===================================================== */
+
+document.getElementById("mapBtn")
+.addEventListener("pointerdown",openMap);
+
+function openMap(){
+
+ document.getElementById("mapPanel")
+ .style.display="block";
+
+ drawMap();
+}
+
+function closeMap(){
+ document.getElementById("mapPanel")
+ .style.display="none";
+}
+
+function drawMap(){
+
+ const c=document.getElementById("mapCanvas");
+ const ctx=c.getContext("2d");
+
+ ctx.fillStyle="#1b2b1d";
+ ctx.fillRect(0,0,600,600);
+
+ ctx.strokeStyle="rgba(255,255,255,.07)";
+
+ for(let i=0;i<=600;i+=60){
+
+  ctx.beginPath();
+  ctx.moveTo(i,0);
+  ctx.lineTo(i,600);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(0,i);
+  ctx.lineTo(600,i);
+  ctx.stroke();
+ }
+
+ const scale=.12;
+
+ const mx=x=>300+x*scale;
+ const mz=z=>300+z*scale;
+
+ /* base */
+
+ ctx.fillStyle="#ff3333";
+ ctx.beginPath();
+ ctx.arc(mx(0),mz(0),9,0,Math.PI*2);
+ ctx.fill();
+
+ ctx.fillStyle="white";
+ ctx.font="bold 16px Arial";
+ ctx.fillText("BASE",mx(0)+12,mz(0)+5);
+
+ /* lugares */
+
+ places.forEach(p=>{
+
+  if(!discovered.includes(p.id))return;
+
+  ctx.fillStyle="#40a5ff";
+  ctx.beginPath();
+  ctx.arc(mx(p.x),mz(p.z),7,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="white";
+  ctx.font="13px Arial";
+  ctx.fillText(p.name,mx(p.x)+10,mz(p.z)+4);
+ });
+
+ /* banderas */
+
+ flags.forEach(f=>{
+
+  if(f.base)return;
+
+  ctx.fillStyle="#ffd447";
+  ctx.beginPath();
+  ctx.arc(mx(f.x),mz(f.z),6,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="white";
+  ctx.font="12px Arial";
+  ctx.fillText(f.name,mx(f.x)+8,mz(f.z)+4);
+ });
+
+ /* jugador */
+
+ ctx.fillStyle="#00ff91";
+ ctx.beginPath();
+ ctx.arc(
+  mx(player.position.x),
+  mz(player.position.z),
+  8,
+  0,
+  Math.PI*2
+ );
+ ctx.fill();
+
+ document.getElementById("mapInfo").innerHTML=
+  "📍 Posición: "+
+  Math.round(player.position.x)+
+  " m / "+
+  Math.round(player.position.z)+
+  " m<br>🏠 Base: "+
+  formatDistance(
+   dist(
+    player.position.x,
+    player.position.z
+   )
+  );
+
+ let html="<b>📍 Lugares descubiertos</b>";
+
+ places.forEach(p=>{
+
+  if(discovered.includes(p.id)){
+
+   html+=
+   '<div class="item">📍 '+
+   p.name+
+   " — "+
+   formatDistance(dist(p.x,p.z))+
+   " desde base</div>";
+  }
+ });
+
+ savedFlags.forEach(f=>{
+
+  html+=
+  '<div class="item">⚑ '+
+  f.name+
+  " — "+
+  formatDistance(dist(f.x,f.z))+
+  " desde base</div>";
+ });
+
+ document.getElementById("placesList")
+ .innerHTML=html;
+}
+
+/* =====================================================
+   INVENTARIO
+   ===================================================== */
+
+document.getElementById("invBtn")
+.addEventListener("pointerdown",openInventory);
+
+function openInventory(){
+
+ document.getElementById("inventoryPanel")
+ .style.display="block";
+
+ document.getElementById("inventoryList")
+ .innerHTML=`
+
+ <div class="item">🪵 Madera: ${resources.wood}</div>
+ <div class="item">🪨 Piedra: ${resources.stone}</div>
+ <div class="item">⛓️ Hierro: ${resources.iron}</div>
+ <div class="item">🥩 Comida: ${resources.food}</div>
+ <div class="item">❤️ Vida: ${hp}</div>
+ <div class="item">🏃 Resistencia: ${Math.round(stamina)}%</div>
+
+ <button class="action"
+ onclick="craftCampfire()">
+ 🔥 Fabricar fogata
+ </button>
+
+ <br><br>
+
+ <button class="action"
+ onclick="craftWall()">
+ 🧱 Fabricar pared
+ </button>
+ `;
+}
+
+function closeInventory(){
+ document.getElementById("inventoryPanel")
+ .style.display="none";
+}
+
+function craftCampfire(){
+
+ if(resources.wood>=3&&resources.stone>=2){
+
+  resources.wood-=3;
+  resources.stone-=2;
+
+  msg("🔥 Fogata fabricada.");
+  updateUI();
+  openInventory();
+
+ }else{
+
+  msg("Necesitas 3 madera y 2 piedra.");
+ }
+}
+
+function craftWall(){
+
+ if(resources.wood>=5){
+
+  resources.wood-=5;
+
+  msg("🧱 Pared fabricada.");
+  updateUI();
+  openInventory();
+
+ }else{
+
+  msg("Necesitas 5 madera.");
+ }
+}
+
+/* =====================================================
+   UI
+   ===================================================== */
+
+function updateUI(){
+
+ document.getElementById("hp").textContent=Math.round(hp);
+ document.getElementById("wood").textContent=resources.wood;
+ document.getElementById("stone").textContent=resources.stone;
+ document.getElementById("iron").textContent=resources.iron;
+ document.getElementById("food").textContent=resources.food;
+
+ const d=dist(
+  player.position.x,
+  player.position.z
+ );
+
+ document.getElementById("distance")
+ .textContent=formatDistance(d);
+
+ let nearest="Zona salvaje";
+
+ if(
+  Math.abs(player.position.x)<60&&
+  Math.abs(player.position.z)<60
+ ){
+  nearest="Base";
+ }else{
+
+  places.forEach(p=>{
+
+   const pd=Math.sqrt(
+    (player.position.x-p.x)**2+
+    (player.position.z-p.z)**2
+   );
+
+   if(
+    pd<p.radius&&
+    discovered.includes(p.id)
+   ){
+    nearest=p.name;
+   }
+  });
+ }
+
+ document.getElementById("place")
+ .textContent=nearest;
+}
+
+/* =====================================================
+   ANIMACIÓN PRINCIPAL
+   ===================================================== */
+
+function animate(){
+
+ requestAnimationFrame(animate);
+
+ const dt=Math.min(
+  clock.getDelta(),
+  .05
+ );
+
+ movement(dt);
+ gravity(dt);
+ updateCamera(dt);
+ discoveries();
+ updateUI();
+
+ renderer.render(
+  scene,
+  camera
+ );
+}
+
+/* ================= RESIZE ================= */
+
+function resize(){
+
+ camera.aspect=
+  innerWidth/innerHeight;
+
+ camera.updateProjectionMatrix();
+
+ renderer.setSize(
+  innerWidth,
+  innerHeight
+ );
+}
+
+init();
+
+</script>
+
+</body>
+</html>
