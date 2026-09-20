@@ -2,82 +2,44 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Supervivencia 3D</title>
 
 <style>
+*{box-sizing:border-box}
 html,body{
   margin:0;
   width:100%;
   height:100%;
   overflow:hidden;
   background:#000;
-  font-family:Arial,sans-serif;
   touch-action:none;
+  font-family:Arial,sans-serif;
 }
-
-canvas{
-  display:block;
-}
+canvas{display:block}
 
 #hud{
   position:fixed;
   top:12px;
   left:12px;
-  color:white;
-  background:rgba(0,0,0,.55);
+  z-index:10;
+  color:#fff;
+  background:#0009;
   padding:10px 14px;
   border-radius:12px;
-  z-index:5;
-  font-size:15px;
+  line-height:1.5;
 }
 
 #info{
   position:fixed;
   top:12px;
   right:12px;
-  color:white;
-  background:rgba(0,0,0,.55);
-  padding:10px;
+  z-index:10;
+  color:#fff;
+  background:#0009;
+  padding:9px;
   border-radius:12px;
-  z-index:5;
-  font-size:13px;
-}
-
-#joystick{
-  position:fixed;
-  left:25px;
-  bottom:30px;
-  width:120px;
-  height:120px;
-  border-radius:50%;
-  background:rgba(255,255,255,.18);
-  border:2px solid rgba(255,255,255,.35);
-  z-index:10;
-}
-
-#stick{
-  position:absolute;
-  width:55px;
-  height:55px;
-  left:32px;
-  top:32px;
-  border-radius:50%;
-  background:rgba(255,255,255,.55);
-}
-
-#build{
-  position:fixed;
-  right:20px;
-  bottom:35px;
-  width:90px;
-  height:55px;
-  border:0;
-  border-radius:15px;
-  background:#e6a23c;
-  color:white;
-  font-weight:bold;
-  z-index:10;
+  font-size:12px;
 }
 
 #crosshair{
@@ -85,9 +47,55 @@ canvas{
   left:50%;
   top:50%;
   transform:translate(-50%,-50%);
-  color:white;
+  color:#fff;
   font-size:25px;
-  z-index:4;
+  z-index:5;
+  pointer-events:none;
+}
+
+#joystick{
+  position:fixed;
+  left:22px;
+  bottom:25px;
+  width:125px;
+  height:125px;
+  border-radius:50%;
+  background:#ffffff25;
+  border:2px solid #ffffff45;
+  z-index:20;
+}
+
+#stick{
+  position:absolute;
+  width:55px;
+  height:55px;
+  left:33px;
+  top:33px;
+  border-radius:50%;
+  background:#ffffff90;
+}
+
+#build{
+  position:fixed;
+  right:20px;
+  bottom:35px;
+  width:105px;
+  height:55px;
+  border:0;
+  border-radius:15px;
+  background:#e39a2f;
+  color:#fff;
+  font-weight:bold;
+  z-index:20;
+}
+
+#lookArea{
+  position:fixed;
+  right:0;
+  top:0;
+  width:65%;
+  height:100%;
+  z-index:2;
 }
 </style>
 </head>
@@ -95,16 +103,18 @@ canvas{
 <body>
 
 <div id="hud">
-  🪵 Madera: <span id="wood">0</span><br>
-  🪨 Piedra: <span id="stone">0</span>
+🪵 Madera: <span id="wood">0</span><br>
+🪨 Piedra: <span id="stone">0</span>
 </div>
 
 <div id="info">
-  Exploración 3D<br>
-  Recolectá materiales
+Arrastrá el lado derecho<br>
+para mirar
 </div>
 
 <div id="crosshair">+</div>
+
+<div id="lookArea"></div>
 
 <div id="joystick">
   <div id="stick"></div>
@@ -116,9 +126,12 @@ canvas{
 
 <script>
 
-let scene,camera,renderer;
+let scene;
+let camera;
+let renderer;
 
 let player;
+
 let trees=[];
 let rocks=[];
 let campfires=[];
@@ -129,10 +142,16 @@ let stone=0;
 let moveX=0;
 let moveZ=0;
 
-let joystick=document.getElementById("joystick");
-let stick=document.getElementById("stick");
+let yaw=0;
+let pitch=0;
 
-let dragging=false;
+let looking=false;
+let lastX=0;
+let lastY=0;
+
+const joystick=document.getElementById("joystick");
+const stick=document.getElementById("stick");
+const lookArea=document.getElementById("lookArea");
 
 init();
 animate();
@@ -143,7 +162,11 @@ function init(){
 
   scene.background=new THREE.Color(0x87ceeb);
 
-  scene.fog=new THREE.Fog(0x87ceeb,25,150);
+  scene.fog=new THREE.Fog(
+    0x87ceeb,
+    30,
+    150
+  );
 
   camera=new THREE.PerspectiveCamera(
     70,
@@ -156,13 +179,18 @@ function init(){
     antialias:true
   });
 
-  renderer.setSize(innerWidth,innerHeight);
+  renderer.setSize(
+    innerWidth,
+    innerHeight
+  );
 
-  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setPixelRatio(
+    Math.min(devicePixelRatio,2)
+  );
 
-  document.body.appendChild(renderer.domElement);
-
-  // LUZ
+  document.body.appendChild(
+    renderer.domElement
+  );
 
   const hemi=new THREE.HemisphereLight(
     0xffffff,
@@ -177,68 +205,99 @@ function init(){
     2
   );
 
-  sun.position.set(30,60,20);
+  sun.position.set(
+    30,
+    60,
+    20
+  );
 
   scene.add(sun);
 
   // SUELO
 
-  const groundGeo=new THREE.PlaneGeometry(300,300);
-
-  const groundMat=new THREE.MeshStandardMaterial({
-    color:0x4d8a45
-  });
-
   const ground=new THREE.Mesh(
-    groundGeo,
-    groundMat
+    new THREE.PlaneGeometry(300,300),
+    new THREE.MeshStandardMaterial({
+      color:0x4d8a45
+    })
   );
 
   ground.rotation.x=-Math.PI/2;
 
   scene.add(ground);
 
-  // PLAYER
+  // JUGADOR
 
   player=new THREE.Object3D();
 
-  player.position.set(0,1.7,8);
+  player.position.set(
+    0,
+    1.7,
+    8
+  );
 
   scene.add(player);
 
-  camera.position.set(0,2.5,6);
-
   player.add(camera);
 
-  // CREAR MUNDO
+  camera.position.set(
+    0,
+    0,
+    0
+  );
 
-  for(let i=0;i<45;i++){
+  createWorld();
 
-    let x=(Math.random()-0.5)*140;
-    let z=(Math.random()-0.5)*140;
+  setupJoystick();
 
-    if(Math.abs(x)<8 && Math.abs(z)<8) continue;
+  setupCameraControls();
+
+  document
+    .getElementById("build")
+    .addEventListener(
+      "click",
+      buildCampfire
+    );
+
+  window.addEventListener(
+    "resize",
+    resize
+  );
+}
+
+function createWorld(){
+
+  for(let i=0;i<55;i++){
+
+    const x=
+      (Math.random()-.5)*140;
+
+    const z=
+      (Math.random()-.5)*140;
+
+    if(
+      Math.abs(x)<10 &&
+      Math.abs(z)<10
+    ) continue;
 
     createTree(x,z);
   }
 
-  for(let i=0;i<35;i++){
+  for(let i=0;i<40;i++){
 
-    let x=(Math.random()-0.5)*140;
-    let z=(Math.random()-0.5)*140;
+    const x=
+      (Math.random()-.5)*140;
 
-    if(Math.abs(x)<8 && Math.abs(z)<8) continue;
+    const z=
+      (Math.random()-.5)*140;
+
+    if(
+      Math.abs(x)<10 &&
+      Math.abs(z)<10
+    ) continue;
 
     createRock(x,z);
   }
-
-  setupJoystick();
-
-  window.addEventListener("resize",resize);
-
-  document.getElementById("build")
-    .addEventListener("click",buildCampfire);
-
 }
 
 function createTree(x,z){
@@ -246,7 +305,11 @@ function createTree(x,z){
   const tree=new THREE.Group();
 
   const trunk=new THREE.Mesh(
-    new THREE.CylinderGeometry(.35,.45,4),
+    new THREE.CylinderGeometry(
+      .35,
+      .45,
+      4
+    ),
     new THREE.MeshStandardMaterial({
       color:0x6b3e1e
     })
@@ -257,7 +320,11 @@ function createTree(x,z){
   tree.add(trunk);
 
   const leaves=new THREE.Mesh(
-    new THREE.SphereGeometry(2.2,10,10),
+    new THREE.SphereGeometry(
+      2.2,
+      10,
+      10
+    ),
     new THREE.MeshStandardMaterial({
       color:0x176b2c
     })
@@ -267,7 +334,11 @@ function createTree(x,z){
 
   tree.add(leaves);
 
-  tree.position.set(x,0,z);
+  tree.position.set(
+    x,
+    0,
+    z
+  );
 
   scene.add(tree);
 
@@ -283,7 +354,11 @@ function createRock(x,z){
     })
   );
 
-  rock.position.set(x,0.7,z);
+  rock.position.set(
+    x,
+    .7,
+    z
+  );
 
   rock.scale.set(
     1.2,
@@ -298,69 +373,162 @@ function createRock(x,z){
 
 function setupJoystick(){
 
-  joystick.addEventListener("touchstart",e=>{
-    dragging=true;
-  });
+  function updateStick(touch){
 
-  joystick.addEventListener("touchmove",e=>{
+    const rect=
+      joystick.getBoundingClientRect();
 
-    if(!dragging)return;
+    let x=
+      touch.clientX -
+      (rect.left+rect.width/2);
 
-    const t=e.touches[0];
-
-    const r=joystick.getBoundingClientRect();
-
-    let x=t.clientX-(r.left+r.width/2);
-    let y=t.clientY-(r.top+r.height/2);
+    let y=
+      touch.clientY -
+      (rect.top+rect.height/2);
 
     const max=45;
 
-    const len=Math.sqrt(x*x+y*y);
+    const distance=
+      Math.sqrt(x*x+y*y);
 
-    if(len>max){
+    if(distance>max){
 
-      x=x/len*max;
-      y=y/len*max;
+      x=x/distance*max;
+      y=y/distance*max;
 
     }
 
-    stick.style.left=(32+x)+"px";
-    stick.style.top=(32+y)+"px";
+    stick.style.left=
+      (33+x)+"px";
+
+    stick.style.top=
+      (33+y)+"px";
 
     moveX=x/max;
     moveZ=y/max;
+  }
 
-  });
+  joystick.addEventListener(
+    "touchstart",
+    e=>{
+      e.preventDefault();
+      updateStick(e.touches[0]);
+    },
+    {passive:false}
+  );
 
-  joystick.addEventListener("touchend",()=>{
+  joystick.addEventListener(
+    "touchmove",
+    e=>{
+      e.preventDefault();
+      updateStick(e.touches[0]);
+    },
+    {passive:false}
+  );
 
-    dragging=false;
+  joystick.addEventListener(
+    "touchend",
+    e=>{
+      e.preventDefault();
 
-    moveX=0;
-    moveZ=0;
+      moveX=0;
+      moveZ=0;
 
-    stick.style.left="32px";
-    stick.style.top="32px";
+      stick.style.left="33px";
+      stick.style.top="33px";
+    },
+    {passive:false}
+  );
+}
 
-  });
+function setupCameraControls(){
 
+  lookArea.addEventListener(
+    "touchstart",
+    e=>{
+
+      e.preventDefault();
+
+      looking=true;
+
+      lastX=e.touches[0].clientX;
+      lastY=e.touches[0].clientY;
+
+    },
+    {passive:false}
+  );
+
+  lookArea.addEventListener(
+    "touchmove",
+    e=>{
+
+      e.preventDefault();
+
+      if(!looking)return;
+
+      const touch=e.touches[0];
+
+      const dx=
+        touch.clientX-lastX;
+
+      const dy=
+        touch.clientY-lastY;
+
+      lastX=touch.clientX;
+      lastY=touch.clientY;
+
+      yaw-=dx*0.006;
+
+      pitch-=dy*0.006;
+
+      const limit=1.35;
+
+      pitch=Math.max(
+        -limit,
+        Math.min(limit,pitch)
+      );
+
+      player.rotation.y=yaw;
+
+      camera.rotation.x=pitch;
+
+    },
+    {passive:false}
+  );
+
+  lookArea.addEventListener(
+    "touchend",
+    e=>{
+      e.preventDefault();
+      looking=false;
+    },
+    {passive:false}
+  );
 }
 
 function collect(){
 
-  for(let i=trees.length-1;i>=0;i--){
+  for(
+    let i=trees.length-1;
+    i>=0;
+    i--
+  ){
 
-    const d=player.position.distanceTo(
-      trees[i].position
-    );
-
-    if(d<3){
+    if(
+      player.position.distanceTo(
+        trees[i].position
+      )<3
+    ){
 
       wood+=2;
 
-      document.getElementById("wood").textContent=wood;
+      document.getElementById(
+        "wood"
+      ).textContent=wood;
 
-      scene.remove(trees[i]);
+      scene.remove(
+        trees[i]
+      );
 
       trees.splice(i,1);
 
@@ -368,33 +536,45 @@ function collect(){
     }
   }
 
-  for(let i=rocks.length-1;i>=0;i--){
+  for(
+    let i=rocks.length-1;
+    i>=0;
+    i--
+  ){
 
-    const d=player.position.distanceTo(
-      rocks[i].position
-    );
-
-    if(d<3){
+    if(
+      player.position.distanceTo(
+        rocks[i].position
+      )<3
+    ){
 
       stone+=2;
 
-      document.getElementById("stone").textContent=stone;
+      document.getElementById(
+        "stone"
+      ).textContent=stone;
 
-      scene.remove(rocks[i]);
+      scene.remove(
+        rocks[i]
+      );
 
       rocks.splice(i,1);
 
       return;
     }
   }
-
 }
 
 function buildCampfire(){
 
-  if(wood<3 || stone<2){
+  if(
+    wood<3 ||
+    stone<2
+  ){
 
-    alert("Necesitás 3 madera y 2 piedra");
+    alert(
+      "Necesitás 3 madera y 2 piedra"
+    );
 
     return;
   }
@@ -402,13 +582,23 @@ function buildCampfire(){
   wood-=3;
   stone-=2;
 
-  document.getElementById("wood").textContent=wood;
-  document.getElementById("stone").textContent=stone;
+  document.getElementById(
+    "wood"
+  ).textContent=wood;
+
+  document.getElementById(
+    "stone"
+  ).textContent=stone;
 
   const fire=new THREE.Group();
 
   const base=new THREE.Mesh(
-    new THREE.CylinderGeometry(.7,.8,.3,10),
+    new THREE.CylinderGeometry(
+      .7,
+      .8,
+      .3,
+      10
+    ),
     new THREE.MeshStandardMaterial({
       color:0x555555
     })
@@ -417,7 +607,11 @@ function buildCampfire(){
   fire.add(base);
 
   const flame=new THREE.Mesh(
-    new THREE.ConeGeometry(.45,1.5,8),
+    new THREE.ConeGeometry(
+      .45,
+      1.5,
+      8
+    ),
     new THREE.MeshBasicMaterial({
       color:0xff6a00
     })
@@ -427,40 +621,55 @@ function buildCampfire(){
 
   fire.add(flame);
 
-  fire.position.copy(player.position);
+  fire.position.copy(
+    player.position
+  );
 
   fire.position.y=0;
 
   scene.add(fire);
 
   campfires.push(fire);
-
 }
 
 function update(){
 
-  const speed=.12;
+  const speed=.13;
 
-  player.position.x+=moveX*speed;
-  player.position.z+=moveZ*speed;
+  // MOVIMIENTO SEGÚN LA CÁMARA
 
-  // recolectar automáticamente al acercarse
+  const forwardX=
+    -Math.sin(yaw);
+
+  const forwardZ=
+    -Math.cos(yaw);
+
+  const rightX=
+    Math.cos(yaw);
+
+  const rightZ=
+    -Math.sin(yaw);
+
+  player.position.x +=
+    (
+      rightX*moveX +
+      forwardX*(-moveZ)
+    )*speed;
+
+  player.position.z +=
+    (
+      rightZ*moveX +
+      forwardZ*(-moveZ)
+    )*speed;
 
   collect();
-
-  // cámara siguiendo al jugador
-
-  camera.lookAt(
-    player.position.x,
-    player.position.y,
-    player.position.z-10
-  );
-
 }
 
 function animate(){
 
-  requestAnimationFrame(animate);
+  requestAnimationFrame(
+    animate
+  );
 
   update();
 
@@ -468,7 +677,6 @@ function animate(){
     scene,
     camera
   );
-
 }
 
 function resize(){
@@ -482,7 +690,6 @@ function resize(){
     innerWidth,
     innerHeight
   );
-
 }
 
 </script>
