@@ -3,237 +3,243 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Supervivencia 3D V8.0</title>
+<title>Supervivencia 3D V8.1</title>
 
 <style>
 *{
-  box-sizing:border-box;
-  user-select:none;
-  -webkit-user-select:none;
-  touch-action:none;
+ box-sizing:border-box;
+ user-select:none;
+ -webkit-user-select:none;
+ touch-action:none;
 }
 
 html,body{
-  margin:0;
-  width:100%;
-  height:100%;
-  overflow:hidden;
-  background:#111;
-  font-family:Arial,sans-serif;
+ margin:0;
+ width:100%;
+ height:100%;
+ overflow:hidden;
+ background:#000;
+ font-family:Arial,sans-serif;
 }
 
 #game{
-  position:fixed;
-  inset:0;
+ position:fixed;
+ inset:0;
+}
+
+button{
+ font-family:Arial,sans-serif;
 }
 
 #hud{
-  position:fixed;
-  top:10px;
-  left:10px;
-  z-index:20;
-  color:white;
-  background:rgba(0,0,0,.62);
-  padding:10px;
-  border-radius:12px;
-  font-size:13px;
-  line-height:1.45;
+ position:fixed;
+ top:10px;
+ left:10px;
+ z-index:20;
+ color:white;
+ background:rgba(0,0,0,.72);
+ border:1px solid rgba(255,255,255,.2);
+ border-radius:13px;
+ padding:10px 12px;
+ font-size:13px;
+ line-height:1.5;
 }
 
 #version{
-  font-weight:bold;
-  color:#8cff8c;
+ color:#7dff7d;
+ font-weight:bold;
+ margin-bottom:3px;
 }
 
 #compass{
-  position:fixed;
-  top:10px;
-  left:50%;
-  transform:translateX(-50%);
-  z-index:20;
-  color:white;
-  background:rgba(0,0,0,.65);
-  padding:7px 18px;
-  border-radius:20px;
-  font-weight:bold;
+ position:fixed;
+ top:10px;
+ left:50%;
+ transform:translateX(-50%);
+ z-index:20;
+ background:rgba(0,0,0,.72);
+ color:white;
+ padding:8px 20px;
+ border-radius:20px;
+ font-weight:bold;
 }
 
-#mapBtn,#invBtn{
-  position:fixed;
-  right:12px;
-  z-index:30;
-  border:0;
-  border-radius:12px;
-  color:white;
-  background:#222;
-  padding:12px 15px;
-  font-weight:bold;
+.btn{
+ position:fixed;
+ right:12px;
+ z-index:30;
+ border:0;
+ border-radius:13px;
+ color:white;
+ background:rgba(25,25,25,.9);
+ padding:12px 14px;
+ font-weight:bold;
 }
 
 #mapBtn{top:10px}
 #invBtn{top:62px}
 
-#map{
-  display:none;
-  position:fixed;
-  inset:5%;
-  z-index:100;
-  background:#182318;
-  border:3px solid #777;
-  border-radius:18px;
-  overflow:hidden;
-}
-
-#mapCanvas{
-  width:100%;
-  height:100%;
-}
-
-#closeMap{
-  position:absolute;
-  top:10px;
-  right:10px;
-  z-index:5;
-  background:#222;
-  color:white;
-  border:0;
-  border-radius:10px;
-  padding:10px 14px;
-}
-
-#mapInfo{
-  position:absolute;
-  left:10px;
-  top:10px;
-  background:rgba(0,0,0,.72);
-  color:white;
-  padding:8px;
-  border-radius:10px;
-  font-size:12px;
-}
-
 #joystick{
-  position:fixed;
-  left:25px;
-  bottom:25px;
-  width:125px;
-  height:125px;
-  border-radius:50%;
-  background:rgba(255,255,255,.13);
-  border:2px solid rgba(255,255,255,.25);
-  z-index:20;
+ position:fixed;
+ left:22px;
+ bottom:22px;
+ width:125px;
+ height:125px;
+ border-radius:50%;
+ background:rgba(255,255,255,.12);
+ border:2px solid rgba(255,255,255,.25);
+ z-index:30;
 }
 
 #stick{
-  position:absolute;
-  width:55px;
-  height:55px;
-  border-radius:50%;
-  background:rgba(255,255,255,.45);
-  left:33px;
-  top:33px;
+ position:absolute;
+ width:55px;
+ height:55px;
+ left:33px;
+ top:33px;
+ border-radius:50%;
+ background:rgba(255,255,255,.45);
+}
+
+.action{
+ position:fixed;
+ right:22px;
+ z-index:30;
+ width:105px;
+ height:55px;
+ border:0;
+ border-radius:14px;
+ color:white;
+ font-weight:bold;
 }
 
 #run{
-  position:fixed;
-  right:25px;
-  bottom:40px;
-  width:100px;
-  height:55px;
-  border:0;
-  border-radius:15px;
-  background:#444;
-  color:white;
-  font-weight:bold;
-  z-index:20;
+ bottom:25px;
+ background:#3b3b3b;
 }
 
 #hit{
-  position:fixed;
-  right:25px;
-  bottom:110px;
-  width:100px;
-  height:65px;
-  border:0;
-  border-radius:15px;
-  background:#7b241c;
-  color:white;
-  font-weight:bold;
-  z-index:20;
+ bottom:92px;
+ background:#79251d;
 }
 
 #flagBtn{
-  position:fixed;
-  right:25px;
-  bottom:185px;
-  width:100px;
-  height:55px;
-  border:0;
-  border-radius:15px;
-  background:#285a35;
-  color:white;
-  font-weight:bold;
-  z-index:20;
+ bottom:159px;
+ background:#28633a;
 }
 
 #message{
-  position:fixed;
-  left:50%;
-  bottom:20px;
-  transform:translateX(-50%);
-  background:rgba(0,0,0,.8);
-  color:white;
-  padding:10px 16px;
-  border-radius:12px;
-  z-index:50;
-  display:none;
-  max-width:85%;
-  text-align:center;
+ display:none;
+ position:fixed;
+ left:50%;
+ bottom:20px;
+ transform:translateX(-50%);
+ z-index:70;
+ background:rgba(0,0,0,.85);
+ color:white;
+ padding:11px 17px;
+ border-radius:12px;
+ text-align:center;
+ max-width:85%;
 }
 
 #discover{
-  position:fixed;
-  left:50%;
-  top:25%;
-  transform:translateX(-50%);
-  z-index:60;
-  background:rgba(0,0,0,.88);
-  color:white;
-  padding:22px 30px;
-  border:2px solid #d9b44a;
-  border-radius:18px;
-  text-align:center;
-  display:none;
+ display:none;
+ position:fixed;
+ left:50%;
+ top:25%;
+ transform:translateX(-50%);
+ z-index:80;
+ width:80%;
+ max-width:350px;
+ background:rgba(0,0,0,.9);
+ color:white;
+ border:2px solid #e0bd45;
+ border-radius:18px;
+ padding:22px;
+ text-align:center;
 }
 
-#discover small{
-  color:#bbb;
+#discoverTitle{
+ color:#ffd95a;
+ font-size:22px;
+ font-weight:bold;
+}
+
+#discoverName{
+ font-size:20px;
+ margin-top:10px;
+}
+
+#discoverDistance{
+ color:#bbb;
+ margin-top:8px;
+}
+
+.panel{
+ display:none;
+ position:fixed;
+ inset:5%;
+ z-index:100;
+ background:rgba(12,18,12,.97);
+ border:2px solid #777;
+ border-radius:18px;
+ overflow:hidden;
+}
+
+.close{
+ position:absolute;
+ top:10px;
+ right:10px;
+ z-index:5;
+ border:0;
+ border-radius:9px;
+ padding:9px 12px;
+ background:#333;
+ color:white;
+ font-weight:bold;
+}
+
+#mapCanvas{
+ width:100%;
+ height:100%;
+ display:block;
+}
+
+#mapLegend{
+ position:absolute;
+ top:10px;
+ left:10px;
+ z-index:5;
+ color:white;
+ background:rgba(0,0,0,.72);
+ padding:9px;
+ border-radius:10px;
+ font-size:12px;
+ line-height:1.6;
+}
+
+#mapDistance{
+ position:absolute;
+ bottom:10px;
+ left:10px;
+ z-index:5;
+ color:white;
+ background:rgba(0,0,0,.72);
+ padding:9px;
+ border-radius:10px;
 }
 
 #inventory{
-  display:none;
-  position:fixed;
-  inset:10%;
-  z-index:90;
-  background:rgba(10,10,10,.95);
-  color:white;
-  border:2px solid #777;
-  border-radius:18px;
-  padding:20px;
+ color:white;
+ padding:20px;
+ font-size:16px;
 }
 
 #inventory h2{
-  margin-top:0;
+ margin-top:0;
 }
 
-#closeInv{
-  float:right;
-  background:#333;
-  color:white;
-  border:0;
-  padding:8px 12px;
-  border-radius:8px;
-}
 </style>
 </head>
 
@@ -242,1446 +248,1996 @@ html,body{
 <div id="game"></div>
 
 <div id="hud">
-  <div id="version">SUPERVIVENCIA 3D — V8.0</div>
-  ❤️ Vida: <span id="hp">100</span><br>
-  🪵 Madera: <span id="wood">0</span><br>
-  🪨 Piedra: <span id="stone">0</span><br>
-  🔩 Hierro: <span id="iron">0</span><br>
-  🚩 Banderas: <span id="flags">3</span><br>
-  📍 <span id="coords">0 m / 0 m</span>
+ <div id="version">SUPERVIVENCIA 3D — V8.1</div>
+ ❤️ Vida: <span id="hp">100</span><br>
+ 🪵 Madera: <span id="wood">0</span><br>
+ 🪨 Piedra: <span id="stone">0</span><br>
+ 🔩 Hierro: <span id="iron">0</span><br>
+ 🚩 Banderas: <span id="flags">5</span><br>
+ 📍 <span id="distanceBase">Base: 0 m</span>
 </div>
 
 <div id="compass">N</div>
 
-<button id="mapBtn">🗺️ MAPA</button>
-<button id="invBtn">🎒 INVENTARIO</button>
+<button class="btn" id="mapBtn">🗺️ MAPA</button>
+<button class="btn" id="invBtn">🎒 INVENTARIO</button>
 
 <div id="joystick">
-  <div id="stick"></div>
+ <div id="stick"></div>
 </div>
 
-<button id="flagBtn">🚩 BANDERA</button>
-<button id="hit">⛏️ GOLPEAR</button>
-<button id="run">CORRER</button>
+<button class="action" id="flagBtn">🚩 BANDERA</button>
+<button class="action" id="hit">⛏️ GOLPEAR</button>
+<button class="action" id="run">CORRER</button>
 
 <div id="message"></div>
 
 <div id="discover">
-  <div style="font-size:22px;font-weight:bold">¡LUGAR DESCUBIERTO!</div>
-  <br>
-  <div id="discoverName"></div>
-  <br>
-  <small id="discoverDistance"></small>
+ <div id="discoverTitle">¡LUGAR DESCUBIERTO!</div>
+ <div id="discoverName"></div>
+ <div id="discoverDistance"></div>
 </div>
 
-<div id="map">
-  <button id="closeMap">CERRAR</button>
-  <div id="mapInfo">
-    🟢 Tú<br>
-    🚩 Banderas<br>
-    🏠 Lugares descubiertos<br>
-    ⭐ Base
-  </div>
-  <canvas id="mapCanvas"></canvas>
+<div class="panel" id="mapPanel">
+
+ <button class="close" id="closeMap">CERRAR</button>
+
+ <div id="mapLegend">
+  🟢 Jugador<br>
+  🔴 Base<br>
+  🚩 Bandera<br>
+  🔵 Lugar descubierto
+ </div>
+
+ <canvas id="mapCanvas"></canvas>
+
+ <div id="mapDistance"></div>
+
 </div>
 
-<div id="inventory">
-  <button id="closeInv">CERRAR</button>
-  <h2>🎒 Inventario</h2>
-  <div id="invText"></div>
+<div class="panel" id="inventoryPanel">
+
+ <button class="close" id="closeInv">CERRAR</button>
+
+ <div id="inventory">
+
+  <h2>🎒 INVENTARIO</h2>
+
+  🪵 Madera: <span id="iWood">0</span><br><br>
+  🪨 Piedra: <span id="iStone">0</span><br><br>
+  🔩 Hierro: <span id="iIron">0</span><br><br>
+  🚩 Banderas: <span id="iFlags">0</span><br><br>
+
+  🗺️ Lugares descubiertos:
+  <span id="iPlaces">0</span>
+
+ </div>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
 
-let scene,camera,renderer;
+/* =====================================================
+   SUPERVIVENCIA 3D V8.1
+   EXPLORACIÓN / BANDERAS / MAPA / DESCUBRIMIENTO
+===================================================== */
+
+const SAVE_KEY="SURVIVAL_V81";
+
+let scene;
+let camera;
+let renderer;
 
 let player={
-  x:0,
-  z:8,
-  y:1.7,
-  hp:100
+ x:0,
+ z:0,
+ y:1.7,
+ hp:100
 };
 
-const BASE={x:0,z:8};
+const BASE={
+ x:0,
+ z:0
+};
 
 let wood=0;
 let stone=0;
 let iron=0;
-let flags=3;
+let flags=5;
 
 let discovered=[];
-let placedFlags=[];
+let customFlags=[];
 
-let objects=[];
+let resources=[];
+
+let places=[];
 
 let yaw=0;
-let pitch=-0.12;
+let pitch=-0.15;
 
 let joyX=0;
 let joyY=0;
+
 let running=false;
+
+let cameraDragging=false;
+let lastPointerX=0;
+let lastPointerY=0;
 
 let lastTime=performance.now();
 
-const SAVE_KEY="survival_v8_save";
+/* =====================================================
+   GUARDADO
+===================================================== */
 
 function saveGame(){
 
-  localStorage.setItem(SAVE_KEY,JSON.stringify({
-    player,
-    wood,
-    stone,
-    iron,
-    flags,
-    discovered,
-    placedFlags
-  }));
+ localStorage.setItem(
+  SAVE_KEY,
+  JSON.stringify({
+   player:{
+    x:player.x,
+    z:player.z,
+    hp:player.hp
+   },
+   wood,
+   stone,
+   iron,
+   flags,
+   discovered,
+   customFlags
+  })
+ );
 
 }
 
 function loadGame(){
 
-  try{
+ const raw=localStorage.getItem(SAVE_KEY);
 
-    const data=JSON.parse(localStorage.getItem(SAVE_KEY));
+ if(!raw)return;
 
-    if(!data)return;
+ try{
 
-    if(data.player){
-      player.x=data.player.x||0;
-      player.z=data.player.z||8;
-    }
+  const data=JSON.parse(raw);
 
-    wood=data.wood||0;
-    stone=data.stone||0;
-    iron=data.iron||0;
-    flags=data.flags===undefined?3:data.flags;
+  if(data.player){
 
-    discovered=data.discovered||[];
-    placedFlags=data.placedFlags||[];
+   player.x=data.player.x||0;
+   player.z=data.player.z||0;
+   player.hp=data.player.hp||100;
 
-  }catch(e){}
+  }
+
+  wood=data.wood||0;
+  stone=data.stone||0;
+  iron=data.iron||0;
+  flags=data.flags===undefined?5:data.flags;
+
+  discovered=data.discovered||[];
+  customFlags=data.customFlags||[];
+
+ }catch(e){
+
+  console.log("No se pudo cargar partida");
+
+ }
 
 }
 
 loadGame();
 
+/* =====================================================
+   THREE
+===================================================== */
+
 scene=new THREE.Scene();
 
-scene.background=new THREE.Color(0x91c7e8);
+scene.background=new THREE.Color(0x8ec6e8);
 
 scene.fog=new THREE.Fog(
-  0x91c7e8,
-  80,
-  700
+ 0x8ec6e8,
+ 80,
+ 650
 );
 
 camera=new THREE.PerspectiveCamera(
-  70,
-  innerWidth/innerHeight,
-  .1,
-  2000
+ 70,
+ innerWidth/innerHeight,
+ .1,
+ 2000
 );
 
 renderer=new THREE.WebGLRenderer({
-  antialias:true
+ antialias:true
 });
 
-renderer.setSize(innerWidth,innerHeight);
+renderer.setSize(
+ innerWidth,
+ innerHeight
+);
 
 renderer.setPixelRatio(
-  Math.min(devicePixelRatio,1.6)
+ Math.min(devicePixelRatio,1.5)
 );
 
 renderer.shadowMap.enabled=true;
 
-document.getElementById("game").appendChild(renderer.domElement);
+document
+ .getElementById("game")
+ .appendChild(renderer.domElement);
+
+/* LUZ */
 
 const hemi=new THREE.HemisphereLight(
-  0xbfe8ff,
-  0x304020,
-  1.6
+ 0xcfeeff,
+ 0x35442b,
+ 1.6
 );
 
 scene.add(hemi);
 
 const sun=new THREE.DirectionalLight(
-  0xffffff,
-  1.5
+ 0xffffff,
+ 1.4
 );
 
-sun.position.set(80,130,60);
+sun.position.set(
+ 100,
+ 150,
+ 70
+);
+
 sun.castShadow=true;
 
 scene.add(sun);
 
-/* TERRENO */
-
-const groundMat=new THREE.MeshStandardMaterial({
-  color:0x496b3b
-});
+/* =====================================================
+   TERRENO 5 KM
+===================================================== */
 
 const ground=new THREE.Mesh(
-  new THREE.PlaneGeometry(6000,6000),
-  groundMat
+ new THREE.PlaneGeometry(
+  5000,
+  5000
+ ),
+ new THREE.MeshStandardMaterial({
+  color:0x4b6d3b
+ })
 );
 
 ground.rotation.x=-Math.PI/2;
+
 ground.receiveShadow=true;
 
 scene.add(ground);
 
-/* CAMINOS */
+/* =====================================================
+   CAMINOS
+===================================================== */
 
-function road(x,z,w,d){
+function createRoad(x,z,w,d){
 
-  const mat=new THREE.MeshStandardMaterial({
-    color:0x696254
-  });
+ const road=new THREE.Mesh(
+  new THREE.BoxGeometry(
+   w,
+   .05,
+   d
+  ),
+  new THREE.MeshStandardMaterial({
+   color:0x625a4e
+  })
+ );
 
-  const r=new THREE.Mesh(
-    new THREE.BoxGeometry(w,.04,d),
-    mat
-  );
+ road.position.set(
+  x,
+  .025,
+  z
+ );
 
-  r.position.set(x,.02,z);
-
-  scene.add(r);
-
-}
-
-road(500,-400,30,900);
-road(500,50,900,30);
-road(-500,400,30,800);
-
-/* ÁRBOLES */
-
-function createTree(x,z,level=1){
-
-  const g=new THREE.Group();
-
-  const trunk=new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      .35+.12*level,
-      .55+.15*level,
-      4+level,
-      8
-    ),
-    new THREE.MeshStandardMaterial({
-      color:0x60402c
-    })
-  );
-
-  trunk.position.y=2;
-
-  g.add(trunk);
-
-  const leaves=new THREE.Mesh(
-    new THREE.ConeGeometry(
-      2.4+level*.8,
-      5+level,
-      8
-    ),
-    new THREE.MeshStandardMaterial({
-      color:level===1?0x315d32:
-            level===2?0x214a27:
-            0x173b20
-    })
-  );
-
-  leaves.position.y=5.3;
-
-  g.add(leaves);
-
-  g.position.set(x,0,z);
-
-  g.traverse(o=>{
-    if(o.isMesh){
-      o.castShadow=true;
-      o.receiveShadow=true;
-    }
-  });
-
-  scene.add(g);
-
-  objects.push({
-    type:"tree",
-    mesh:g,
-    x,z,
-    hardness:level
-  });
+ scene.add(road);
 
 }
 
-/* ROCAS */
+/* caminos grandes */
 
-function createRock(x,z,level=1){
+createRoad(
+ 500,
+ 0,
+ 30,
+ 1500
+);
 
-  const r=new THREE.Mesh(
-    new THREE.DodecahedronGeometry(
-      1+level*.35,
-      1
-    ),
-    new THREE.MeshStandardMaterial({
-      color:
-        level===1?0x777777:
-        level===2?0x55585b:
-        0x393b3d
-    })
-  );
+createRoad(
+ 0,
+ 500,
+ 1500,
+ 30
+);
 
-  r.position.set(x,1,z);
+createRoad(
+ -900,
+ -800,
+ 25,
+ 800
+);
 
-  r.scale.y=.7;
+/* =====================================================
+   ÁRBOLES
+===================================================== */
 
-  r.castShadow=true;
+function createTree(x,z,level){
 
-  scene.add(r);
+ const group=new THREE.Group();
 
-  objects.push({
-    type:"rock",
-    mesh:r,
-    x,z,
-    hardness:level
-  });
+ const trunk=new THREE.Mesh(
+  new THREE.CylinderGeometry(
+   .35+level*.12,
+   .55+level*.16,
+   4+level,
+   8
+  ),
+  new THREE.MeshStandardMaterial({
+   color:0x60412b
+  })
+ );
+
+ trunk.position.y=2;
+
+ group.add(trunk);
+
+ const crown=new THREE.Mesh(
+  new THREE.ConeGeometry(
+   2.3+level*.8,
+   5+level,
+   8
+  ),
+  new THREE.MeshStandardMaterial({
+   color:
+    level===1?0x376c35:
+    level===2?0x28562c:
+    0x183e20
+  })
+ );
+
+ crown.position.y=5.2;
+
+ group.add(crown);
+
+ group.position.set(
+  x,
+  0,
+  z
+ );
+
+ group.traverse(o=>{
+
+  if(o.isMesh){
+
+   o.castShadow=true;
+   o.receiveShadow=true;
+
+  }
+
+ });
+
+ scene.add(group);
+
+ resources.push({
+  type:"tree",
+  x,
+  z,
+  level,
+  mesh:group
+ });
 
 }
 
-/* VEGETACIÓN */
+/* =====================================================
+   ROCAS
+===================================================== */
 
-function createBush(x,z){
+function createRock(x,z,level){
 
-  const b=new THREE.Mesh(
-    new THREE.SphereGeometry(
-      .7+Math.random()*.6,
-      8,8
-    ),
-    new THREE.MeshStandardMaterial({
-      color:0x35652f
-    })
-  );
+ const rock=new THREE.Mesh(
+  new THREE.DodecahedronGeometry(
+   1+level*.35,
+   1
+  ),
+  new THREE.MeshStandardMaterial({
+   color:
+    level===1?0x777777:
+    level===2?0x56595b:
+    0x36383a
+  })
+ );
 
-  b.position.set(x,.6,z);
+ rock.position.set(
+  x,
+  1,
+  z
+ );
 
-  scene.add(b);
+ rock.scale.y=.7;
+
+ rock.castShadow=true;
+
+ scene.add(rock);
+
+ resources.push({
+  type:"rock",
+  x,
+  z,
+  level,
+  mesh:rock
+ });
 
 }
+
+/* =====================================================
+   VEGETACIÓN
+===================================================== */
 
 function createGrass(x,z){
 
-  for(let i=0;i<4;i++){
+ const grass=new THREE.Mesh(
+  new THREE.ConeGeometry(
+   .12,
+   .8,
+   4
+  ),
+  new THREE.MeshStandardMaterial({
+   color:0x5d8139
+  })
+ );
 
-    const blade=new THREE.Mesh(
-      new THREE.BoxGeometry(.035,.6,.035),
-      new THREE.MeshStandardMaterial({
-        color:0x5f863e
-      })
-    );
+ grass.position.set(
+  x,
+  .4,
+  z
+ );
 
-    blade.position.set(
-      x+(Math.random()-.5),
-      .3,
-      z+(Math.random()-.5)
-    );
-
-    blade.rotation.z=(Math.random()-.5)*.5;
-
-    scene.add(blade);
-
-  }
+ scene.add(grass);
 
 }
 
-/* CASA */
+function createBush(x,z){
 
-function createHouse(x,z,w=12,d=10){
+ const bush=new THREE.Mesh(
+  new THREE.SphereGeometry(
+   .7+Math.random()*.5,
+   8,
+   8
+  ),
+  new THREE.MeshStandardMaterial({
+   color:0x315d30
+  })
+ );
 
-  const g=new THREE.Group();
+ bush.position.set(
+  x,
+  .7,
+  z
+ );
 
-  const wallMat=new THREE.MeshStandardMaterial({
-    color:0xaaa08d
+ scene.add(bush);
+
+}
+
+/* =====================================================
+   CASA DETALLADA
+===================================================== */
+
+function createHouse(x,z,w,d){
+
+ const group=new THREE.Group();
+
+ const wallMat=
+  new THREE.MeshStandardMaterial({
+   color:0xaaa08d
   });
 
-  const roofMat=new THREE.MeshStandardMaterial({
-    color:0x4c3d35
+ const roofMat=
+  new THREE.MeshStandardMaterial({
+   color:0x4b3c34
   });
 
-  function wall(px,pz,pw,pd){
+ function wall(px,pz,pw,pd){
 
-    const m=new THREE.Mesh(
-      new THREE.BoxGeometry(pw,4,pd),
-      wallMat
-    );
-
-    m.position.set(px,2,pz);
-
-    m.castShadow=true;
-
-    g.add(m);
-
-  }
-
-  wall(0,-d/2,w,.5);
-  wall(0,d/2,w,.5);
-  wall(-w/2,0,.5,d);
-  wall(w/2,0,.5,d);
-
-  const roof=new THREE.Mesh(
-    new THREE.BoxGeometry(w+1,1,d+1),
-    roofMat
+  const wall=new THREE.Mesh(
+   new THREE.BoxGeometry(
+    pw,
+    4,
+    pd
+   ),
+   wallMat
   );
 
-  roof.position.y=4.5;
-
-  roof.rotation.z=.04;
-
-  roof.castShadow=true;
-
-  g.add(roof);
-
-  const door=new THREE.Mesh(
-    new THREE.BoxGeometry(1.8,2.8,.2),
-    new THREE.MeshStandardMaterial({
-      color:0x55351e
-    })
+  wall.position.set(
+   px,
+   2,
+   pz
   );
 
-  door.position.set(0,1.4,d/2+.15);
+  wall.castShadow=true;
 
-  g.add(door);
+  group.add(wall);
 
-  const windowMat=new THREE.MeshStandardMaterial({
-    color:0x8fd5e8,
-    metalness:.2,
-    roughness:.2
+ }
+
+ wall(
+  0,
+  -d/2,
+  w,
+  .5
+ );
+
+ wall(
+  0,
+  d/2,
+  w,
+  .5
+ );
+
+ wall(
+  -w/2,
+  0,
+  .5,
+  d
+ );
+
+ wall(
+  w/2,
+  0,
+  .5,
+  d
+ );
+
+ const roof=new THREE.Mesh(
+  new THREE.BoxGeometry(
+   w+1,
+   1,
+   d+1
+  ),
+  roofMat
+ );
+
+ roof.position.y=4.5;
+
+ roof.castShadow=true;
+
+ group.add(roof);
+
+ /* puerta */
+
+ const door=new THREE.Mesh(
+  new THREE.BoxGeometry(
+   1.8,
+   2.8,
+   .2
+  ),
+  new THREE.MeshStandardMaterial({
+   color:0x54351f
+  })
+ );
+
+ door.position.set(
+  0,
+  1.4,
+  d/2+.25
+ );
+
+ group.add(door);
+
+ /* ventanas */
+
+ const glass=
+  new THREE.MeshStandardMaterial({
+   color:0x8bd4e5,
+   roughness:.2,
+   metalness:.1
   });
 
-  [-w/3,w/3].forEach(px=>{
+ [-w*.3,w*.3].forEach(px=>{
 
-    const win=new THREE.Mesh(
-      new THREE.BoxGeometry(1.8,1.4,.15),
-      windowMat
-    );
+  const win=new THREE.Mesh(
+   new THREE.BoxGeometry(
+    1.7,
+    1.3,
+    .15
+   ),
+   glass
+  );
 
-    win.position.set(px,2,d/2+.2);
+  win.position.set(
+   px,
+   2.2,
+   d/2+.25
+  );
 
-    g.add(win);
+  group.add(win);
 
-  });
+ });
 
-  g.position.set(x,0,z);
+ group.position.set(
+  x,
+  0,
+  z
+ );
 
-  scene.add(g);
-
-  return g;
+ scene.add(group);
 
 }
 
-/* CIUDAD GRANDE */
+/* =====================================================
+   LUGARES
+===================================================== */
 
-function createCity(){
+function registerPlace(
+ name,
+ x,
+ z,
+ type
+){
 
-  const cx=900;
-  const cz=-700;
-
-  for(let i=0;i<14;i++){
-
-    const angle=(i/14)*Math.PI*2;
-
-    const radius=100+Math.random()*170;
-
-    const x=cx+Math.cos(angle)*radius;
-    const z=cz+Math.sin(angle)*radius;
-
-    createHouse(
-      x,
-      z,
-      12+Math.random()*8,
-      10+Math.random()*8
-    );
-
-  }
-
-  road(cx,cz,500,25);
-  road(cx,cz,25,500);
-
-  createPlace(
-    "Ciudad Vieja",
-    cx,
-    cz,
-    "city"
-  );
+ places.push({
+  name,
+  x,
+  z,
+  type
+ });
 
 }
 
-/* GRANJAS */
+/* =====================================================
+   BASE
+===================================================== */
 
-function createFarm(){
+createHouse(
+ 0,
+ -12,
+ 15,
+ 12
+);
 
-  const x=-700;
-  const z=500;
+registerPlace(
+ "BASE",
+ BASE.x,
+ BASE.z,
+ "base"
+);
 
-  createHouse(x,z,16,12);
+/* =====================================================
+   GRANJA LEJANA
+===================================================== */
 
-  for(let i=0;i<8;i++){
+const farmX=-650;
+const farmZ=550;
 
-    const fx=x-30+i*8;
+createHouse(
+ farmX,
+ farmZ,
+ 16,
+ 12
+);
 
-    for(let j=0;j<5;j++){
+for(let i=0;i<8;i++){
 
-      const plant=new THREE.Mesh(
-        new THREE.CylinderGeometry(.12,.2,.8,6),
-        new THREE.MeshStandardMaterial({
-          color:0x477a32
-        })
-      );
+ for(let j=0;j<5;j++){
 
-      plant.position.set(
-        fx,
-        .4,
-        z+30+j*4
-      );
-
-      scene.add(plant);
-
-    }
-
-  }
-
-  createPlace(
-    "Granja Verde",
-    x,
-    z,
-    "farm"
+  createGrass(
+   farmX-28+i*8,
+   farmZ+25+j*4
   );
+
+ }
 
 }
 
-/* LUGARES */
+registerPlace(
+ "Granja Verde",
+ farmX,
+ farmZ,
+ "farm"
+);
 
-function createPlace(name,x,z,type){
+/* =====================================================
+   CIUDAD
+===================================================== */
 
-  const found=discovered.some(
-    p=>p.name===name
-  );
+const cityX=900;
+const cityZ=-700;
 
-  const marker=new THREE.Group();
+for(let i=0;i<16;i++){
 
-  const pillar=new THREE.Mesh(
-    new THREE.CylinderGeometry(.15,.15,5,8),
-    new THREE.MeshStandardMaterial({
-      color:0x777777
-    })
-  );
+ const angle=
+  Math.random()*Math.PI*2;
 
-  pillar.position.y=2.5;
+ const radius=
+  100+Math.random()*260;
 
-  marker.add(pillar);
+ const x=
+  cityX+
+  Math.cos(angle)*radius;
 
-  const top=new THREE.Mesh(
-    new THREE.BoxGeometry(1.4,.9,.1),
-    new THREE.MeshStandardMaterial({
-      color:0x7777ff
-    })
-  );
+ const z=
+  cityZ+
+  Math.sin(angle)*radius;
 
-  top.position.y=4.5;
-
-  marker.add(top);
-
-  marker.position.set(x,0,z);
-
-  marker.visible=false;
-
-  scene.add(marker);
-
-  const place={
-    name,
-    x,
-    z,
-    type,
-    marker
-  };
-
-  window.places=window.places||[];
-
-  window.places.push(place);
+ createHouse(
+  x,
+  z,
+  11+Math.random()*8,
+  9+Math.random()*7
+ );
 
 }
 
-/* BASE */
+createRoad(
+ cityX,
+ cityZ,
+ 700,
+ 25
+);
 
-function createBase(){
+createRoad(
+ cityX,
+ cityZ,
+ 25,
+ 700
+);
 
-  createHouse(
-    BASE.x,
-    BASE.z-10,
-    14,
-    12
-  );
+registerPlace(
+ "Ciudad Vieja",
+ cityX,
+ cityZ,
+ "city"
+);
 
-  createFlag(
-    BASE.x,
-    BASE.z,
-    "BASE",
-    true
-  );
+/* =====================================================
+   OTROS LUGARES
+===================================================== */
 
-}
+registerPlace(
+ "Bosque del Norte",
+ -1000,
+ -1100,
+ "forest"
+);
 
-function createFlag(x,z,name,isBase=false){
+registerPlace(
+ "Lago Perdido",
+ 1250,
+ 900,
+ "lake"
+);
 
-  const g=new THREE.Group();
+registerPlace(
+ "Casa Abandonada",
+ -1350,
+ 950,
+ "house"
+);
 
-  const pole=new THREE.Mesh(
-    new THREE.CylinderGeometry(.08,.08,4,8),
-    new THREE.MeshStandardMaterial({
-      color:0x333333
-    })
-  );
+registerPlace(
+ "Mina Vieja",
+ 1450,
+ -1250,
+ "mine"
+);
 
-  pole.position.y=2;
+/* =====================================================
+   GENERACIÓN DEL MUNDO
+===================================================== */
 
-  g.add(pole);
+for(let i=0;i<180;i++){
 
-  const flag=new THREE.Mesh(
-    new THREE.PlaneGeometry(2,1.2),
-    new THREE.MeshStandardMaterial({
-      color:isBase?0xd62828:0xe6c229,
-      side:THREE.DoubleSide
-    })
-  );
+ let x=
+  (Math.random()-.5)*4800;
 
-  flag.position.set(1,3.3,0);
+ let z=
+  (Math.random()-.5)*4800;
 
-  g.add(flag);
+ if(
+  Math.hypot(x,z)<100
+ )continue;
 
-  g.position.set(x,0,z);
-
-  scene.add(g);
-
-  return g;
-
-}
-
-/* GENERACIÓN */
-
-createBase();
-
-createCity();
-
-createFarm();
-
-for(let i=0;i<160;i++){
-
-  const x=(Math.random()-.5)*5000;
-  const z=(Math.random()-.5)*5000;
-
-  if(Math.hypot(x-BASE.x,z-BASE.z)<80)continue;
-
-  createTree(
-    x,
-    z,
-    1+Math.floor(Math.random()*3)
-  );
-
-}
-
-for(let i=0;i<100;i++){
-
-  const x=(Math.random()-.5)*5000;
-  const z=(Math.random()-.5)*5000;
-
-  createRock(
-    x,
-    z,
-    1+Math.floor(Math.random()*3)
-  );
+ createTree(
+  x,
+  z,
+  1+Math.floor(
+   Math.random()*3
+  )
+ );
 
 }
 
-for(let i=0;i<900;i++){
+for(let i=0;i<120;i++){
 
-  const x=(Math.random()-.5)*5000;
-  const z=(Math.random()-.5)*5000;
+ createRock(
+  (Math.random()-.5)*4800,
+  (Math.random()-.5)*4800,
+  1+Math.floor(
+   Math.random()*3
+  )
+ );
 
-  createGrass(x,z);
+}
+
+for(let i=0;i<1000;i++){
+
+ createGrass(
+  (Math.random()-.5)*4800,
+  (Math.random()-.5)*4800
+ );
 
 }
 
 for(let i=0;i<250;i++){
 
-  const x=(Math.random()-.5)*5000;
-  const z=(Math.random()-.5)*5000;
-
-  createBush(x,z);
-
-}
-
-/* LUGARES ADICIONALES */
-
-createPlace(
-  "Bosque del Norte",
-  -900,
-  -1100,
-  "forest"
-);
-
-createPlace(
-  "Lago Perdido",
-  1200,
-  850,
-  "lake"
-);
-
-createPlace(
-  "Casa Abandonada",
-  -1300,
-  900,
-  "house"
-);
-
-createPlace(
-  "Mina Vieja",
-  1500,
-  -1200,
-  "mine"
-);
-
-/* BANDERAS GUARDADAS */
-
-for(const f of placedFlags){
-
-  const flag=createFlag(
-    f.x,
-    f.z,
-    f.name
-  );
+ createBush(
+  (Math.random()-.5)*4800,
+  (Math.random()-.5)*4800
+ );
 
 }
 
-/* CÁMARA */
+/* =====================================================
+   BANDERAS
+===================================================== */
+
+function createFlag(
+ x,
+ z,
+ color=0xffd329
+){
+
+ const group=new THREE.Group();
+
+ const pole=new THREE.Mesh(
+  new THREE.CylinderGeometry(
+   .08,
+   .08,
+   4,
+   8
+  ),
+  new THREE.MeshStandardMaterial({
+   color:0x303030
+  })
+ );
+
+ pole.position.y=2;
+
+ group.add(pole);
+
+ const cloth=new THREE.Mesh(
+  new THREE.PlaneGeometry(
+   2.1,
+   1.2
+  ),
+  new THREE.MeshStandardMaterial({
+   color,
+   side:THREE.DoubleSide
+  })
+ );
+
+ cloth.position.set(
+  1,
+  3.3,
+  0
+ );
+
+ group.add(cloth);
+
+ group.position.set(
+  x,
+  0,
+  z
+ );
+
+ scene.add(group);
+
+ return group;
+
+}
+
+/* bandera base */
+
+createFlag(
+ BASE.x,
+ BASE.z,
+ 0xff3030
+);
+
+/* banderas guardadas */
+
+for(const f of customFlags){
+
+ createFlag(
+  f.x,
+  f.z,
+  0xffd329
+ );
+
+}
+
+/* =====================================================
+   CÁMARA
+===================================================== */
 
 function updateCamera(){
 
-  camera.position.set(
-    player.x,
-    player.y,
-    player.z
-  );
+ camera.position.set(
+  player.x,
+  player.y,
+  player.z
+ );
 
-  const dir=new THREE.Vector3(
-    Math.sin(yaw),
-    Math.sin(pitch),
-    Math.cos(yaw)
-  );
+ const target=new THREE.Vector3(
+  Math.sin(yaw),
+  Math.sin(pitch),
+  Math.cos(yaw)
+ );
 
-  camera.lookAt(
-    camera.position.clone().add(dir)
-  );
-
-}
-
-updateCamera();
-
-/* MOVIMIENTO */
-
-function movePlayer(dt){
-
-  let speed=running?7:3.5;
-
-  const forward=-joyY;
-  const side=joyX;
-
-  const sin=Math.sin(yaw);
-  const cos=Math.cos(yaw);
-
-  player.x += (
-    side*cos +
-    forward*sin
-  )*speed*dt;
-
-  player.z += (
-    side*-sin +
-    forward*cos
-  )*speed*dt;
-
-  player.x=Math.max(-2900,Math.min(2900,player.x));
-  player.z=Math.max(-2900,Math.min(2900,player.z));
+ camera.lookAt(
+  camera.position.clone().add(target)
+ );
 
 }
 
-/* JOYSTICK */
+/* =====================================================
+   MOVIMIENTO
+===================================================== */
 
-const joystick=document.getElementById("joystick");
-const stick=document.getElementById("stick");
+function updateMovement(dt){
 
-let joyActive=false;
+ const speed=
+  running?8:4;
 
-joystick.addEventListener("pointerdown",e=>{
+ const forward=-joyY;
+ const side=joyX;
 
-  joyActive=true;
-  joystick.setPointerCapture(e.pointerId);
-  updateJoy(e);
+ const sin=Math.sin(yaw);
+ const cos=Math.cos(yaw);
 
-});
+ player.x+=
+  (
+   side*cos+
+   forward*sin
+  )*
+  speed*
+  dt;
 
-joystick.addEventListener("pointermove",e=>{
+ player.z+=
+  (
+   side*-sin+
+   forward*cos
+  )*
+  speed*
+  dt;
 
-  if(joyActive)updateJoy(e);
+ /* límite 2.5 km desde el centro */
 
-});
+ player.x=Math.max(
+  -2450,
+  Math.min(2450,player.x)
+ );
 
-joystick.addEventListener("pointerup",()=>{
-  joyActive=false;
+ player.z=Math.max(
+  -2450,
+  Math.min(2450,player.z)
+ );
+
+}
+
+/* =====================================================
+   JOYSTICK
+===================================================== */
+
+const joystick=
+ document.getElementById(
+  "joystick"
+ );
+
+const stick=
+ document.getElementById(
+  "stick"
+ );
+
+let joystickActive=false;
+
+joystick.addEventListener(
+ "pointerdown",
+ e=>{
+
+  joystickActive=true;
+
+  joystick.setPointerCapture(
+   e.pointerId
+  );
+
+  updateJoystick(e);
+
+ }
+);
+
+joystick.addEventListener(
+ "pointermove",
+ e=>{
+
+  if(
+   joystickActive
+  ){
+
+   updateJoystick(e);
+
+  }
+
+ }
+);
+
+joystick.addEventListener(
+ "pointerup",
+ ()=>{
+  joystickActive=false;
   joyX=0;
   joyY=0;
+
   stick.style.left="33px";
   stick.style.top="33px";
-});
+ }
+);
 
-function updateJoy(e){
+function updateJoystick(e){
 
-  const r=joystick.getBoundingClientRect();
+ const r=
+  joystick.getBoundingClientRect();
 
-  let x=e.clientX-(r.left+r.width/2);
-  let y=e.clientY-(r.top+r.height/2);
+ let x=
+  e.clientX-
+  (r.left+r.width/2);
 
-  const max=42;
+ let y=
+  e.clientY-
+  (r.top+r.height/2);
 
-  const len=Math.hypot(x,y);
+ const max=42;
 
-  if(len>max){
+ const distance=
+  Math.hypot(x,y);
 
-    x=x/len*max;
-    y=y/len*max;
+ if(distance>max){
 
-  }
+  x=x/distance*max;
+  y=y/distance*max;
 
-  joyX=x/max;
-  joyY=y/max;
+ }
 
-  stick.style.left=(33+x)+"px";
-  stick.style.top=(33+y)+"px";
+ joyX=x/max;
+ joyY=y/max;
+
+ stick.style.left=
+  (33+x)+"px";
+
+ stick.style.top=
+  (33+y)+"px";
 
 }
 
-/* CÁMARA TÁCTIL */
-
-let camActive=false;
-let lastX=0;
-let lastY=0;
+/* =====================================================
+   CÁMARA TÁCTIL
+===================================================== */
 
 renderer.domElement.addEventListener(
-  "pointerdown",
-  e=>{
+ "pointerdown",
+ e=>{
 
-    if(e.clientX<170)return;
+  if(e.clientX<170)return;
 
-    camActive=true;
+  cameraDragging=true;
 
-    lastX=e.clientX;
-    lastY=e.clientY;
+  lastPointerX=e.clientX;
+  lastPointerY=e.clientY;
 
-  }
+ }
 );
 
 renderer.domElement.addEventListener(
-  "pointermove",
-  e=>{
+ "pointermove",
+ e=>{
 
-    if(!camActive)return;
+  if(!cameraDragging)return;
 
-    const dx=e.clientX-lastX;
-    const dy=e.clientY-lastY;
+  const dx=
+   e.clientX-lastPointerX;
 
-    yaw-=dx*.008;
-    pitch-=dy*.006;
+  const dy=
+   e.clientY-lastPointerY;
 
-    pitch=Math.max(-.9,Math.min(.55,pitch));
+  yaw-=dx*.008;
 
-    lastX=e.clientX;
-    lastY=e.clientY;
+  pitch-=dy*.006;
 
-  }
+  pitch=Math.max(
+   -.9,
+   Math.min(.5,pitch)
+  );
+
+  lastPointerX=e.clientX;
+  lastPointerY=e.clientY;
+
+ }
 );
 
 renderer.domElement.addEventListener(
-  "pointerup",
-  ()=>{
-    camActive=false;
-  }
+ "pointerup",
+ ()=>{
+  cameraDragging=false;
+ }
 );
 
-/* CORRER */
+renderer.domElement.addEventListener(
+ "pointercancel",
+ ()=>{
+  cameraDragging=false;
+ }
+);
 
-const run=document.getElementById("run");
+/* =====================================================
+   CORRER
+===================================================== */
 
-run.addEventListener("pointerdown",()=>{
+const runBtn=
+ document.getElementById(
+  "run"
+ );
+
+runBtn.addEventListener(
+ "pointerdown",
+ ()=>{
   running=true;
-});
+ }
+);
 
-run.addEventListener("pointerup",()=>{
+runBtn.addEventListener(
+ "pointerup",
+ ()=>{
   running=false;
-});
+ }
+);
 
-run.addEventListener("pointercancel",()=>{
+runBtn.addEventListener(
+ "pointercancel",
+ ()=>{
   running=false;
-});
+ }
+);
 
-/* BANDERA */
+/* =====================================================
+   DISTANCIA
+===================================================== */
 
-document.getElementById("flagBtn")
-.addEventListener("click",()=>{
+function getBaseDistance(){
 
-  if(flags<=0){
+ const meters=
+  Math.hypot(
+   player.x-BASE.x,
+   player.z-BASE.z
+  );
 
-    showMessage("No tenés más banderas.");
+ return meters;
+
+}
+
+function formatDistance(meters){
+
+ if(meters>=1000){
+
+  return(
+   (meters/1000)
+   .toFixed(2)+
+   " km"
+  );
+
+ }
+
+ return(
+  Math.round(meters)+
+  " m"
+ );
+
+}
+
+/* =====================================================
+   DESCUBRIR LUGARES
+===================================================== */
+
+function checkPlaces(){
+
+ for(const place of places){
+
+  if(place.type==="base")continue;
+
+  const distance=
+   Math.hypot(
+    player.x-place.x,
+    player.z-place.z
+   );
+
+  if(distance<=90){
+
+   const found=
+    discovered.some(
+     d=>d.name===place.name
+    );
+
+   if(!found){
+
+    discovered.push({
+     name:place.name,
+     x:place.x,
+     z:place.z,
+     type:place.type
+    });
+
+    showDiscovery(
+     place.name,
+     formatDistance(
+      Math.hypot(
+       place.x-BASE.x,
+       place.z-BASE.z
+      )
+     )
+    );
+
+    saveGame();
+
+   }
+
+  }
+
+ }
+
+}
+
+/* =====================================================
+   DESCUBRIMIENTO VISUAL
+===================================================== */
+
+function showDiscovery(
+ name,
+ distance
+){
+
+ const box=
+  document.getElementById(
+   "discover"
+  );
+
+ document.getElementById(
+  "discoverName"
+ ).innerText=name;
+
+ document.getElementById(
+  "discoverDistance"
+ ).innerText=
+  distance+
+  " desde la base";
+
+ box.style.display="block";
+
+ clearTimeout(
+  window.discoveryTimer
+ );
+
+ window.discoveryTimer=
+  setTimeout(
+   ()=>{
+    box.style.display="none";
+   },
+   4500
+  );
+
+}
+
+/* =====================================================
+   BANDERA
+===================================================== */
+
+document
+ .getElementById("flagBtn")
+ .addEventListener(
+  "click",
+  ()=>{
+
+   if(flags<=0){
+
+    showMessage(
+     "No te quedan banderas."
+    );
 
     return;
 
-  }
+   }
 
-  const name=
+   const name=
     prompt(
-      "Nombre de esta bandera/lugar:",
-      "Lugar descubierto"
+     "¿Qué querés marcar acá?",
+     "Mi lugar"
     );
 
-  if(!name)return;
+   if(
+    !name||
+    !name.trim()
+   )return;
 
-  const f={
-    name,
+   const f={
+    name:name.trim(),
     x:Math.round(player.x),
     z:Math.round(player.z)
-  };
+   };
 
-  placedFlags.push(f);
+   customFlags.push(f);
 
-  createFlag(
+   createFlag(
     f.x,
-    f.z,
-    f.name
-  );
+    f.z
+   );
 
-  flags--;
+   flags--;
 
-  saveGame();
+   saveGame();
 
-  showMessage(
-    "🚩 Bandera colocada: "+name+
-    " — "+distanceFromBase(f.x,f.z)
-  );
+   showMessage(
+    "🚩 "+f.name+
+    " marcada a "+
+    formatDistance(
+     Math.hypot(
+      f.x-BASE.x,
+      f.z-BASE.z
+     )
+    )+
+    " de la base"
+   );
 
-  updateHUD();
-
-});
-
-/* DISTANCIA */
-
-function distanceFromBase(x,z){
-
-  const meters=Math.hypot(
-    x-BASE.x,
-    z-BASE.z
-  );
-
-  if(meters>=1000){
-
-    return(
-      (meters/1000).toFixed(2)+
-      " km desde la base"
-    );
+   updateHUD();
 
   }
+ );
 
-  return(
-    Math.round(meters)+
-    " m desde la base"
-  );
+/* =====================================================
+   GOLPEAR / RECURSOS
+===================================================== */
 
-}
+document
+ .getElementById("hit")
+ .addEventListener(
+  "click",
+  ()=>{
 
-/* DESCUBRIMIENTO */
+   let nearest=null;
+   let nearestDistance=9999;
 
-function checkDiscoveries(){
-
-  if(!window.places)return;
-
-  for(const p of window.places){
-
-    const d=Math.hypot(
-      player.x-p.x,
-      player.z-p.z
-    );
-
-    if(d<70){
-
-      const already=discovered.some(
-        x=>x.name===p.name
-      );
-
-      if(!already){
-
-        discovered.push({
-          name:p.name,
-          x:p.x,
-          z:p.z,
-          type:p.type
-        });
-
-        p.marker.visible=true;
-
-        showDiscovery(
-          p.name,
-          distanceFromBase(p.x,p.z)
-        );
-
-        saveGame();
-
-      }
-
-    }
-
-  }
-
-}
-
-/* RECUPERAR MARCADORES */
-
-function restoreDiscoveries(){
-
-  if(!window.places)return;
-
-  for(const p of window.places){
+   for(const r of resources){
 
     if(
-      discovered.some(
-        d=>d.name===p.name
-      )
+     !r.mesh.visible
+    )continue;
+
+    const d=
+     Math.hypot(
+      r.x-player.x,
+      r.z-player.z
+     );
+
+    if(
+     d<nearestDistance
     ){
 
-      p.marker.visible=true;
+     nearest=r;
+     nearestDistance=d;
 
     }
 
+   }
+
+   if(
+    !nearest||
+    nearestDistance>5
+   ){
+
+    showMessage(
+     "No hay recursos cerca."
+    );
+
+    return;
+
+   }
+
+   if(
+    nearest.type==="tree"
+   ){
+
+    wood+=
+     nearest.level;
+
+    showMessage(
+     "🪵 +"+
+     nearest.level+
+     " madera"
+    );
+
+   }
+
+   if(
+    nearest.type==="rock"
+   ){
+
+    stone+=
+     nearest.level;
+
+    showMessage(
+     "🪨 +"+
+     nearest.level+
+     " piedra"
+    );
+
+   }
+
+   nearest.mesh.visible=false;
+
+   saveGame();
+
+   updateHUD();
+
   }
+ );
 
-}
-
-/* MENSAJES */
+/* =====================================================
+   MENSAJE
+===================================================== */
 
 function showMessage(text){
 
-  const el=document.getElementById("message");
+ const el=
+  document.getElementById(
+   "message"
+  );
 
-  el.innerText=text;
+ el.innerText=text;
 
-  el.style.display="block";
+ el.style.display="block";
 
-  clearTimeout(window.msgTimer);
+ clearTimeout(
+  window.messageTimer
+ );
 
-  window.msgTimer=setTimeout(()=>{
+ window.messageTimer=
+  setTimeout(
+   ()=>{
     el.style.display="none";
-  },3000);
+   },
+   2800
+  );
 
 }
 
-function showDiscovery(name,distance){
-
-  const box=document.getElementById("discover");
-
-  document.getElementById("discoverName")
-  .innerText=name;
-
-  document.getElementById("discoverDistance")
-  .innerText=distance;
-
-  box.style.display="block";
-
-  clearTimeout(window.discoveryTimer);
-
-  window.discoveryTimer=setTimeout(()=>{
-    box.style.display="none";
-  },4500);
-
-}
-
-/* HUD */
+/* =====================================================
+   HUD
+===================================================== */
 
 function updateHUD(){
 
-  document.getElementById("hp")
-  .innerText=Math.round(player.hp);
+ document.getElementById(
+  "hp"
+ ).innerText=
+  Math.round(player.hp);
 
-  document.getElementById("wood")
-  .innerText=wood;
+ document.getElementById(
+  "wood"
+ ).innerText=wood;
 
-  document.getElementById("stone")
-  .innerText=stone;
+ document.getElementById(
+  "stone"
+ ).innerText=stone;
 
-  document.getElementById("iron")
-  .innerText=iron;
+ document.getElementById(
+  "iron"
+ ).innerText=iron;
 
-  document.getElementById("flags")
-  .innerText=flags;
+ document.getElementById(
+  "flags"
+ ).innerText=flags;
 
-  const dx=Math.round(player.x);
-  const dz=Math.round(player.z);
-
-  document.getElementById("coords")
-  .innerText=
-    dx+" m / "+dz+" m";
+ document.getElementById(
+  "distanceBase"
+ ).innerText=
+  "Base: "+
+  formatDistance(
+   getBaseDistance()
+  );
 
 }
 
-/* BRÚJULA */
+/* =====================================================
+   BRÚJULA
+===================================================== */
 
 function updateCompass(){
 
-  let deg=
-    (yaw*180/Math.PI)%360;
+ let degrees=
+  yaw*180/Math.PI;
 
-  if(deg<0)deg+=360;
+ degrees=
+  (degrees%360+360)%360;
 
-  let dir="N";
+ let direction="N";
 
-  if(deg>=22.5&&deg<67.5)dir="NE";
-  else if(deg>=67.5&&deg<112.5)dir="E";
-  else if(deg>=112.5&&deg<157.5)dir="SE";
-  else if(deg>=157.5&&deg<202.5)dir="S";
-  else if(deg>=202.5&&deg<247.5)dir="SO";
-  else if(deg>=247.5&&deg<292.5)dir="O";
-  else if(deg>=292.5&&deg<337.5)dir="NO";
+ if(
+  degrees>=22.5&&
+  degrees<67.5
+ )direction="NE";
 
-  document.getElementById("compass")
-  .innerText=dir;
+ else if(
+  degrees>=67.5&&
+  degrees<112.5
+ )direction="E";
+
+ else if(
+  degrees>=112.5&&
+  degrees<157.5
+ )direction="SE";
+
+ else if(
+  degrees>=157.5&&
+  degrees<202.5
+ )direction="S";
+
+ else if(
+  degrees>=202.5&&
+  degrees<247.5
+ )direction="SO";
+
+ else if(
+  degrees>=247.5&&
+  degrees<292.5
+ )direction="O";
+
+ else if(
+  degrees>=292.5&&
+  degrees<337.5
+ )direction="NO";
+
+ document.getElementById(
+  "compass"
+ ).innerText=
+  direction+
+  " · "+
+  Math.round(degrees)+"°";
 
 }
 
-/* MAPA */
+/* =====================================================
+   MAPA
+===================================================== */
 
-const map=document.getElementById("map");
-const mapCanvas=document.getElementById("mapCanvas");
-const ctx=mapCanvas.getContext("2d");
+const mapPanel=
+ document.getElementById(
+  "mapPanel"
+ );
 
-document.getElementById("mapBtn")
-.addEventListener("click",()=>{
+const mapCanvas=
+ document.getElementById(
+  "mapCanvas"
+ );
 
-  map.style.display="block";
+const mapCtx=
+ mapCanvas.getContext("2d");
 
-  drawMap();
+document
+ .getElementById("mapBtn")
+ .addEventListener(
+  "click",
+  ()=>{
 
-});
+   mapPanel.style.display="block";
 
-document.getElementById("closeMap")
-.addEventListener("click",()=>{
+   setTimeout(
+    drawMap,
+    50
+   );
 
-  map.style.display="none";
+  }
+ );
 
-});
+document
+ .getElementById("closeMap")
+ .addEventListener(
+  "click",
+  ()=>{
+   mapPanel.style.display="none";
+  }
+ );
 
 function drawMap(){
 
-  mapCanvas.width=mapCanvas.clientWidth;
-  mapCanvas.height=mapCanvas.clientHeight;
+ mapCanvas.width=
+  mapCanvas.clientWidth;
 
-  const w=mapCanvas.width;
-  const h=mapCanvas.height;
+ mapCanvas.height=
+  mapCanvas.clientHeight;
 
-  ctx.fillStyle="#263b25";
-  ctx.fillRect(0,0,w,h);
+ const w=
+  mapCanvas.width;
 
-  const scale=.055;
+ const h=
+  mapCanvas.height;
 
-  function worldToMap(x,z){
+ mapCtx.fillStyle="#273b25";
 
-    return {
-      x:w/2+x*scale,
-      y:h/2+z*scale
-    };
+ mapCtx.fillRect(
+  0,
+  0,
+  w,
+  h
+ );
 
-  }
+ /*
+   5000m de mundo.
+   Escala para visualizarlo.
+ */
 
-  /* CUADRÍCULA */
+ const scale=
+  Math.min(w,h)/
+  5000;
 
-  ctx.strokeStyle="rgba(255,255,255,.08)";
-  ctx.lineWidth=1;
+ function mapPosition(
+  x,
+  z
+ ){
 
-  for(let x=0;x<w;x+=50){
+  return{
+   x:w/2+x*scale,
+   y:h/2+z*scale
+  };
 
-    ctx.beginPath();
-    ctx.moveTo(x,0);
-    ctx.lineTo(x,h);
-    ctx.stroke();
+ }
 
-  }
+ /* cuadrícula */
 
-  for(let y=0;y<h;y+=50){
+ mapCtx.strokeStyle=
+  "rgba(255,255,255,.08)";
 
-    ctx.beginPath();
-    ctx.moveTo(0,y);
-    ctx.lineTo(w,y);
-    ctx.stroke();
+ mapCtx.lineWidth=1;
 
-  }
+ const gridStep=
+  500*scale;
 
-  /* BASE */
+ for(
+  let x=w/2%gridStep;
+  x<w;
+  x+=gridStep
+ ){
 
-  const b=worldToMap(
-    BASE.x,
-    BASE.z
+  mapCtx.beginPath();
+
+  mapCtx.moveTo(
+   x,
+   0
   );
 
-  ctx.fillStyle="#ff3030";
-
-  ctx.beginPath();
-  ctx.arc(b.x,b.y,8,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.fillStyle="white";
-  ctx.font="12px Arial";
-  ctx.fillText(
-    "BASE",
-    b.x+10,
-    b.y
+  mapCtx.lineTo(
+   x,
+   h
   );
 
-  /* BANDERAS */
+  mapCtx.stroke();
 
-  for(const f of placedFlags){
+ }
 
-    const p=worldToMap(f.x,f.z);
+ for(
+  let y=h/2%gridStep;
+  y<h;
+  y+=gridStep
+ ){
 
-    ctx.fillStyle="#ffd83d";
+  mapCtx.beginPath();
 
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,6,0,Math.PI*2);
-    ctx.fill();
-
-    ctx.fillStyle="white";
-    ctx.fillText(
-      f.name,
-      p.x+8,
-      p.y
-    );
-
-  }
-
-  /* LUGARES */
-
-  for(const d of discovered){
-
-    const p=worldToMap(d.x,d.z);
-
-    ctx.fillStyle="#73a7ff";
-
-    ctx.fillRect(
-      p.x-5,
-      p.y-5,
-      10,
-      10
-    );
-
-    ctx.fillStyle="white";
-
-    ctx.fillText(
-      d.name,
-      p.x+8,
-      p.y
-    );
-
-  }
-
-  /* JUGADOR */
-
-  const me=worldToMap(
-    player.x,
-    player.z
+  mapCtx.moveTo(
+   0,
+   y
   );
 
-  ctx.fillStyle="#00ff66";
-
-  ctx.beginPath();
-
-  ctx.arc(
-    me.x,
-    me.y,
-    8,
-    0,
-    Math.PI*2
+  mapCtx.lineTo(
+   w,
+   y
   );
 
-  ctx.fill();
+  mapCtx.stroke();
 
-  /* DISTANCIA A BASE */
+ }
 
-  const distance=Math.hypot(
-    player.x-BASE.x,
-    player.z-BASE.z
+ /* BASE */
+
+ const base=
+  mapPosition(
+   BASE.x,
+   BASE.z
   );
 
-  ctx.fillStyle="white";
-  ctx.font="bold 14px Arial";
+ mapCtx.fillStyle="#ff3030";
 
-  ctx.fillText(
-    "Distancia a base: "+
-    (
-      distance>=1000
-      ?(distance/1000).toFixed(2)+" km"
-      :Math.round(distance)+" m"
-    ),
-    15,
-    h-20
+ mapCtx.beginPath();
+
+ mapCtx.arc(
+  base.x,
+  base.y,
+  8,
+  0,
+  Math.PI*2
+ );
+
+ mapCtx.fill();
+
+ mapCtx.fillStyle="white";
+
+ mapCtx.font=
+  "bold 12px Arial";
+
+ mapCtx.fillText(
+  "BASE",
+  base.x+12,
+  base.y
+ );
+
+ /* BANDERAS */
+
+ for(
+  const f of customFlags
+ ){
+
+  const p=
+   mapPosition(
+    f.x,
+    f.z
+   );
+
+  mapCtx.fillStyle=
+   "#ffd52f";
+
+  mapCtx.beginPath();
+
+  mapCtx.arc(
+   p.x,
+   p.y,
+   6,
+   0,
+   Math.PI*2
   );
+
+  mapCtx.fill();
+
+  mapCtx.fillStyle=
+   "white";
+
+  mapCtx.font=
+   "11px Arial";
+
+  mapCtx.fillText(
+   "🚩 "+f.name,
+   p.x+9,
+   p.y
+  );
+
+ }
+
+ /* DESCUBIERTOS */
+
+ for(
+  const d of discovered
+ ){
+
+  const p=
+   mapPosition(
+    d.x,
+    d.z
+   );
+
+  mapCtx.fillStyle=
+   "#57a8ff";
+
+  mapCtx.fillRect(
+   p.x-5,
+   p.y-5,
+   10,
+   10
+  );
+
+  mapCtx.fillStyle=
+   "white";
+
+  mapCtx.font=
+   "11px Arial";
+
+  mapCtx.fillText(
+   d.name,
+   p.x+9,
+   p.y
+  );
+
+ }
+
+ /* JUGADOR */
+
+ const me=
+  mapPosition(
+   player.x,
+   player.z
+  );
+
+ mapCtx.fillStyle=
+  "#00ff62";
+
+ mapCtx.beginPath();
+
+ mapCtx.arc(
+  me.x,
+  me.y,
+  8,
+  0,
+  Math.PI*2
+ );
+
+ mapCtx.fill();
+
+ /* dirección */
+
+ mapCtx.strokeStyle=
+  "#00ff62";
+
+ mapCtx.lineWidth=3;
+
+ mapCtx.beginPath();
+
+ mapCtx.moveTo(
+  me.x,
+  me.y
+ );
+
+ mapCtx.lineTo(
+  me.x+
+  Math.sin(yaw)*25,
+  me.y+
+  Math.cos(yaw)*25
+ );
+
+ mapCtx.stroke();
+
+ const distance=
+  getBaseDistance();
+
+ document.getElementById(
+  "mapDistance"
+ ).innerText=
+  "Distancia a base: "+
+  formatDistance(distance);
 
 }
 
-/* INVENTARIO */
+/* =====================================================
+   INVENTARIO
+===================================================== */
 
-document.getElementById("invBtn")
-.addEventListener("click",()=>{
+const inventoryPanel=
+ document.getElementById(
+  "inventoryPanel"
+ );
 
-  document.getElementById("inventory")
-  .style.display="block";
+document
+ .getElementById("invBtn")
+ .addEventListener(
+  "click",
+  ()=>{
 
-  document.getElementById("invText")
-  .innerHTML=`
+   document.getElementById(
+    "iWood"
+   ).innerText=wood;
 
-    🪵 Madera: ${wood}<br><br>
+   document.getElementById(
+    "iStone"
+   ).innerText=stone;
 
-    🪨 Piedra: ${stone}<br><br>
+   document.getElementById(
+    "iIron"
+   ).innerText=iron;
 
-    🔩 Hierro: ${iron}<br><br>
+   document.getElementById(
+    "iFlags"
+   ).innerText=flags;
 
-    🚩 Banderas: ${flags}<br><br>
+   document.getElementById(
+    "iPlaces"
+   ).innerText=
+    discovered.length;
 
-    🗺️ Lugares descubiertos:
-    ${discovered.length}
-
-  `;
-
-});
-
-document.getElementById("closeInv")
-.addEventListener("click",()=>{
-
-  document.getElementById("inventory")
-  .style.display="none";
-
-});
-
-/* GOLPEAR */
-
-document.getElementById("hit")
-.addEventListener("click",()=>{
-
-  const nearest=objects
-    .map(o=>({
-      o,
-      d:Math.hypot(
-        o.x-player.x,
-        o.z-player.z
-      )
-    }))
-    .sort((a,b)=>a.d-b.d)[0];
-
-  if(!nearest||nearest.d>5){
-
-    showMessage("No hay ningún recurso cerca.");
-
-    return;
+   inventoryPanel.style.display=
+    "block";
 
   }
+ );
 
-  const o=nearest.o;
-
-  if(o.type==="tree"){
-
-    wood+=o.hardness;
-
-    showMessage(
-      "🪵 Conseguís "+o.hardness+
-      " madera."
-    );
-
+document
+ .getElementById("closeInv")
+ .addEventListener(
+  "click",
+  ()=>{
+   inventoryPanel.style.display=
+    "none";
   }
+ );
 
-  if(o.type==="rock"){
-
-    stone+=o.hardness;
-
-    showMessage(
-      "🪨 Conseguís "+o.hardness+
-      " piedra."
-    );
-
-  }
-
-  o.mesh.visible=false;
-
-  objects.splice(
-    objects.indexOf(o),
-    1
-  );
-
-  saveGame();
-
-  updateHUD();
-
-});
-
-/* LOOP */
+/* =====================================================
+   LOOP
+===================================================== */
 
 function animate(){
 
-  requestAnimationFrame(animate);
+ requestAnimationFrame(
+  animate
+ );
 
-  const now=performance.now();
+ const now=
+  performance.now();
 
-  const dt=Math.min(
-    (now-lastTime)/1000,
-    .05
+ const dt=
+  Math.min(
+   (now-lastTime)/1000,
+   .05
   );
 
-  lastTime=now;
+ lastTime=now;
 
-  movePlayer(dt);
+ updateMovement(dt);
 
-  updateCamera();
+ updateCamera();
 
-  updateCompass();
+ updateCompass();
 
-  updateHUD();
+ updateHUD();
 
-  checkDiscoveries();
+ checkPlaces();
 
-  renderer.render(
-    scene,
-    camera
-  );
+ renderer.render(
+  scene,
+  camera
+ );
 
 }
 
-restoreDiscoveries();
-
 animate();
 
-addEventListener("resize",()=>{
+/* =====================================================
+   RESIZE
+===================================================== */
+
+window.addEventListener(
+ "resize",
+ ()=>{
 
   camera.aspect=
-    innerWidth/innerHeight;
+   innerWidth/innerHeight;
 
   camera.updateProjectionMatrix();
 
   renderer.setSize(
-    innerWidth,
-    innerHeight
+   innerWidth,
+   innerHeight
   );
 
-});
+ }
+);
 
 </script>
 
