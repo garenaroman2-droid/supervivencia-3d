@@ -3,1074 +3,1687 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Supervivencia 3D V7.0</title>
+<title>Supervivencia 3D V8.0</title>
+
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111;font-family:Arial,sans-serif;touch-action:none}
-canvas{display:block}
+*{
+  box-sizing:border-box;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:none;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#111;
+  font-family:Arial,sans-serif;
+}
+
+#game{
+  position:fixed;
+  inset:0;
+}
+
 #hud{
-position:fixed;top:10px;left:10px;z-index:20;
-background:rgba(0,0,0,.65);color:white;padding:10px 12px;
-border-radius:12px;font-size:13px;line-height:1.45;
-min-width:185px;pointer-events:none
+  position:fixed;
+  top:10px;
+  left:10px;
+  z-index:20;
+  color:white;
+  background:rgba(0,0,0,.62);
+  padding:10px;
+  border-radius:12px;
+  font-size:13px;
+  line-height:1.45;
 }
-#hud b{color:#ffd54a}
-.bar{height:8px;background:#333;border-radius:5px;overflow:hidden;margin:3px 0 5px}
-.fill{height:100%;width:100%}
-#vida{background:#e53935}
-#stamina{background:#42a5f5}
-#mensaje{
-position:fixed;top:105px;left:50%;transform:translateX(-50%);
-z-index:30;background:rgba(0,0,0,.75);color:#fff;
-padding:9px 15px;border-radius:12px;display:none;
-text-align:center;font-size:14px
+
+#version{
+  font-weight:bold;
+  color:#8cff8c;
 }
+
+#compass{
+  position:fixed;
+  top:10px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:20;
+  color:white;
+  background:rgba(0,0,0,.65);
+  padding:7px 18px;
+  border-radius:20px;
+  font-weight:bold;
+}
+
+#mapBtn,#invBtn{
+  position:fixed;
+  right:12px;
+  z-index:30;
+  border:0;
+  border-radius:12px;
+  color:white;
+  background:#222;
+  padding:12px 15px;
+  font-weight:bold;
+}
+
+#mapBtn{top:10px}
+#invBtn{top:62px}
+
+#map{
+  display:none;
+  position:fixed;
+  inset:5%;
+  z-index:100;
+  background:#182318;
+  border:3px solid #777;
+  border-radius:18px;
+  overflow:hidden;
+}
+
+#mapCanvas{
+  width:100%;
+  height:100%;
+}
+
+#closeMap{
+  position:absolute;
+  top:10px;
+  right:10px;
+  z-index:5;
+  background:#222;
+  color:white;
+  border:0;
+  border-radius:10px;
+  padding:10px 14px;
+}
+
+#mapInfo{
+  position:absolute;
+  left:10px;
+  top:10px;
+  background:rgba(0,0,0,.72);
+  color:white;
+  padding:8px;
+  border-radius:10px;
+  font-size:12px;
+}
+
 #joystick{
-position:fixed;left:20px;bottom:25px;width:125px;height:125px;
-border-radius:50%;background:rgba(255,255,255,.12);
-border:2px solid rgba(255,255,255,.22);z-index:20
+  position:fixed;
+  left:25px;
+  bottom:25px;
+  width:125px;
+  height:125px;
+  border-radius:50%;
+  background:rgba(255,255,255,.13);
+  border:2px solid rgba(255,255,255,.25);
+  z-index:20;
 }
+
 #stick{
-position:absolute;left:37px;top:37px;width:48px;height:48px;
-border-radius:50%;background:rgba(255,255,255,.45)
+  position:absolute;
+  width:55px;
+  height:55px;
+  border-radius:50%;
+  background:rgba(255,255,255,.45);
+  left:33px;
+  top:33px;
 }
-.btn{
-position:fixed;z-index:25;border:0;color:#fff;font-weight:bold;
-border-radius:50%;background:rgba(30,30,30,.78);
-border:2px solid rgba(255,255,255,.25);
-user-select:none;-webkit-user-select:none
+
+#run{
+  position:fixed;
+  right:25px;
+  bottom:40px;
+  width:100px;
+  height:55px;
+  border:0;
+  border-radius:15px;
+  background:#444;
+  color:white;
+  font-weight:bold;
+  z-index:20;
 }
-#golpear{right:25px;bottom:40px;width:82px;height:82px}
-#correr{right:125px;bottom:30px;width:65px;height:65px;font-size:11px}
-#crear{right:20px;top:15px;border-radius:12px;padding:10px 13px}
-#inventario{
-position:fixed;right:15px;top:65px;z-index:25;
-background:rgba(0,0,0,.82);color:white;padding:12px;
-border-radius:12px;display:none;width:210px
+
+#hit{
+  position:fixed;
+  right:25px;
+  bottom:110px;
+  width:100px;
+  height:65px;
+  border:0;
+  border-radius:15px;
+  background:#7b241c;
+  color:white;
+  font-weight:bold;
+  z-index:20;
 }
-#inventario button{
-width:100%;margin-top:7px;padding:9px;border:0;border-radius:8px;
-background:#444;color:white
+
+#flagBtn{
+  position:fixed;
+  right:25px;
+  bottom:185px;
+  width:100px;
+  height:55px;
+  border:0;
+  border-radius:15px;
+  background:#285a35;
+  color:white;
+  font-weight:bold;
+  z-index:20;
 }
-#cross{
-position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
-color:rgba(255,255,255,.7);font-size:24px;z-index:15;pointer-events:none
+
+#message{
+  position:fixed;
+  left:50%;
+  bottom:20px;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,.8);
+  color:white;
+  padding:10px 16px;
+  border-radius:12px;
+  z-index:50;
+  display:none;
+  max-width:85%;
+  text-align:center;
+}
+
+#discover{
+  position:fixed;
+  left:50%;
+  top:25%;
+  transform:translateX(-50%);
+  z-index:60;
+  background:rgba(0,0,0,.88);
+  color:white;
+  padding:22px 30px;
+  border:2px solid #d9b44a;
+  border-radius:18px;
+  text-align:center;
+  display:none;
+}
+
+#discover small{
+  color:#bbb;
+}
+
+#inventory{
+  display:none;
+  position:fixed;
+  inset:10%;
+  z-index:90;
+  background:rgba(10,10,10,.95);
+  color:white;
+  border:2px solid #777;
+  border-radius:18px;
+  padding:20px;
+}
+
+#inventory h2{
+  margin-top:0;
+}
+
+#closeInv{
+  float:right;
+  background:#333;
+  color:white;
+  border:0;
+  padding:8px 12px;
+  border-radius:8px;
 }
 </style>
 </head>
+
 <body>
 
+<div id="game"></div>
+
 <div id="hud">
-<b>SUPERVIVENCIA 3D — V7.0</b><br>
-🪵 Madera: <span id="madera">0</span>
-&nbsp; 🪨 Piedra: <span id="piedra">0</span><br>
-⛓️ Hierro: <span id="hierro">0</span>
-&nbsp; 🌾 Comida: <span id="comida">0</span><br>
-💧 Agua: <span id="agua">0</span><br>
-❤️ Vida
-<div class="bar"><div id="vida" class="fill"></div></div>
-🏃 Stamina
-<div class="bar"><div id="stamina" class="fill"></div></div>
-🔧 <span id="herramienta">Manos</span>
+  <div id="version">SUPERVIVENCIA 3D — V8.0</div>
+  ❤️ Vida: <span id="hp">100</span><br>
+  🪵 Madera: <span id="wood">0</span><br>
+  🪨 Piedra: <span id="stone">0</span><br>
+  🔩 Hierro: <span id="iron">0</span><br>
+  🚩 Banderas: <span id="flags">3</span><br>
+  📍 <span id="coords">0 m / 0 m</span>
 </div>
 
-<div id="mensaje"></div>
-<div id="cross">+</div>
+<div id="compass">N</div>
 
-<div id="joystick"><div id="stick"></div></div>
+<button id="mapBtn">🗺️ MAPA</button>
+<button id="invBtn">🎒 INVENTARIO</button>
 
-<button id="golpear" class="btn">GOLPEAR</button>
-<button id="correr" class="btn">CORRER</button>
-<button id="crear">🎒 INVENTARIO</button>
+<div id="joystick">
+  <div id="stick"></div>
+</div>
 
-<div id="inventario">
-<b>INVENTARIO / CREACIÓN</b>
-<hr>
-Madera: <span id="imadera">0</span><br>
-Piedra: <span id="ipiedra">0</span><br>
-Hierro: <span id="ihierro">0</span><br>
-Comida: <span id="icomida">0</span><br>
-Agua: <span id="iagua">0</span>
+<button id="flagBtn">🚩 BANDERA</button>
+<button id="hit">⛏️ GOLPEAR</button>
+<button id="run">CORRER</button>
 
-<button onclick="crearHachaPiedra()">🪓 Hacha de piedra<br>3 madera + 3 piedra</button>
-<button onclick="crearPicoPiedra()">⛏️ Pico de piedra<br>3 madera + 4 piedra</button>
-<button onclick="crearHachaHierro()">🪓 Hacha de hierro<br>5 madera + 5 hierro</button>
-<button onclick="crearPicoHierro()">⛏️ Pico de hierro<br>5 madera + 5 hierro</button>
+<div id="message"></div>
+
+<div id="discover">
+  <div style="font-size:22px;font-weight:bold">¡LUGAR DESCUBIERTO!</div>
+  <br>
+  <div id="discoverName"></div>
+  <br>
+  <small id="discoverDistance"></small>
+</div>
+
+<div id="map">
+  <button id="closeMap">CERRAR</button>
+  <div id="mapInfo">
+    🟢 Tú<br>
+    🚩 Banderas<br>
+    🏠 Lugares descubiertos<br>
+    ⭐ Base
+  </div>
+  <canvas id="mapCanvas"></canvas>
+</div>
+
+<div id="inventory">
+  <button id="closeInv">CERRAR</button>
+  <h2>🎒 Inventario</h2>
+  <div id="invText"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
 <script>
-/* =========================================================
-   SUPERVIVENCIA 3D V7.0
-   ========================================================= */
 
-const scene=new THREE.Scene();
+let scene,camera,renderer;
+
+let player={
+  x:0,
+  z:8,
+  y:1.7,
+  hp:100
+};
+
+const BASE={x:0,z:8};
+
+let wood=0;
+let stone=0;
+let iron=0;
+let flags=3;
+
+let discovered=[];
+let placedFlags=[];
+
+let objects=[];
+
+let yaw=0;
+let pitch=-0.12;
+
+let joyX=0;
+let joyY=0;
+let running=false;
+
+let lastTime=performance.now();
+
+const SAVE_KEY="survival_v8_save";
+
+function saveGame(){
+
+  localStorage.setItem(SAVE_KEY,JSON.stringify({
+    player,
+    wood,
+    stone,
+    iron,
+    flags,
+    discovered,
+    placedFlags
+  }));
+
+}
+
+function loadGame(){
+
+  try{
+
+    const data=JSON.parse(localStorage.getItem(SAVE_KEY));
+
+    if(!data)return;
+
+    if(data.player){
+      player.x=data.player.x||0;
+      player.z=data.player.z||8;
+    }
+
+    wood=data.wood||0;
+    stone=data.stone||0;
+    iron=data.iron||0;
+    flags=data.flags===undefined?3:data.flags;
+
+    discovered=data.discovered||[];
+    placedFlags=data.placedFlags||[];
+
+  }catch(e){}
+
+}
+
+loadGame();
+
+scene=new THREE.Scene();
+
 scene.background=new THREE.Color(0x91c7e8);
-scene.fog=new THREE.Fog(0x91c7e8,35,150);
 
-const camera=new THREE.PerspectiveCamera(
-70,innerWidth/innerHeight,.05,300
+scene.fog=new THREE.Fog(
+  0x91c7e8,
+  80,
+  700
 );
-camera.position.set(0,2.1,8);
 
-const renderer=new THREE.WebGLRenderer({antialias:true});
+camera=new THREE.PerspectiveCamera(
+  70,
+  innerWidth/innerHeight,
+  .1,
+  2000
+);
+
+renderer=new THREE.WebGLRenderer({
+  antialias:true
+});
+
 renderer.setSize(innerWidth,innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.shadowMap.enabled=true;
-renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-document.body.appendChild(renderer.domElement);
 
-/* LUCES */
-const hemi=new THREE.HemisphereLight(0xbfe8ff,0x315229,1.5);
+renderer.setPixelRatio(
+  Math.min(devicePixelRatio,1.6)
+);
+
+renderer.shadowMap.enabled=true;
+
+document.getElementById("game").appendChild(renderer.domElement);
+
+const hemi=new THREE.HemisphereLight(
+  0xbfe8ff,
+  0x304020,
+  1.6
+);
+
 scene.add(hemi);
 
-const sol=new THREE.DirectionalLight(0xffffff,2);
-sol.position.set(40,70,20);
-sol.castShadow=true;
-sol.shadow.mapSize.width=2048;
-sol.shadow.mapSize.height=2048;
-scene.add(sol);
+const sun=new THREE.DirectionalLight(
+  0xffffff,
+  1.5
+);
 
-/* DATOS */
-let madera=0,piedra=0,hierro=0;
-let comida=0,agua=0;
-let vida=100,stamina=100;
+sun.position.set(80,130,60);
+sun.castShadow=true;
 
-let corriendo=false;
-let herramienta=null;
-let objetos=[];
-let cofres=[];
-let puertas=[];
+scene.add(sun);
 
-const mundo=180;
+/* TERRENO */
 
-/* =========================================================
-   TERRENO
-   ========================================================= */
+const groundMat=new THREE.MeshStandardMaterial({
+  color:0x496b3b
+});
 
-const sueloGeo=new THREE.PlaneGeometry(mundo,mundo,30,30);
-const sueloMat=new THREE.MeshLambertMaterial({color:0x3d7c36});
-const suelo=new THREE.Mesh(sueloGeo,sueloMat);
-suelo.rotation.x=-Math.PI/2;
-suelo.receiveShadow=true;
-scene.add(suelo);
+const ground=new THREE.Mesh(
+  new THREE.PlaneGeometry(6000,6000),
+  groundMat
+);
+
+ground.rotation.x=-Math.PI/2;
+ground.receiveShadow=true;
+
+scene.add(ground);
 
 /* CAMINOS */
-function crearCamino(x,z,w,l){
- const g=new THREE.BoxGeometry(w,.05,l);
- const m=new THREE.MeshLambertMaterial({color:0x77705d});
- const o=new THREE.Mesh(g,m);
- o.position.set(x,.025,z);
- o.receiveShadow=true;
- scene.add(o);
-}
 
-/* =========================================================
-   VEGETACIÓN
-   ========================================================= */
+function road(x,z,w,d){
 
-function crearPasto(x,z){
- const g=new THREE.Group();
+  const mat=new THREE.MeshStandardMaterial({
+    color:0x696254
+  });
 
- for(let i=0;i<5;i++){
-  const geo=new THREE.ConeGeometry(.035,.35,4);
-  const mat=new THREE.MeshLambertMaterial({color:0x4d963d});
-  const h=new THREE.Mesh(geo,mat);
-  h.position.set(
-   (Math.random()-.5)*.35,
-   .17,
-   (Math.random()-.5)*.35
+  const r=new THREE.Mesh(
+    new THREE.BoxGeometry(w,.04,d),
+    mat
   );
-  h.rotation.z=(Math.random()-.5)*.3;
-  g.add(h);
- }
 
- g.position.set(x,0,z);
- scene.add(g);
+  r.position.set(x,.02,z);
+
+  scene.add(r);
+
 }
 
-function crearArbusto(x,z){
- const g=new THREE.Group();
+road(500,-400,30,900);
+road(500,50,900,30);
+road(-500,400,30,800);
 
- for(let i=0;i<4;i++){
-  const geo=new THREE.SphereGeometry(.3,8,8);
-  const mat=new THREE.MeshLambertMaterial({color:0x236b2a});
-  const b=new THREE.Mesh(geo,mat);
-  b.position.set((Math.random()-.5)*.5,.3+Math.random()*.2,(Math.random()-.5)*.5);
-  b.scale.y=.8;
-  g.add(b);
- }
+/* ÁRBOLES */
 
- g.position.set(x,0,z);
- scene.add(g);
-}
+function createTree(x,z,level=1){
 
-for(let i=0;i<450;i++){
- const x=(Math.random()-.5)*170;
- const z=(Math.random()-.5)*170;
+  const g=new THREE.Group();
 
- if(Math.abs(x)<15 && Math.abs(z)<15)continue;
-
- if(Math.random()<.75)crearPasto(x,z);
- else crearArbusto(x,z);
-}
-
-/* =========================================================
-   ÁRBOLES
-   ========================================================= */
-
-function crearArbol(x,z,nivel=1){
- const g=new THREE.Group();
-
- const tronco=new THREE.Mesh(
-  new THREE.CylinderGeometry(.25,.34,3.1,8),
-  new THREE.MeshLambertMaterial({color:0x704523})
- );
- tronco.position.y=1.55;
- tronco.castShadow=true;
- g.add(tronco);
-
- const hojas=new THREE.Mesh(
-  new THREE.ConeGeometry(1.45,3.3,9),
-  new THREE.MeshLambertMaterial({
-   color:nivel===1?0x347d32:nivel===2?0x28692b:0x1d5524
-  })
- );
- hojas.position.y=4;
- hojas.castShadow=true;
- g.add(hojas);
-
- g.position.set(x,0,z);
- scene.add(g);
-
- objetos.push({
-  mesh:g,tipo:"arbol",dureza:nivel,
-  vida:nivel===1?3:nivel===2?6:10,
-  madera:nivel===1?4:nivel===2?7:12,
-  recogible:false
- });
-}
-
-/* =========================================================
-   ROCAS
-   ========================================================= */
-
-function crearRoca(x,z,nivel=1,esHierro=false){
- const g=new THREE.Group();
-
- const roca=new THREE.Mesh(
-  new THREE.DodecahedronGeometry(.7+nivel*.08,0),
-  new THREE.MeshLambertMaterial({
-   color:esHierro?0x55585d:
-   nivel===1?0x777777:
-   nivel===2?0x5e6268:0x45484d
-  })
- );
- roca.scale.y=.75;
- roca.castShadow=true;
- g.add(roca);
-
- g.position.set(x,.55,z);
- scene.add(g);
-
- objetos.push({
-  mesh:g,
-  tipo:esHierro?"hierro":"piedra",
-  dureza:nivel,
-  vida:nivel===1?3:nivel===2?6:10,
-  cantidad:nivel===1?3:nivel===2?6:10,
-  recogible:false
- });
-}
-
-/* =========================================================
-   RAMAS / PIEDRAS PEQUEÑAS
-   ========================================================= */
-
-function crearRama(x,z){
- const g=new THREE.Mesh(
-  new THREE.CylinderGeometry(.035,.05,.65,6),
-  new THREE.MeshLambertMaterial({color:0x70452a})
- );
- g.rotation.z=Math.PI/2;
- g.position.set(x,.12,z);
- g.castShadow=true;
- scene.add(g);
-
- objetos.push({
-  mesh:g,tipo:"rama",cantidad:1,recogible:true
- });
-}
-
-function crearPiedraPequena(x,z){
- const g=new THREE.Mesh(
-  new THREE.DodecahedronGeometry(.16,0),
-  new THREE.MeshLambertMaterial({color:0x777777})
- );
- g.position.set(x,.16,z);
- scene.add(g);
-
- objetos.push({
-  mesh:g,tipo:"piedraPequena",cantidad:1,recogible:true
- });
-}
-
-/* =========================================================
-   PLANTACIONES
-   ========================================================= */
-
-function crearPlantacion(x,z){
- const g=new THREE.Group();
-
- for(let i=0;i<9;i++){
-  for(let j=0;j<7;j++){
-   const planta=new THREE.Group();
-
-   const tallo=new THREE.Mesh(
-    new THREE.CylinderGeometry(.025,.025,.45,5),
-    new THREE.MeshLambertMaterial({color:0x4d8c32})
-   );
-   tallo.position.y=.22;
-   planta.add(tallo);
-
-   const espiga=new THREE.Mesh(
-    new THREE.ConeGeometry(.09,.25,5),
-    new THREE.MeshLambertMaterial({color:0xd4a83e})
-   );
-   espiga.position.y=.52;
-   planta.add(espiga);
-
-   planta.position.set(
-    x+(i-4)*.65,
-    0,
-    z+(j-3)*.65
-   );
-   g.add(planta);
-  }
- }
-
- scene.add(g);
-
- /* cartel */
- const base=new THREE.Mesh(
-  new THREE.BoxGeometry(6,.05,5),
-  new THREE.MeshLambertMaterial({color:0x80663d})
- );
- base.position.set(x,.03,z);
- scene.add(base);
-
- return g;
-}
-
-/* =========================================================
-   EDIFICIOS
-   ========================================================= */
-
-function crearCasa(x,z,w=7,d=7){
- const g=new THREE.Group();
-
- const paredMat=new THREE.MeshLambertMaterial({color:0xb4a38a});
-
- const p1=new THREE.Mesh(new THREE.BoxGeometry(w,4,.35),paredMat);
- p1.position.set(0,2,-d/2);
- g.add(p1);
-
- const p2=new THREE.Mesh(new THREE.BoxGeometry(w,4,.35),paredMat);
- p2.position.set(0,2,d/2);
- g.add(p2);
-
- const p3=new THREE.Mesh(new THREE.BoxGeometry(.35,4,d),paredMat);
- p3.position.set(-w/2,2,0);
- g.add(p3);
-
- const p4=new THREE.Mesh(new THREE.BoxGeometry(.35,4,d),paredMat);
- p4.position.set(w/2,2,0);
- g.add(p4);
-
- const techo=new THREE.Mesh(
-  new THREE.BoxGeometry(w+.5,.35,d+.5),
-  new THREE.MeshLambertMaterial({color:0x4a3b32})
- );
- techo.position.y=4.15;
- g.add(techo);
-
- g.position.set(x,0,z);
- scene.add(g);
-
- /* puerta visual */
- const puerta=new THREE.Mesh(
-  new THREE.BoxGeometry(1.25,2.6,.12),
-  new THREE.MeshLambertMaterial({color:0x4b2e1d})
- );
- puerta.position.set(x,1.3,z-d/2-.03);
- scene.add(puerta);
-
- puertas.push({mesh:puerta,x,z,w,d,abierta:false});
-
- /* ventanas */
- for(const sx of [-1,1]){
-  const ventana=new THREE.Mesh(
-   new THREE.BoxGeometry(1.25,1.1,.08),
-   new THREE.MeshLambertMaterial({color:0x75b9d5})
+  const trunk=new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      .35+.12*level,
+      .55+.15*level,
+      4+level,
+      8
+    ),
+    new THREE.MeshStandardMaterial({
+      color:0x60402c
+    })
   );
-  ventana.position.set(x+sx*(w/2+.02),2.2,z);
-  ventana.rotation.y=Math.PI/2;
-  scene.add(ventana);
- }
 
- return g;
+  trunk.position.y=2;
+
+  g.add(trunk);
+
+  const leaves=new THREE.Mesh(
+    new THREE.ConeGeometry(
+      2.4+level*.8,
+      5+level,
+      8
+    ),
+    new THREE.MeshStandardMaterial({
+      color:level===1?0x315d32:
+            level===2?0x214a27:
+            0x173b20
+    })
+  );
+
+  leaves.position.y=5.3;
+
+  g.add(leaves);
+
+  g.position.set(x,0,z);
+
+  g.traverse(o=>{
+    if(o.isMesh){
+      o.castShadow=true;
+      o.receiveShadow=true;
+    }
+  });
+
+  scene.add(g);
+
+  objects.push({
+    type:"tree",
+    mesh:g,
+    x,z,
+    hardness:level
+  });
+
 }
 
-/* =========================================================
-   COFRES
-   ========================================================= */
+/* ROCAS */
 
-function crearCofre(x,z){
- const g=new THREE.Group();
+function createRock(x,z,level=1){
 
- const caja=new THREE.Mesh(
-  new THREE.BoxGeometry(1.1,.65,.75),
-  new THREE.MeshLambertMaterial({color:0x7b4a24})
- );
- caja.position.y=.35;
- caja.castShadow=true;
- g.add(caja);
+  const r=new THREE.Mesh(
+    new THREE.DodecahedronGeometry(
+      1+level*.35,
+      1
+    ),
+    new THREE.MeshStandardMaterial({
+      color:
+        level===1?0x777777:
+        level===2?0x55585b:
+        0x393b3d
+    })
+  );
 
- const tapa=new THREE.Mesh(
-  new THREE.BoxGeometry(1.12,.15,.78),
-  new THREE.MeshLambertMaterial({color:0x9a642d})
- );
- tapa.position.y=.73;
- g.add(tapa);
+  r.position.set(x,1,z);
 
- const cierre=new THREE.Mesh(
-  new THREE.BoxGeometry(.15,.2,.08),
-  new THREE.MeshLambertMaterial({color:0xd3aa42})
- );
- cierre.position.set(0,.52,-.42);
- g.add(cierre);
+  r.scale.y=.7;
 
- g.position.set(x,0,z);
- scene.add(g);
+  r.castShadow=true;
 
- cofres.push({
-  mesh:g,
-  abierto:false,
-  loot:null
- });
+  scene.add(r);
+
+  objects.push({
+    type:"rock",
+    mesh:r,
+    x,z,
+    hardness:level
+  });
+
 }
 
-function lootCofre(c){
- if(c.abierto)return;
+/* VEGETACIÓN */
 
- c.abierto=true;
+function createBush(x,z){
 
- const r=Math.random();
+  const b=new THREE.Mesh(
+    new THREE.SphereGeometry(
+      .7+Math.random()*.6,
+      8,8
+    ),
+    new THREE.MeshStandardMaterial({
+      color:0x35652f
+    })
+  );
 
- if(r<.2){
-  comida+=Math.floor(Math.random()*4)+2;
-  agua+=1;
-  mostrar("Encontraste comida y agua");
- }else if(r<.4){
-  madera+=Math.floor(Math.random()*5)+3;
-  piedra+=Math.floor(Math.random()*4)+2;
-  mostrar("Encontraste materiales");
- }else if(r<.6){
-  hierro+=Math.floor(Math.random()*4)+2;
-  mostrar("Encontraste hierro");
- }else if(r<.8){
-  comida+=4;
-  madera+=6;
-  mostrar("Encontraste provisiones");
- }else{
-  agua+=3;
-  hierro+=3;
-  mostrar("¡Cofre con buen loot!");
- }
+  b.position.set(x,.6,z);
 
- c.mesh.children[1].rotation.x=-.9;
- actualizarHUD();
+  scene.add(b);
+
 }
 
-/* =========================================================
-   CIUDAD
-   ========================================================= */
+function createGrass(x,z){
 
-function crearCiudad(){
- const cx=42,cz=-35;
+  for(let i=0;i<4;i++){
 
- crearCamino(cx,cz,8,60);
- crearCamino(cx,cz,cx?60:60,8);
+    const blade=new THREE.Mesh(
+      new THREE.BoxGeometry(.035,.6,.035),
+      new THREE.MeshStandardMaterial({
+        color:0x5f863e
+      })
+    );
 
- crearCasa(cx-15,cz-12,8,7);
- crearCasa(cx+1,cz-12,7,8);
- crearCasa(cx+15,cz-12,9,7);
+    blade.position.set(
+      x+(Math.random()-.5),
+      .3,
+      z+(Math.random()-.5)
+    );
 
- crearCasa(cx-15,cz+10,8,8);
- crearCasa(cx+1,cz+10,9,7);
- crearCasa(cx+17,cz+10,8,9);
+    blade.rotation.z=(Math.random()-.5)*.5;
 
- crearCofre(cx-15,cz-12);
- crearCofre(cx+1,cz-12);
- crearCofre(cx+15,cz-12);
- crearCofre(cx-15,cz+10);
- crearCofre(cx+1,cz+10);
- crearCofre(cx+17,cz+10);
+    scene.add(blade);
 
- /* edificio grande */
- const deposito=crearCasa(cx+1,cz+30,15,12);
+  }
 
- /* cartel */
- const poste=new THREE.Mesh(
-  new THREE.BoxGeometry(.15,3,.15),
-  new THREE.MeshLambertMaterial({color:0x4d351f})
- );
- poste.position.set(cx-8,1.5,cz-31);
- scene.add(poste);
-
- const cartel=new THREE.Mesh(
-  new THREE.BoxGeometry(5,1.1,.15),
-  new THREE.MeshLambertMaterial({color:0x9a7a42})
- );
- cartel.position.set(cx-8,2.7,cz-31);
- scene.add(cartel);
-
- crearCofre(cx+1,cz+30);
 }
 
-/* =========================================================
-   MUNDO
-   ========================================================= */
+/* CASA */
 
-crearCiudad();
-crearPlantacion(-35,25);
-crearPlantacion(-25,30);
+function createHouse(x,z,w=12,d=10){
 
-for(let i=0;i<55;i++){
- let x=(Math.random()-.5)*150;
- let z=(Math.random()-.5)*150;
+  const g=new THREE.Group();
 
- if(Math.abs(x)<12&&Math.abs(z)<12)continue;
+  const wallMat=new THREE.MeshStandardMaterial({
+    color:0xaaa08d
+  });
 
- crearArbol(x,z,Math.floor(Math.random()*3)+1);
+  const roofMat=new THREE.MeshStandardMaterial({
+    color:0x4c3d35
+  });
+
+  function wall(px,pz,pw,pd){
+
+    const m=new THREE.Mesh(
+      new THREE.BoxGeometry(pw,4,pd),
+      wallMat
+    );
+
+    m.position.set(px,2,pz);
+
+    m.castShadow=true;
+
+    g.add(m);
+
+  }
+
+  wall(0,-d/2,w,.5);
+  wall(0,d/2,w,.5);
+  wall(-w/2,0,.5,d);
+  wall(w/2,0,.5,d);
+
+  const roof=new THREE.Mesh(
+    new THREE.BoxGeometry(w+1,1,d+1),
+    roofMat
+  );
+
+  roof.position.y=4.5;
+
+  roof.rotation.z=.04;
+
+  roof.castShadow=true;
+
+  g.add(roof);
+
+  const door=new THREE.Mesh(
+    new THREE.BoxGeometry(1.8,2.8,.2),
+    new THREE.MeshStandardMaterial({
+      color:0x55351e
+    })
+  );
+
+  door.position.set(0,1.4,d/2+.15);
+
+  g.add(door);
+
+  const windowMat=new THREE.MeshStandardMaterial({
+    color:0x8fd5e8,
+    metalness:.2,
+    roughness:.2
+  });
+
+  [-w/3,w/3].forEach(px=>{
+
+    const win=new THREE.Mesh(
+      new THREE.BoxGeometry(1.8,1.4,.15),
+      windowMat
+    );
+
+    win.position.set(px,2,d/2+.2);
+
+    g.add(win);
+
+  });
+
+  g.position.set(x,0,z);
+
+  scene.add(g);
+
+  return g;
+
 }
 
-for(let i=0;i<38;i++){
- let x=(Math.random()-.5)*150;
- let z=(Math.random()-.5)*150;
+/* CIUDAD GRANDE */
 
- if(Math.abs(x)<12&&Math.abs(z)<12)continue;
+function createCity(){
 
- crearRoca(x,z,Math.floor(Math.random()*3)+1,false);
+  const cx=900;
+  const cz=-700;
+
+  for(let i=0;i<14;i++){
+
+    const angle=(i/14)*Math.PI*2;
+
+    const radius=100+Math.random()*170;
+
+    const x=cx+Math.cos(angle)*radius;
+    const z=cz+Math.sin(angle)*radius;
+
+    createHouse(
+      x,
+      z,
+      12+Math.random()*8,
+      10+Math.random()*8
+    );
+
+  }
+
+  road(cx,cz,500,25);
+  road(cx,cz,25,500);
+
+  createPlace(
+    "Ciudad Vieja",
+    cx,
+    cz,
+    "city"
+  );
+
 }
 
-/* hierro en zonas más raras */
-for(let i=0;i<12;i++){
- crearRoca(
-  (Math.random()-.5)*150,
-  (Math.random()-.5)*150,
-  Math.random()<.5?2:3,
-  true
- );
+/* GRANJAS */
+
+function createFarm(){
+
+  const x=-700;
+  const z=500;
+
+  createHouse(x,z,16,12);
+
+  for(let i=0;i<8;i++){
+
+    const fx=x-30+i*8;
+
+    for(let j=0;j<5;j++){
+
+      const plant=new THREE.Mesh(
+        new THREE.CylinderGeometry(.12,.2,.8,6),
+        new THREE.MeshStandardMaterial({
+          color:0x477a32
+        })
+      );
+
+      plant.position.set(
+        fx,
+        .4,
+        z+30+j*4
+      );
+
+      scene.add(plant);
+
+    }
+
+  }
+
+  createPlace(
+    "Granja Verde",
+    x,
+    z,
+    "farm"
+  );
+
 }
 
-for(let i=0;i<45;i++){
- crearRama((Math.random()-.5)*100,(Math.random()-.5)*100);
+/* LUGARES */
+
+function createPlace(name,x,z,type){
+
+  const found=discovered.some(
+    p=>p.name===name
+  );
+
+  const marker=new THREE.Group();
+
+  const pillar=new THREE.Mesh(
+    new THREE.CylinderGeometry(.15,.15,5,8),
+    new THREE.MeshStandardMaterial({
+      color:0x777777
+    })
+  );
+
+  pillar.position.y=2.5;
+
+  marker.add(pillar);
+
+  const top=new THREE.Mesh(
+    new THREE.BoxGeometry(1.4,.9,.1),
+    new THREE.MeshStandardMaterial({
+      color:0x7777ff
+    })
+  );
+
+  top.position.y=4.5;
+
+  marker.add(top);
+
+  marker.position.set(x,0,z);
+
+  marker.visible=false;
+
+  scene.add(marker);
+
+  const place={
+    name,
+    x,
+    z,
+    type,
+    marker
+  };
+
+  window.places=window.places||[];
+
+  window.places.push(place);
+
 }
 
-for(let i=0;i<45;i++){
- crearPiedraPequena((Math.random()-.5)*100,(Math.random()-.5)*100);
+/* BASE */
+
+function createBase(){
+
+  createHouse(
+    BASE.x,
+    BASE.z-10,
+    14,
+    12
+  );
+
+  createFlag(
+    BASE.x,
+    BASE.z,
+    "BASE",
+    true
+  );
+
 }
 
-/* =========================================================
-   HERRAMIENTAS
-   ========================================================= */
+function createFlag(x,z,name,isBase=false){
 
-function crearHacha(hierro){
- const g=new THREE.Group();
+  const g=new THREE.Group();
 
- const mango=new THREE.Mesh(
-  new THREE.CylinderGeometry(.055,.07,.85,8),
-  new THREE.MeshLambertMaterial({color:0x6b4226})
- );
- mango.rotation.z=-.5;
- g.add(mango);
+  const pole=new THREE.Mesh(
+    new THREE.CylinderGeometry(.08,.08,4,8),
+    new THREE.MeshStandardMaterial({
+      color:0x333333
+    })
+  );
 
- const cabeza=new THREE.Mesh(
-  new THREE.BoxGeometry(.38,.45,.13),
-  new THREE.MeshLambertMaterial({color:hierro?0x999da2:0x777777})
- );
- cabeza.position.set(.25,.28,0);
- cabeza.rotation.z=-.2;
- g.add(cabeza);
+  pole.position.y=2;
 
- return g;
+  g.add(pole);
+
+  const flag=new THREE.Mesh(
+    new THREE.PlaneGeometry(2,1.2),
+    new THREE.MeshStandardMaterial({
+      color:isBase?0xd62828:0xe6c229,
+      side:THREE.DoubleSide
+    })
+  );
+
+  flag.position.set(1,3.3,0);
+
+  g.add(flag);
+
+  g.position.set(x,0,z);
+
+  scene.add(g);
+
+  return g;
+
 }
 
-function crearPico(hierro){
- const g=new THREE.Group();
+/* GENERACIÓN */
 
- const mango=new THREE.Mesh(
-  new THREE.CylinderGeometry(.055,.07,.9,8),
-  new THREE.MeshLambertMaterial({color:0x6b4226})
- );
- mango.rotation.z=-.55;
- g.add(mango);
+createBase();
 
- const cabeza=new THREE.Mesh(
-  new THREE.BoxGeometry(.55,.1,.12),
-  new THREE.MeshLambertMaterial({color:hierro?0x999da2:0x777777})
- );
- cabeza.position.set(.25,.3,0);
- cabeza.rotation.z=-.35;
- g.add(cabeza);
+createCity();
 
- return g;
+createFarm();
+
+for(let i=0;i<160;i++){
+
+  const x=(Math.random()-.5)*5000;
+  const z=(Math.random()-.5)*5000;
+
+  if(Math.hypot(x-BASE.x,z-BASE.z)<80)continue;
+
+  createTree(
+    x,
+    z,
+    1+Math.floor(Math.random()*3)
+  );
+
 }
 
-/* MANO */
-const mano=new THREE.Group();
-mano.position.set(.65,-.55,-1.15);
-mano.scale.set(1.5,1.5,1.5);
+for(let i=0;i<100;i++){
 
-const brazo=new THREE.Mesh(
- new THREE.CylinderGeometry(.11,.15,.65,8),
- new THREE.MeshLambertMaterial({color:0xd49b73})
+  const x=(Math.random()-.5)*5000;
+  const z=(Math.random()-.5)*5000;
+
+  createRock(
+    x,
+    z,
+    1+Math.floor(Math.random()*3)
+  );
+
+}
+
+for(let i=0;i<900;i++){
+
+  const x=(Math.random()-.5)*5000;
+  const z=(Math.random()-.5)*5000;
+
+  createGrass(x,z);
+
+}
+
+for(let i=0;i<250;i++){
+
+  const x=(Math.random()-.5)*5000;
+  const z=(Math.random()-.5)*5000;
+
+  createBush(x,z);
+
+}
+
+/* LUGARES ADICIONALES */
+
+createPlace(
+  "Bosque del Norte",
+  -900,
+  -1100,
+  "forest"
 );
-brazo.rotation.z=-.25;
-mano.add(brazo);
 
-const manoMesh=new THREE.Mesh(
- new THREE.SphereGeometry(.16,10,10),
- new THREE.MeshLambertMaterial({color:0xe0aa80})
+createPlace(
+  "Lago Perdido",
+  1200,
+  850,
+  "lake"
 );
-manoMesh.position.set(.2,.3,0);
-mano.add(manoMesh);
 
-camera.add(mano);
-scene.add(camera);
+createPlace(
+  "Casa Abandonada",
+  -1300,
+  900,
+  "house"
+);
 
-function actualizarHerramienta(){
- while(mano.children.length>2)mano.remove(mano.children[2]);
+createPlace(
+  "Mina Vieja",
+  1500,
+  -1200,
+  "mine"
+);
 
- if(!herramienta)return;
+/* BANDERAS GUARDADAS */
 
- const modelo=herramienta.tipo==="hacha"
- ?crearHacha(herramienta.nivel>=2)
- :crearPico(herramienta.nivel>=2);
+for(const f of placedFlags){
 
- modelo.position.set(.22,.18,-.1);
- modelo.scale.set(1.35,1.35,1.35);
- modelo.rotation.set(.1,0,-.2);
- mano.add(modelo);
+  const flag=createFlag(
+    f.x,
+    f.z,
+    f.name
+  );
+
 }
 
-function equipar(nombre,tipo,nivel,maxima){
- herramienta={nombre,tipo,nivel,durabilidad:maxima,maxima};
- actualizarHerramienta();
- actualizarHUD();
+/* CÁMARA */
+
+function updateCamera(){
+
+  camera.position.set(
+    player.x,
+    player.y,
+    player.z
+  );
+
+  const dir=new THREE.Vector3(
+    Math.sin(yaw),
+    Math.sin(pitch),
+    Math.cos(yaw)
+  );
+
+  camera.lookAt(
+    camera.position.clone().add(dir)
+  );
+
 }
 
-/* =========================================================
-   CRAFT
-   ========================================================= */
+updateCamera();
 
-function crearHachaPiedra(){
- if(madera>=3&&piedra>=3){
-  madera-=3;piedra-=3;
-  equipar("Hacha piedra","hacha",1,60);
-  mostrar("Hacha de piedra creada");
- }else mostrar("Faltan materiales");
- actualizarHUD();
+/* MOVIMIENTO */
+
+function movePlayer(dt){
+
+  let speed=running?7:3.5;
+
+  const forward=-joyY;
+  const side=joyX;
+
+  const sin=Math.sin(yaw);
+  const cos=Math.cos(yaw);
+
+  player.x += (
+    side*cos +
+    forward*sin
+  )*speed*dt;
+
+  player.z += (
+    side*-sin +
+    forward*cos
+  )*speed*dt;
+
+  player.x=Math.max(-2900,Math.min(2900,player.x));
+  player.z=Math.max(-2900,Math.min(2900,player.z));
+
 }
 
-function crearPicoPiedra(){
- if(madera>=3&&piedra>=4){
-  madera-=3;piedra-=4;
-  equipar("Pico piedra","pico",1,60);
-  mostrar("Pico de piedra creado");
- }else mostrar("Faltan materiales");
- actualizarHUD();
-}
-
-function crearHachaHierro(){
- if(madera>=5&&hierro>=5){
-  madera-=5;hierro-=5;
-  equipar("Hacha hierro","hacha",2,120);
-  mostrar("Hacha de hierro creada");
- }else mostrar("Faltan materiales");
- actualizarHUD();
-}
-
-function crearPicoHierro(){
- if(madera>=5&&hierro>=5){
-  madera-=5;hierro-=5;
-  equipar("Pico hierro","pico",2,120);
-  mostrar("Pico de hierro creado");
- }else mostrar("Faltan materiales");
- actualizarHUD();
-}
-
-/* =========================================================
-   RECOLECCIÓN
-   ========================================================= */
-
-function distancia(a,b){
- return a.distanceTo(b);
-}
-
-function recogerCercano(){
- let mejor=null;
- let d=2.3;
-
- for(const o of objetos){
-  if(!o.recogible)continue;
-
-  const od=distancia(camera.position,o.mesh.position);
-
-  if(od<d){
-   d=od;
-   mejor=o;
-  }
- }
-
- if(!mejor)return false;
-
- if(mejor.tipo==="rama"){
-  madera+=mejor.cantidad;
-  mostrar("+1 madera");
- }
-
- if(mejor.tipo==="piedraPequena"){
-  piedra+=mejor.cantidad;
-  mostrar("+1 piedra");
- }
-
- scene.remove(mejor.mesh);
- objetos.splice(objetos.indexOf(mejor),1);
-
- actualizarHUD();
- return true;
-}
-
-/* =========================================================
-   GOLPEAR
-   ========================================================= */
-
-function golpear(){
- if(recogerCercano())return;
-
- /* cofres */
- let cofreCercano=null;
- let dc=2.7;
-
- for(const c of cofres){
-  const d=distancia(camera.position,c.mesh.position);
-  if(d<dc){
-   dc=d;
-   cofreCercano=c;
-  }
- }
-
- if(cofreCercano){
-  lootCofre(cofreCercano);
-  return;
- }
-
- /* puerta */
- for(const p of puertas){
-  const d=Math.hypot(camera.position.x-p.x,camera.position.z-p.z);
-  if(d<3){
-   p.abierta=!p.abierta;
-   p.mesh.rotation.y=p.abierta?Math.PI/2:0;
-   mostrar(p.abierta?"Puerta abierta":"Puerta cerrada");
-   return;
-  }
- }
-
- /* animación */
- mano.position.z=-1.05;
-
- setTimeout(()=>{
-  mano.position.z=-1.15;
- },100);
-
- let objetivo=null;
- let mejor=3.4;
-
- for(const o of objetos){
-  if(o.recogible)continue;
-
-  const d=distancia(camera.position,o.mesh.position);
-
-  if(d<mejor){
-   mejor=d;
-   objetivo=o;
-  }
- }
-
- if(!objetivo){
-  actualizarHUD();
-  return;
- }
-
- if(objetivo.tipo==="arbol"){
-  if(!herramienta||herramienta.tipo!=="hacha"){
-   mostrar("Necesitás un hacha");
-   return;
-  }
-
-  if(herramienta.nivel<objetivo.dureza){
-   mostrar("El hacha es demasiado débil");
-   return;
-  }
- }
-
- if((objetivo.tipo==="piedra"||objetivo.tipo==="hierro")){
-  if(!herramienta||herramienta.tipo!=="pico"){
-   mostrar("Necesitás un pico");
-   return;
-  }
-
-  if(herramienta.nivel<objetivo.dureza){
-   mostrar("El pico es demasiado débil");
-   return;
-  }
- }
-
- objetivo.vida--;
- herramienta.durabilidad--;
-
- if(objetivo.tipo==="arbol"){
-  madera+=1;
- }else if(objetivo.tipo==="piedra"){
-  piedra+=1;
- }else if(objetivo.tipo==="hierro"){
-  hierro+=1;
- }
-
- if(herramienta.durabilidad<=0){
-  mostrar("Tu herramienta se rompió");
-  herramienta=null;
-  actualizarHerramienta();
- }
-
- if(objetivo.vida<=0){
-  if(objetivo.tipo==="arbol")madera+=objetivo.madera;
-  if(objetivo.tipo==="piedra")piedra+=objetivo.cantidad;
-  if(objetivo.tipo==="hierro")hierro+=objetivo.cantidad;
-
-  scene.remove(objetivo.mesh);
-  objetos.splice(objetos.indexOf(objetivo),1);
- }
-
- actualizarHUD();
-}
-
-/* =========================================================
-   MOVIMIENTO
-   ========================================================= */
-
-let joyX=0,joyY=0;
-let tocandoJoy=false;
+/* JOYSTICK */
 
 const joystick=document.getElementById("joystick");
 const stick=document.getElementById("stick");
 
+let joyActive=false;
+
 joystick.addEventListener("pointerdown",e=>{
- tocandoJoy=true;
- joystick.setPointerCapture(e.pointerId);
- moverJoy(e);
+
+  joyActive=true;
+  joystick.setPointerCapture(e.pointerId);
+  updateJoy(e);
+
 });
 
 joystick.addEventListener("pointermove",e=>{
- if(tocandoJoy)moverJoy(e);
+
+  if(joyActive)updateJoy(e);
+
 });
 
 joystick.addEventListener("pointerup",()=>{
- tocandoJoy=false;
- joyX=0;joyY=0;
- stick.style.left="37px";
- stick.style.top="37px";
+  joyActive=false;
+  joyX=0;
+  joyY=0;
+  stick.style.left="33px";
+  stick.style.top="33px";
 });
 
-function moverJoy(e){
- const r=joystick.getBoundingClientRect();
- let x=e.clientX-(r.left+r.width/2);
- let y=e.clientY-(r.top+r.height/2);
+function updateJoy(e){
 
- const max=42;
- const len=Math.hypot(x,y);
+  const r=joystick.getBoundingClientRect();
 
- if(len>max){
-  x=x/len*max;
-  y=y/len*max;
- }
+  let x=e.clientX-(r.left+r.width/2);
+  let y=e.clientY-(r.top+r.height/2);
 
- joyX=x/max;
- joyY=y/max;
+  const max=42;
 
- stick.style.left=(37+x)+"px";
- stick.style.top=(37+y)+"px";
+  const len=Math.hypot(x,y);
+
+  if(len>max){
+
+    x=x/len*max;
+    y=y/len*max;
+
+  }
+
+  joyX=x/max;
+  joyY=y/max;
+
+  stick.style.left=(33+x)+"px";
+  stick.style.top=(33+y)+"px";
+
 }
 
-/* =========================================================
-   CÁMARA
-   ========================================================= */
+/* CÁMARA TÁCTIL */
 
-let mirando=false;
-let ultimaX=0,ultimaY=0;
+let camActive=false;
+let lastX=0;
+let lastY=0;
 
-renderer.domElement.addEventListener("pointerdown",e=>{
- mirando=true;
- ultimaX=e.clientX;
- ultimaY=e.clientY;
+renderer.domElement.addEventListener(
+  "pointerdown",
+  e=>{
+
+    if(e.clientX<170)return;
+
+    camActive=true;
+
+    lastX=e.clientX;
+    lastY=e.clientY;
+
+  }
+);
+
+renderer.domElement.addEventListener(
+  "pointermove",
+  e=>{
+
+    if(!camActive)return;
+
+    const dx=e.clientX-lastX;
+    const dy=e.clientY-lastY;
+
+    yaw-=dx*.008;
+    pitch-=dy*.006;
+
+    pitch=Math.max(-.9,Math.min(.55,pitch));
+
+    lastX=e.clientX;
+    lastY=e.clientY;
+
+  }
+);
+
+renderer.domElement.addEventListener(
+  "pointerup",
+  ()=>{
+    camActive=false;
+  }
+);
+
+/* CORRER */
+
+const run=document.getElementById("run");
+
+run.addEventListener("pointerdown",()=>{
+  running=true;
 });
 
-renderer.domElement.addEventListener("pointermove",e=>{
- if(!mirando)return;
-
- const dx=e.clientX-ultimaX;
- const dy=e.clientY-ultimaY;
-
- ultimaX=e.clientX;
- ultimaY=e.clientY;
-
- camera.rotation.order="YXZ";
- camera.rotation.y-=dx*.004;
- camera.rotation.x-=dy*.004;
-
- camera.rotation.x=Math.max(-1.35,Math.min(1.35,camera.rotation.x));
+run.addEventListener("pointerup",()=>{
+  running=false;
 });
 
-renderer.domElement.addEventListener("pointerup",()=>mirando=false);
-renderer.domElement.addEventListener("pointercancel",()=>mirando=false);
-
-/* =========================================================
-   CORRER
-   ========================================================= */
-
-const correr=document.getElementById("correr");
-
-correr.addEventListener("pointerdown",()=>{
- corriendo=true;
+run.addEventListener("pointercancel",()=>{
+  running=false;
 });
 
-correr.addEventListener("pointerup",()=>{
- corriendo=false;
+/* BANDERA */
+
+document.getElementById("flagBtn")
+.addEventListener("click",()=>{
+
+  if(flags<=0){
+
+    showMessage("No tenés más banderas.");
+
+    return;
+
+  }
+
+  const name=
+    prompt(
+      "Nombre de esta bandera/lugar:",
+      "Lugar descubierto"
+    );
+
+  if(!name)return;
+
+  const f={
+    name,
+    x:Math.round(player.x),
+    z:Math.round(player.z)
+  };
+
+  placedFlags.push(f);
+
+  createFlag(
+    f.x,
+    f.z,
+    f.name
+  );
+
+  flags--;
+
+  saveGame();
+
+  showMessage(
+    "🚩 Bandera colocada: "+name+
+    " — "+distanceFromBase(f.x,f.z)
+  );
+
+  updateHUD();
+
 });
 
-correr.addEventListener("pointercancel",()=>{
- corriendo=false;
-});
+/* DISTANCIA */
 
-/* =========================================================
-   INVENTARIO
-   ========================================================= */
+function distanceFromBase(x,z){
 
-const inv=document.getElementById("inventario");
+  const meters=Math.hypot(
+    x-BASE.x,
+    z-BASE.z
+  );
 
-document.getElementById("crear").onclick=()=>{
- inv.style.display=inv.style.display==="none"?"block":"none";
-};
+  if(meters>=1000){
 
-/* =========================================================
-   HUD
-   ========================================================= */
+    return(
+      (meters/1000).toFixed(2)+
+      " km desde la base"
+    );
 
-function actualizarHUD(){
- document.getElementById("madera").textContent=madera;
- document.getElementById("piedra").textContent=piedra;
- document.getElementById("hierro").textContent=hierro;
- document.getElementById("comida").textContent=comida;
- document.getElementById("agua").textContent=agua;
+  }
 
- document.getElementById("imadera").textContent=madera;
- document.getElementById("ipiedra").textContent=piedra;
- document.getElementById("ihierro").textContent=hierro;
- document.getElementById("icomida").textContent=comida;
- document.getElementById("iagua").textContent=agua;
+  return(
+    Math.round(meters)+
+    " m desde la base"
+  );
 
- document.getElementById("vida").style.width=vida+"%";
- document.getElementById("stamina").style.width=stamina+"%";
-
- document.getElementById("herramienta").textContent=
- herramienta
- ?herramienta.nombre+" "+herramienta.durabilidad+"/"+herramienta.maxima
- :"Manos";
 }
 
-function mostrar(txt){
- const m=document.getElementById("mensaje");
- m.textContent=txt;
- m.style.display="block";
+/* DESCUBRIMIENTO */
 
- clearTimeout(m._t);
- m._t=setTimeout(()=>{
-  m.style.display="none";
- },1800);
+function checkDiscoveries(){
+
+  if(!window.places)return;
+
+  for(const p of window.places){
+
+    const d=Math.hypot(
+      player.x-p.x,
+      player.z-p.z
+    );
+
+    if(d<70){
+
+      const already=discovered.some(
+        x=>x.name===p.name
+      );
+
+      if(!already){
+
+        discovered.push({
+          name:p.name,
+          x:p.x,
+          z:p.z,
+          type:p.type
+        });
+
+        p.marker.visible=true;
+
+        showDiscovery(
+          p.name,
+          distanceFromBase(p.x,p.z)
+        );
+
+        saveGame();
+
+      }
+
+    }
+
+  }
+
 }
 
-document.getElementById("golpear").addEventListener("pointerdown",golpear);
+/* RECUPERAR MARCADORES */
 
-/* =========================================================
-   CICLO
-   ========================================================= */
+function restoreDiscoveries(){
 
-const reloj=new THREE.Clock();
+  if(!window.places)return;
 
-function animar(){
- requestAnimationFrame(animar);
+  for(const p of window.places){
 
- const dt=Math.min(reloj.getDelta(),.05);
+    if(
+      discovered.some(
+        d=>d.name===p.name
+      )
+    ){
 
- /* movimiento */
- let velocidad=corriendo&&stamina>0?.19:.09;
+      p.marker.visible=true;
 
- if(corriendo&&Math.abs(joyX)+Math.abs(joyY)>.1){
-  stamina-=35*dt;
-  if(stamina<0)stamina=0;
- }else{
-  stamina+=22*dt;
-  if(stamina>100)stamina=100;
- }
+    }
 
- const adelante=new THREE.Vector3();
- camera.getWorldDirection(adelante);
- adelante.y=0;
- adelante.normalize();
+  }
 
- const derecha=new THREE.Vector3()
-  .crossVectors(adelante,new THREE.Vector3(0,1,0))
-  .normalize();
-
- camera.position.addScaledVector(adelante,-joyY*velocidad);
- camera.position.addScaledVector(derecha,joyX*velocidad);
-
- /* límites */
- camera.position.x=Math.max(-85,Math.min(85,camera.position.x));
- camera.position.z=Math.max(-85,Math.min(85,camera.position.z));
- camera.position.y=2.1;
-
- actualizarHUD();
-
- renderer.render(scene,camera);
 }
 
-animar();
+/* MENSAJES */
 
-/* =========================================================
-   INICIO
-   ========================================================= */
+function showMessage(text){
 
-mostrar("Explorá el mundo y buscá recursos");
-actualizarHUD();
+  const el=document.getElementById("message");
+
+  el.innerText=text;
+
+  el.style.display="block";
+
+  clearTimeout(window.msgTimer);
+
+  window.msgTimer=setTimeout(()=>{
+    el.style.display="none";
+  },3000);
+
+}
+
+function showDiscovery(name,distance){
+
+  const box=document.getElementById("discover");
+
+  document.getElementById("discoverName")
+  .innerText=name;
+
+  document.getElementById("discoverDistance")
+  .innerText=distance;
+
+  box.style.display="block";
+
+  clearTimeout(window.discoveryTimer);
+
+  window.discoveryTimer=setTimeout(()=>{
+    box.style.display="none";
+  },4500);
+
+}
+
+/* HUD */
+
+function updateHUD(){
+
+  document.getElementById("hp")
+  .innerText=Math.round(player.hp);
+
+  document.getElementById("wood")
+  .innerText=wood;
+
+  document.getElementById("stone")
+  .innerText=stone;
+
+  document.getElementById("iron")
+  .innerText=iron;
+
+  document.getElementById("flags")
+  .innerText=flags;
+
+  const dx=Math.round(player.x);
+  const dz=Math.round(player.z);
+
+  document.getElementById("coords")
+  .innerText=
+    dx+" m / "+dz+" m";
+
+}
+
+/* BRÚJULA */
+
+function updateCompass(){
+
+  let deg=
+    (yaw*180/Math.PI)%360;
+
+  if(deg<0)deg+=360;
+
+  let dir="N";
+
+  if(deg>=22.5&&deg<67.5)dir="NE";
+  else if(deg>=67.5&&deg<112.5)dir="E";
+  else if(deg>=112.5&&deg<157.5)dir="SE";
+  else if(deg>=157.5&&deg<202.5)dir="S";
+  else if(deg>=202.5&&deg<247.5)dir="SO";
+  else if(deg>=247.5&&deg<292.5)dir="O";
+  else if(deg>=292.5&&deg<337.5)dir="NO";
+
+  document.getElementById("compass")
+  .innerText=dir;
+
+}
+
+/* MAPA */
+
+const map=document.getElementById("map");
+const mapCanvas=document.getElementById("mapCanvas");
+const ctx=mapCanvas.getContext("2d");
+
+document.getElementById("mapBtn")
+.addEventListener("click",()=>{
+
+  map.style.display="block";
+
+  drawMap();
+
+});
+
+document.getElementById("closeMap")
+.addEventListener("click",()=>{
+
+  map.style.display="none";
+
+});
+
+function drawMap(){
+
+  mapCanvas.width=mapCanvas.clientWidth;
+  mapCanvas.height=mapCanvas.clientHeight;
+
+  const w=mapCanvas.width;
+  const h=mapCanvas.height;
+
+  ctx.fillStyle="#263b25";
+  ctx.fillRect(0,0,w,h);
+
+  const scale=.055;
+
+  function worldToMap(x,z){
+
+    return {
+      x:w/2+x*scale,
+      y:h/2+z*scale
+    };
+
+  }
+
+  /* CUADRÍCULA */
+
+  ctx.strokeStyle="rgba(255,255,255,.08)";
+  ctx.lineWidth=1;
+
+  for(let x=0;x<w;x+=50){
+
+    ctx.beginPath();
+    ctx.moveTo(x,0);
+    ctx.lineTo(x,h);
+    ctx.stroke();
+
+  }
+
+  for(let y=0;y<h;y+=50){
+
+    ctx.beginPath();
+    ctx.moveTo(0,y);
+    ctx.lineTo(w,y);
+    ctx.stroke();
+
+  }
+
+  /* BASE */
+
+  const b=worldToMap(
+    BASE.x,
+    BASE.z
+  );
+
+  ctx.fillStyle="#ff3030";
+
+  ctx.beginPath();
+  ctx.arc(b.x,b.y,8,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="white";
+  ctx.font="12px Arial";
+  ctx.fillText(
+    "BASE",
+    b.x+10,
+    b.y
+  );
+
+  /* BANDERAS */
+
+  for(const f of placedFlags){
+
+    const p=worldToMap(f.x,f.z);
+
+    ctx.fillStyle="#ffd83d";
+
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,6,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle="white";
+    ctx.fillText(
+      f.name,
+      p.x+8,
+      p.y
+    );
+
+  }
+
+  /* LUGARES */
+
+  for(const d of discovered){
+
+    const p=worldToMap(d.x,d.z);
+
+    ctx.fillStyle="#73a7ff";
+
+    ctx.fillRect(
+      p.x-5,
+      p.y-5,
+      10,
+      10
+    );
+
+    ctx.fillStyle="white";
+
+    ctx.fillText(
+      d.name,
+      p.x+8,
+      p.y
+    );
+
+  }
+
+  /* JUGADOR */
+
+  const me=worldToMap(
+    player.x,
+    player.z
+  );
+
+  ctx.fillStyle="#00ff66";
+
+  ctx.beginPath();
+
+  ctx.arc(
+    me.x,
+    me.y,
+    8,
+    0,
+    Math.PI*2
+  );
+
+  ctx.fill();
+
+  /* DISTANCIA A BASE */
+
+  const distance=Math.hypot(
+    player.x-BASE.x,
+    player.z-BASE.z
+  );
+
+  ctx.fillStyle="white";
+  ctx.font="bold 14px Arial";
+
+  ctx.fillText(
+    "Distancia a base: "+
+    (
+      distance>=1000
+      ?(distance/1000).toFixed(2)+" km"
+      :Math.round(distance)+" m"
+    ),
+    15,
+    h-20
+  );
+
+}
+
+/* INVENTARIO */
+
+document.getElementById("invBtn")
+.addEventListener("click",()=>{
+
+  document.getElementById("inventory")
+  .style.display="block";
+
+  document.getElementById("invText")
+  .innerHTML=`
+
+    🪵 Madera: ${wood}<br><br>
+
+    🪨 Piedra: ${stone}<br><br>
+
+    🔩 Hierro: ${iron}<br><br>
+
+    🚩 Banderas: ${flags}<br><br>
+
+    🗺️ Lugares descubiertos:
+    ${discovered.length}
+
+  `;
+
+});
+
+document.getElementById("closeInv")
+.addEventListener("click",()=>{
+
+  document.getElementById("inventory")
+  .style.display="none";
+
+});
+
+/* GOLPEAR */
+
+document.getElementById("hit")
+.addEventListener("click",()=>{
+
+  const nearest=objects
+    .map(o=>({
+      o,
+      d:Math.hypot(
+        o.x-player.x,
+        o.z-player.z
+      )
+    }))
+    .sort((a,b)=>a.d-b.d)[0];
+
+  if(!nearest||nearest.d>5){
+
+    showMessage("No hay ningún recurso cerca.");
+
+    return;
+
+  }
+
+  const o=nearest.o;
+
+  if(o.type==="tree"){
+
+    wood+=o.hardness;
+
+    showMessage(
+      "🪵 Conseguís "+o.hardness+
+      " madera."
+    );
+
+  }
+
+  if(o.type==="rock"){
+
+    stone+=o.hardness;
+
+    showMessage(
+      "🪨 Conseguís "+o.hardness+
+      " piedra."
+    );
+
+  }
+
+  o.mesh.visible=false;
+
+  objects.splice(
+    objects.indexOf(o),
+    1
+  );
+
+  saveGame();
+
+  updateHUD();
+
+});
+
+/* LOOP */
+
+function animate(){
+
+  requestAnimationFrame(animate);
+
+  const now=performance.now();
+
+  const dt=Math.min(
+    (now-lastTime)/1000,
+    .05
+  );
+
+  lastTime=now;
+
+  movePlayer(dt);
+
+  updateCamera();
+
+  updateCompass();
+
+  updateHUD();
+
+  checkDiscoveries();
+
+  renderer.render(
+    scene,
+    camera
+  );
+
+}
+
+restoreDiscoveries();
+
+animate();
 
 addEventListener("resize",()=>{
- camera.aspect=innerWidth/innerHeight;
- camera.updateProjectionMatrix();
- renderer.setSize(innerWidth,innerHeight);
+
+  camera.aspect=
+    innerWidth/innerHeight;
+
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(
+    innerWidth,
+    innerHeight
+  );
+
 });
+
 </script>
+
 </body>
 </html>
