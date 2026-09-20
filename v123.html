@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Supervivencia 3D V12.3</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  user-select:none;
+  -webkit-user-select:none;
+  touch-action:none;
+}
+
+html,body{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#111;
+  font-family:Arial,sans-serif;
+}
+
+#game{
+  position:fixed;
+  inset:0;
+}
+
+canvas{
+  display:block;
+  width:100%;
+  height:100%;
+}
+
+#hud{
+  position:fixed;
+  top:10px;
+  left:10px;
+  color:white;
+  z-index:20;
+  font-size:13px;
+  text-shadow:2px 2px 3px #000;
+  pointer-events:none;
+}
+
+#title{
+  font-size:18px;
+  font-weight:bold;
+  margin-bottom:4px;
+}
+
+#info{
+  opacity:.9;
+}
+
+#buttons{
+  position:fixed;
+  top:10px;
+  right:10px;
+  z-index:30;
+  display:flex;
+  gap:7px;
+}
+
+button{
+  border:1px solid rgba(255,255,255,.3);
+  background:rgba(0,0,0,.65);
+  color:white;
+  border-radius:9px;
+  padding:9px 11px;
+  font-weight:bold;
+}
+
+#joystick{
+  position:fixed;
+  left:25px;
+  bottom:30px;
+  width:145px;
+  height:145px;
+  border-radius:50%;
+  background:rgba(255,255,255,.10);
+  border:2px solid rgba(255,255,255,.25);
+  z-index:40;
+}
+
+#stick{
+  position:absolute;
+  width:62px;
+  height:62px;
+  left:39px;
+  top:39px;
+  border-radius:50%;
+  background:rgba(255,255,255,.30);
+  border:2px solid rgba(255,255,255,.45);
+}
+
+#lookHelp{
+  position:fixed;
+  right:20px;
+  bottom:28px;
+  color:white;
+  font-size:12px;
+  opacity:.55;
+  text-shadow:1px 1px 3px #000;
+  pointer-events:none;
+}
+
+#map{
+  position:fixed;
+  display:none;
+  z-index:60;
+  top:55px;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(92vw,430px);
+  height:min(75vh,430px);
+  background:rgba(10,15,10,.94);
+  border:2px solid #aaa;
+  border-radius:12px;
+  color:white;
+  padding:12px;
+}
+
+#map h2{
+  font-size:18px;
+  margin-bottom:8px;
+}
+
+#mapCanvas{
+  width:100%;
+  height:calc(100% - 35px);
+  background:#1b271b;
+  border:1px solid #555;
+}
+
+#crosshair{
+  position:fixed;
+  left:50%;
+  top:50%;
+  width:10px;
+  height:10px;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  z-index:25;
+}
+
+#crosshair:before,
+#crosshair:after{
+  content:"";
+  position:absolute;
+  background:rgba(255,255,255,.75);
+}
+
+#crosshair:before{
+  width:10px;
+  height:1px;
+  top:4px;
+  left:0;
+}
+
+#crosshair:after{
+  width:1px;
+  height:10px;
+  left:4px;
+  top:0;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game"></div>
+
+<div id="hud">
+  <div id="title">SUPERVIVENCIA 3D — V12.3</div>
+  <div id="info">Día 1 · 08:00 · Explora el mapa</div>
+</div>
+
+<div id="buttons">
+  <button id="cameraBtn">3ª PERSONA</button>
+  <button id="mapBtn">MAPA</button>
+  <button id="timeBtn">NOCHE</button>
+</div>
+
+<div id="joystick">
+  <div id="stick"></div>
+</div>
+
+<div id="lookHelp">Deslizá en la pantalla para mirar</div>
+<div id="crosshair"></div>
+
+<div id="map">
+  <h2>Mapa — Supervivencia</h2>
+  <canvas id="mapCanvas"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+/* =========================================================
+   SUPERVIVENCIA 3D V12.3
+   Cámara independiente + movimiento relativo a cámara
+   Casas con puertas sólidas y ventanas abiertas sin vidrio
+========================================================= */
+
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0x91b4cf);
+scene.fog = new THREE.Fog(0x91b4cf,900,6000);
+
+const camera = new THREE.PerspectiveCamera(
+  70,
+  innerWidth/innerHeight,
+  0.1,
+  10000
+);
+
+const renderer = new THREE.WebGLRenderer({
+  antialias:false,
+  powerPreference:"high-performance"
+});
+
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+document.getElementById("game").appendChild(renderer.domElement);
+
+
+/* =========================================================
+   LUCES
+========================================================= */
+
+const hemi = new THREE.HemisphereLight(
+  0xbfdcff,
+  0x39402e,
+  1.8
+);
+
+scene.add(hemi);
+
+const sun = new THREE.DirectionalLight(
+  0xffffff,
+  1.5
+);
+
+sun.position.set(300,700,200);
+scene.add(sun);
+
+
+/* =========================================================
+   MATERIALES
+========================================================= */
+
+const matGround = new THREE.MeshLambertMaterial({
+  color:0x59664a
+});
+
+const matRoad = new THREE.MeshLambertMaterial({
+  color:0x303030
+});
+
+const matRoadLine = new THREE.MeshLambertMaterial({
+  color:0xd5c85b
+});
+
+const matWall = new THREE.MeshLambertMaterial({
+  color:0x9b8064
+});
+
+const matWallDark = new THREE.MeshLambertMaterial({
+  color:0x6e5744
+});
+
+const matWood = new THREE.MeshLambertMaterial({
+  color:0x704323
+});
+
+const matWoodDark = new THREE.MeshLambertMaterial({
+  color:0x482a17
+});
+
+const matRoof = new THREE.MeshLambertMaterial({
+  color:0x3f403c
+});
+
+const matWindowFrame = new THREE.MeshLambertMaterial({
+  color:0x57351f
+});
+
+const matTree = new THREE.MeshLambertMaterial({
+  color:0x284d29
+});
+
+const matTrunk = new THREE.MeshLambertMaterial({
+  color:0x573d27
+});
+
+const matWater = new THREE.MeshLambertMaterial({
+  color:0x397c9e
+});
+
+const matStone = new THREE.MeshLambertMaterial({
+  color:0x676767
+});
+
+const matMetal = new THREE.MeshLambertMaterial({
+  color:0x50565a
+});
+
+const matPlayer = new THREE.MeshLambertMaterial({
+  color:0x304b77
+});
+
+
+/* =========================================================
+   SUELO
+========================================================= */
+
+const WORLD = 10000;
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(WORLD,WORLD),
+  matGround
+);
+
+ground.rotation.x=-Math.PI/2;
+scene.add(ground);
+
+
+/* =========================================================
+   COLLIDERS
+========================================================= */
+
+const colliders=[];
+
+function addCollider(x,z,w,d){
+  colliders.push({
+    minX:x-w/2,
+    maxX:x+w/2,
+    minZ:z-d/2,
+    maxZ:z+d/2
+  });
+}
+
+function collision(x,z,r=.65){
+
+  for(const c of colliders){
+
+    if(
+      x+r>c.minX &&
+      x-r<c.maxX &&
+      z+r>c.minZ &&
+      z-r<c.maxZ
+    ){
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+/* =========================================================
+   CUBOS
+========================================================= */
+
+function box(w,h,d,material,x,y,z){
+
+  const m=new THREE.Mesh(
+    new THREE.BoxGeometry(w,h,d),
+    material
+  );
+
+  m.position.set(x,y,z);
+  scene.add(m);
+
+  return m;
+}
+
+
+/* =========================================================
+   ÁRBOLES
+========================================================= */
+
+function tree(x,z,s=1){
+
+  box(
+    0.8*s,
+    5*s,
+    0.8*s,
+    matTrunk,
+    x,
+    2.5*s,
+    z
+  );
+
+  const crown=new THREE.Mesh(
+    new THREE.ConeGeometry(
+      3.1*s,
+      6*s,
+      7
+    ),
+    matTree
+  );
+
+  crown.position.set(
+    x,
+    7*s,
+    z
+  );
+
+  scene.add(crown);
+}
+
+
+/* =========================================================
+   CASA
+   - paredes reales
+   - puerta sólida
+   - ventanas sin vidrio
+   - marco de madera
+========================================================= */
+
+function makeWindowWallX(
+  x,
+  z,
+  width,
+  height,
+  windowCenter,
+  windowWidth=4,
+  bottom=1.15
+){
+
+  const top=bottom+2.0;
+
+  // parte inferior
+  box(
+    width,
+    bottom,
+    .5,
+    matWall,
+    x,
+    bottom/2,
+    z
+  );
+
+  addCollider(x,z,width,.5);
+
+  // parte superior
+  box(
+    width,
+    height-top,
+    .5,
+    matWall,
+    x,
+    top+(height-top)/2,
+    z
+  );
+
+  addCollider(
+    x,
+    z,
+    width,
+    .5
+  );
+
+  // lado izquierdo del hueco
+  const leftWidth=
+    windowCenter-windowWidth/2 + width/2;
+
+  if(leftWidth>0){
+
+    const lx=
+      x-width/2+leftWidth/2;
+
+    box(
+      leftWidth,
+      top-bottom,
+      .5,
+      matWall,
+      lx,
+      bottom+(top-bottom)/2,
+      z
+    );
+
+    addCollider(
+      lx,
+      z,
+      leftWidth,
+      .5
+    );
+  }
+
+  // lado derecho del hueco
+  const rightWidth=
+    width-(windowCenter-windowWidth/2+width/2)-windowWidth;
+
+  if(rightWidth>0){
+
+    const rx=
+      x+width/2-rightWidth/2;
+
+    box(
+      rightWidth,
+      top-bottom,
+      .5,
+      matWall,
+      rx,
+      bottom+(top-bottom)/2,
+      z
+    );
+
+    addCollider(
+      rx,
+      z,
+      rightWidth,
+      .5
+    );
+  }
+
+  // marco horizontal inferior
+  box(
+    windowWidth+.35,
+    .18,
+    .72,
+    matWindowFrame,
+    x+windowCenter,
+    bottom,
+    z
+  );
+
+  // marco horizontal superior
+  box(
+    windowWidth+.35,
+    .18,
+    .72,
+    matWindowFrame,
+    x+windowCenter,
+    top,
+    z
+  );
+
+  // marco vertical izquierdo
+  box(
+    .18,
+    top-bottom,
+    .72,
+    matWindowFrame,
+    x+windowCenter-windowWidth/2,
+    bottom+(top-bottom)/2,
+    z
+  );
+
+  // marco vertical derecho
+  box(
+    .18,
+    top-bottom,
+    .72,
+    matWindowFrame,
+    x+windowCenter+windowWidth/2,
+    bottom+(top-bottom)/2,
+    z
+  );
+
+  // cruz de madera
+  box(
+    windowWidth,
+    .16,
+    .65,
+    matWindowFrame,
+    x+windowCenter,
+    bottom+(top-bottom)/2,
+    z
+  );
+
+  box(
+    .16,
+    top-bottom,
+    .65,
+    matWindowFrame,
+    x+windowCenter,
+    bottom+(top-bottom)/2,
+    z
+  );
+}
+
+
+/* =========================================================
+   PARED CON VENTANA EN Z
+========================================================= */
+
+function makeWindowWallZ(
+  x,
+  z,
+  width,
+  height,
+  windowCenter,
+  windowWidth=4,
+  bottom=1.15
+){
+
+  const top=bottom+2;
+
+  // inferior
+  box(
+    .5,
+    bottom,
+    width,
+    matWall,
+    x,
+    bottom/2,
+    z
+  );
+
+  addCollider(x,z,.5,width);
+
+  // superior
+  box(
+    .5,
+    height-top,
+    width,
+    matWall,
+    x,
+    top+(height-top)/2,
+    z
+  );
+
+  addCollider(x,z,.5,width);
+
+  const leftWidth=
+    windowCenter-windowWidth/2+width/2;
+
+  if(leftWidth>0){
+
+    const lz=
+      z-width/2+leftWidth/2;
+
+    box(
+      .5,
+      top-bottom,
+      leftWidth,
+      matWall,
+      x,
+      bottom+(top-bottom)/2,
+      lz
+    );
+
+    addCollider(x,lz,.5,leftWidth);
+  }
+
+  const rightWidth=
+    width-(windowCenter-windowWidth/2+width/2)-windowWidth;
+
+  if(rightWidth>0){
+
+    const rz=
+      z+width/2-rightWidth/2;
+
+    box(
+      .5,
+      top-bottom,
+      rightWidth,
+      matWall,
+      x,
+      bottom+(top-bottom)/2,
+      rz
+    );
+
+    addCollider(x,rz,.5,rightWidth);
+  }
+
+  // marco
+  box(
+    .72,
+    .18,
+    windowWidth+.35,
+    matWindowFrame,
+    x,
+    bottom,
+    z+windowCenter
+  );
+
+  box(
+    .72,
+    .18,
+    windowWidth+.35,
+    matWindowFrame,
+    x,
+    top,
+    z+windowCenter
+  );
+
+  box(
+    .72,
+    top-bottom,
+    .18,
+    matWindowFrame,
+    x,
+    bottom+(top-bottom)/2,
+    z+windowCenter-windowWidth/2
+  );
+
+  box(
+    .72,
+    top-bottom,
+    .18,
+    matWindowFrame,
+    x,
+    bottom+(top-bottom)/2,
+    z+windowCenter+windowWidth/2
+  );
+
+  // cruz
+  box(
+    .65,
+    .16,
+    windowWidth,
+    matWindowFrame,
+    x,
+    bottom+(top-bottom)/2,
+    z+windowCenter
+  );
+
+  box(
+    .65,
+    top-bottom,
+    .16,
+    matWindowFrame,
+    x,
+    bottom+(top-bottom)/2,
+    z+windowCenter
+  );
+}
+
+
+/* =========================================================
+   CASA
+========================================================= */
+
+function house(x,z){
+
+  const W=24;
+  const D=18;
+  const H=4;
+
+  // piso
+  box(
+    W,
+    .25,
+    D,
+    matWoodDark,
+    x,
+    .12,
+    z
+  );
+
+  // -------------------------------------------------------
+  // FRENTE
+  // puerta centrada y SOLIDA
+  // -------------------------------------------------------
+
+  const doorW=3.2;
+
+  // izquierda de puerta
+  box(
+    (W-doorW)/2,
+    H,
+    .5,
+    matWall,
+    x-W/4-doorW/4,
+    H/2,
+    z-D/2
+  );
+
+  addCollider(
+    x-W/4-doorW/4,
+    z-D/2,
+    (W-doorW)/2,
+    .5
+  );
+
+  // derecha de puerta
+  box(
+    (W-doorW)/2,
+    H,
+    .5,
+    matWall,
+    x+W/4+doorW/4,
+    H/2,
+    z-D/2
+  );
+
+  addCollider(
+    x+W/4+doorW/4,
+    z-D/2,
+    (W-doorW)/2,
+    .5
+  );
+
+  // puerta sólida
+  box(
+    doorW,
+    3.8,
+    .65,
+    matWood,
+    x,
+    1.9,
+    z-D/2
+  );
+
+  addCollider(
+    x,
+    z-D/2,
+    doorW,
+    .65
+  );
+
+  // marco de puerta
+  box(
+    .25,
+    4.1,
+    .75,
+    matWoodDark,
+    x-doorW/2,
+    2.05,
+    z-D/2
+  );
+
+  box(
+    .25,
+    4.1,
+    .75,
+    matWoodDark,
+    x+doorW/2,
+    2.05,
+    z-D/2
+  );
+
+  box(
+    doorW+.5,
+    .25,
+    .75,
+    matWoodDark,
+    x,
+    4,
+    z-D/2
+  );
+
+  // -------------------------------------------------------
+  // PARTE TRASERA CON VENTANA
+  // -------------------------------------------------------
+
+  makeWindowWallX(
+    x,
+    z+D/2,
+    W,
+    H,
+    0,
+    4
+  );
+
+  // -------------------------------------------------------
+  // LADO IZQUIERDO
+  // -------------------------------------------------------
+
+  makeWindowWallZ(
+    x-W/2,
+    z,
+    D,
+    H,
+    0,
+    4
+  );
+
+  // -------------------------------------------------------
+  // LADO DERECHO
+  // -------------------------------------------------------
+
+  makeWindowWallZ(
+    x+W/2,
+    z,
+    D,
+    H,
+    0,
+    4
+  );
+
+  // -------------------------------------------------------
+  // TECHO
+  // -------------------------------------------------------
+
+  const roof=box(
+    W+2,
+    .45,
+    D+2,
+    matRoof,
+    x,
+    H+.25,
+    z
+  );
+
+  // pequeño techo frontal
+  box(
+    W+2.5,
+    .35,
+    2.5,
+    matRoof,
+    x,
+    H+.15,
+    z-D/2-1
+  );
+
+}
+
+
+/* =========================================================
+   VARIAS CASAS
+========================================================= */
+
+house(450,-250);
+house(-680,700);
+house(3600,-500);
+house(1400,3000);
+house(-2200,-900);
+house(2600,-2200);
+
+
+/* =========================================================
+   CIUDAD / EDIFICIOS
+========================================================= */
+
+function building(x,z,w,d,h=7){
+
+  box(
+    w,
+    h,
+    d,
+    matWallDark,
+    x,
+    h/2,
+    z
+  );
+
+  addCollider(x,z,w,d);
+
+  // techo
+  box(
+    w+.5,
+    .4,
+    d+.5,
+    matRoof,
+    x,
+    h+.2,
+    z
+  );
+}
+
+building(3800,-2200,30,25,9);
+building(3900,-2200,25,20,7);
+building(3000,-3000,35,30,10);
+building(-3000,-2300,40,30,9);
+building(-3600,-1800,25,20,7);
+
+
+/* =========================================================
+   POZOS / RUINAS
+========================================================= */
+
+function ruins(x,z){
+
+  for(let i=0;i<6;i++){
+
+    const a=i*Math.PI/3;
+    const r=13;
+
+    const px=x+Math.cos(a)*r;
+    const pz=z+Math.sin(a)*r;
+
+    box(
+      5,
+      3+Math.random()*3,
+      4,
+      matStone,
+      px,
+      2,
+      pz
+    );
+
+    addCollider(
+      px,
+      pz,
+      5,
+      4
+    );
+  }
+}
+
+ruins(-2200,-900);
+ruins(-3800,500);
+
+
+/* =========================================================
+   LAGOS
+========================================================= */
+
+function lake(x,z,w,d){
+
+  const water=new THREE.Mesh(
+    new THREE.PlaneGeometry(w,d),
+    matWater
+  );
+
+  water.rotation.x=-Math.PI/2;
+  water.position.set(x,.03,z);
+  scene.add(water);
+}
+
+lake(-1800,1000,420,280);
+lake(3000,1200,300,220);
+lake(0,3500,250,180);
+
+
+/* =========================================================
+   CARRETERAS
+========================================================= */
+
+function road(x,z,w,d){
+
+  box(
+    w,
+    .08,
+    d,
+    matRoad,
+    x,
+    .05,
+    z
+  );
+
+  // líneas centrales
+  const vertical=d>w;
+
+  const length=vertical?d:w;
+  const count=Math.floor(length/30);
+
+  for(let i=0;i<count;i++){
+
+    const offset=
+      -length/2+15+i*30;
+
+    if(vertical){
+
+      box(
+        .7,
+        .1,
+        14,
+        matRoadLine,
+        x,
+        .11,
+        z+offset
+      );
+
+    }else{
+
+      box(
+        14,
+        .1,
+        .7,
+        matRoadLine,
+        x+offset,
+        .11,
+        z
+      );
+    }
+  }
+}
+
+road(0,-3000,120,1700);
+road(2600,-2200,1800,100);
+road(-3600,-1800,100,1300);
+road(0,-900,120,1800);
+
+
+/* =========================================================
+   PUENTE
+========================================================= */
+
+function bridge(x,z){
+
+  box(
+    100,
+    2,
+    420,
+    matStone,
+    x,
+    1,
+    z
+  );
+
+  for(let i=-180;i<=180;i+=60){
+
+    box(
+      7,
+      10,
+      7,
+      matStone,
+      x-48,
+      -4,
+      z+i
+    );
+
+    box(
+      7,
+      10,
+      7,
+      matStone,
+      x+48,
+      -4,
+      z+i
+    );
+  }
+}
+
+bridge(-700,-1600);
+
+
+/* =========================================================
+   ÁRBOLES DEL MAPA
+========================================================= */
+
+const treeZones=[
+  [700,-2100,45],
+  [-3000,2500,55],
+  [2500,3500,45],
+  [-3300,3000,40],
+  [-2500,2200,30],
+  [1400,3000,30],
+  [3300,2800,25]
+];
+
+for(const zone of treeZones){
+
+  const [cx,cz,count]=zone;
+
+  for(let i=0;i<count;i++){
+
+    const x=cx+(Math.random()-.5)*700;
+    const z=cz+(Math.random()-.5)*700;
+
+    tree(
+      x,
+      z,
+      .7+Math.random()*.7
+    );
+  }
+}
+
+
+/* =========================================================
+   ROCAS
+========================================================= */
+
+for(let i=0;i<90;i++){
+
+  const x=(Math.random()-.5)*8500;
+  const z=(Math.random()-.5)*8500;
+
+  const r=.5+Math.random()*2;
+
+  const rock=new THREE.Mesh(
+    new THREE.DodecahedronGeometry(r,0),
+    matStone
+  );
+
+  rock.position.set(
+    x,
+    r*.45,
+    z
+  );
+
+  scene.add(rock);
+}
+
+
+/* =========================================================
+   JUGADOR
+========================================================= */
+
+const player={
+  x:0,
+  y:1,
+  z:0,
+  yaw:0,
+  speed:0,
+  moving:false
+};
+
+
+/* =========================================================
+   MODELO DEL PERSONAJE
+========================================================= */
+
+const playerGroup=new THREE.Group();
+
+const body=box(
+  1.1,
+  1.7,
+  .65,
+  matPlayer,
+  0,
+  1.5,
+  0
+);
+
+const head=new THREE.Mesh(
+  new THREE.SphereGeometry(.42,12,8),
+  new THREE.MeshLambertMaterial({
+    color:0xb87858
+  })
+);
+
+head.position.set(0,2.65,0);
+playerGroup.add(head);
+
+// quitar body de scene y meterlo al grupo
+scene.remove(body);
+playerGroup.add(body);
+
+playerGroup.position.set(
+  player.x,
+  0,
+  player.z
+);
+
+scene.add(playerGroup);
+
+
+/* =========================================================
+   CÁMARA INDEPENDIENTE
+========================================================= */
+
+let cameraYaw=0;
+let cameraPitch=-0.12;
+
+let thirdPerson=false;
+
+const firstHeight=2.55;
+
+const thirdDistance=7;
+const thirdHeight=4.5;
+
+
+/* =========================================================
+   JOYSTICK
+========================================================= */
+
+const joystick=document.getElementById("joystick");
+const stick=document.getElementById("stick");
+
+let joyX=0;
+let joyY=0;
+
+let joyActive=false;
+let joyPointer=null;
+
+function updateJoystick(clientX,clientY){
+
+  const rect=joystick.getBoundingClientRect();
+
+  let x=clientX-(rect.left+rect.width/2);
+  let y=clientY-(rect.top+rect.height/2);
+
+  const max=48;
+
+  const len=Math.sqrt(x*x+y*y);
+
+  if(len>max){
+
+    x=x/len*max;
+    y=y/len*max;
+  }
+
+  joyX=x/max;
+  joyY=y/max;
+
+  stick.style.transform=
+    `translate(${x}px,${y}px)`;
+}
+
+function resetJoystick(){
+
+  joyX=0;
+  joyY=0;
+
+  stick.style.transform=
+    "translate(0px,0px)";
+
+  joyActive=false;
+  joyPointer=null;
+}
+
+joystick.addEventListener("pointerdown",e=>{
+
+  joyActive=true;
+  joyPointer=e.pointerId;
+
+  joystick.setPointerCapture(e.pointerId);
+
+  updateJoystick(
+    e.clientX,
+    e.clientY
+  );
+});
+
+joystick.addEventListener("pointermove",e=>{
+
+  if(!joyActive || e.pointerId!==joyPointer)return;
+
+  updateJoystick(
+    e.clientX,
+    e.clientY
+  );
+});
+
+joystick.addEventListener("pointerup",e=>{
+
+  if(e.pointerId===joyPointer){
+    resetJoystick();
+  }
+});
+
+joystick.addEventListener("pointercancel",resetJoystick);
+
+
+/* =========================================================
+   CÁMARA TÁCTIL
+   IMPORTANTE:
+   tocar/mover pantalla NO cambia player.yaw
+========================================================= */
+
+let lookActive=false;
+let lookPointer=null;
+
+let lastLookX=0;
+let lastLookY=0;
+
+renderer.domElement.addEventListener("pointerdown",e=>{
+
+  // si toca el joystick, no mirar
+  const jrect=joystick.getBoundingClientRect();
+
+  if(
+    e.clientX>=jrect.left &&
+    e.clientX<=jrect.right &&
+    e.clientY>=jrect.top &&
+    e.clientY<=jrect.bottom
+  ){
+    return;
+  }
+
+  lookActive=true;
+  lookPointer=e.pointerId;
+
+  lastLookX=e.clientX;
+  lastLookY=e.clientY;
+
+  renderer.domElement.setPointerCapture(e.pointerId);
+});
+
+renderer.domElement.addEventListener("pointermove",e=>{
+
+  if(!lookActive || e.pointerId!==lookPointer)return;
+
+  const dx=e.clientX-lastLookX;
+  const dy=e.clientY-lastLookY;
+
+  lastLookX=e.clientX;
+  lastLookY=e.clientY;
+
+  cameraYaw-=dx*.006;
+  cameraPitch-=dy*.005;
+
+  cameraPitch=
+    Math.max(
+      -1.25,
+      Math.min(1.15,cameraPitch)
+    );
+});
+
+renderer.domElement.addEventListener("pointerup",e=>{
+
+  if(e.pointerId===lookPointer){
+
+    lookActive=false;
+    lookPointer=null;
+  }
+});
+
+renderer.domElement.addEventListener("pointercancel",e=>{
+
+  if(e.pointerId===lookPointer){
+
+    lookActive=false;
+    lookPointer=null;
+  }
+});
+
+
+/* =========================================================
+   MOVIMIENTO
+   RELATIVO A CÁMARA
+========================================================= */
+
+function updateMovement(dt){
+
+  const inputX=joyX;
+  const inputY=joyY;
+
+  const magnitude=Math.sqrt(
+    inputX*inputX+
+    inputY*inputY
+  );
+
+  if(magnitude<.08){
+
+    player.speed=0;
+    player.moving=false;
+    return;
+  }
+
+  // arriba del joystick = adelante
+  const forward=-inputY;
+  const right=inputX;
+
+  // movimiento según cámara
+  const dx=
+    Math.sin(cameraYaw)*forward+
+    Math.cos(cameraYaw)*right;
+
+  const dz=
+    -Math.cos(cameraYaw)*forward+
+    Math.sin(cameraYaw)*right;
+
+  const len=Math.sqrt(dx*dx+dz*dz);
+
+  if(len===0)return;
+
+  const nx=dx/len;
+  const nz=dz/len;
+
+  const speed=8*dt;
+
+  const nextX=
+    player.x+nx*speed;
+
+  const nextZ=
+    player.z+nz*speed;
+
+  // collision independiente por eje
+  if(!collision(nextX,player.z,.65)){
+    player.x=nextX;
+  }
+
+  if(!collision(player.x,nextZ,.65)){
+    player.z=nextZ;
+  }
+
+  player.speed=8;
+  player.moving=true;
+
+  // personaje gira SOLO hacia donde camina
+  player.yaw=Math.atan2(nx,nz);
+
+  playerGroup.rotation.y=player.yaw;
+
+  playerGroup.position.x=player.x;
+  playerGroup.position.z=player.z;
+}
+
+
+/* =========================================================
+   ACTUALIZAR CÁMARA
+========================================================= */
+
+function updateCamera(){
+
+  if(!thirdPerson){
+
+    camera.position.set(
+      player.x,
+      firstHeight,
+      player.z
+    );
+
+    const targetX=
+      camera.position.x+
+      Math.sin(cameraYaw)*Math.cos(cameraPitch);
+
+    const targetY=
+      camera.position.y+
+      Math.sin(cameraPitch);
+
+    const targetZ=
+      camera.position.z-
+      Math.cos(cameraYaw)*Math.cos(cameraPitch);
+
+    camera.lookAt(
+      targetX,
+      targetY,
+      targetZ
+    );
+
+  }else{
+
+    // cámara orbital independiente
+    const horizontal=
+      Math.cos(cameraPitch)*thirdDistance;
+
+    const cx=
+      player.x-
+      Math.sin(cameraYaw)*horizontal;
+
+    const cz=
+      player.z+
+      Math.cos(cameraYaw)*horizontal;
+
+    const cy=
+      thirdHeight+
+      Math.sin(cameraPitch)*thirdDistance;
+
+    camera.position.set(
+      cx,
+      cy,
+      cz
+    );
+
+    camera.lookAt(
+      player.x,
+      1.7,
+      player.z
+    );
+  }
+}
+
+
+/* =========================================================
+   BOTÓN CÁMARA
+========================================================= */
+
+const cameraBtn=
+  document.getElementById("cameraBtn");
+
+cameraBtn.onclick=()=>{
+
+  thirdPerson=!thirdPerson;
+
+  cameraBtn.textContent=
+    thirdPerson
+      ?"1ª PERSONA"
+      :"3ª PERSONA";
+};
+
+
+/* =========================================================
+   DÍA / NOCHE
+========================================================= */
+
+let night=false;
+
+const timeBtn=
+  document.getElementById("timeBtn");
+
+timeBtn.onclick=()=>{
+
+  night=!night;
+
+  if(night){
+
+    scene.background.set(0x101827);
+    scene.fog.color.set(0x101827);
+
+    hemi.intensity=.45;
+    sun.intensity=.25;
+
+    timeBtn.textContent="DÍA";
+
+  }else{
+
+    scene.background.set(0x91b4cf);
+    scene.fog.color.set(0x91b4cf);
+
+    hemi.intensity=1.8;
+    sun.intensity=1.5;
+
+    timeBtn.textContent="NOCHE";
+  }
+};
+
+
+/* =========================================================
+   MAPA
+========================================================= */
+
+const map=document.getElementById("map");
+const mapBtn=document.getElementById("mapBtn");
+const mapCanvas=document.getElementById("mapCanvas");
+
+mapBtn.onclick=()=>{
+
+  if(map.style.display==="block"){
+
+    map.style.display="none";
+
+  }else{
+
+    map.style.display="block";
+    drawMap();
+  }
+};
+
+function drawMap(){
+
+  const ctx=mapCanvas.getContext("2d");
+
+  const w=mapCanvas.width=
+    mapCanvas.clientWidth*devicePixelRatio;
+
+  const h=mapCanvas.height=
+    mapCanvas.clientHeight*devicePixelRatio;
+
+  ctx.clearRect(0,0,w,h);
+
+  ctx.fillStyle="#263226";
+  ctx.fillRect(0,0,w,h);
+
+  const scale=w/9000;
+
+  function pos(x,z){
+
+    return {
+      x:w/2+x*scale,
+      y:h/2+z*scale
+    };
+  }
+
+  const places=[
+    [0,0,"Base"],
+    [450,-250,"Casa"],
+    [-700,700,"Granja"],
+    [700,-2100,"Bosque"],
+    [-1800,1000,"Lago"],
+    [-2200,-900,"Ruinas"],
+    [2600,-2200,"Ciudad"],
+    [2200,1900,"Mina"],
+    [-3000,2500,"Bosque"],
+    [3000,1200,"Lago"],
+    [3600,-500,"Pueblo"],
+    [-3000,-2300,"Fábrica"],
+    [-1400,-2600,"Gasolinera"],
+    [0,-3000,"Autopista"],
+    [-700,-1600,"Puente"],
+    [1400,3000,"Campamento"],
+    [3300,2800,"Cantera"],
+    [-2500,2200,"Cultivo"],
+    [-3800,500,"Fuerte"],
+    [3000,-3000,"Hospital"],
+    [3800,-2200,"Industrial"],
+    [-3600,-1800,"Tren"],
+    [1200,-3600,"Cementerio"],
+    [2500,3500,"Reserva"],
+    [-3300,3000,"Montañas"]
+  ];
+
+  ctx.font="11px Arial";
+
+  for(const p of places){
+
+    const a=pos(p[0],p[1]);
+
+    ctx.fillStyle=
+      p[2]==="Base"
+      ?"white"
+      :"#d5d5d5";
+
+    ctx.beginPath();
+    ctx.arc(
+      a.x,
+      a.y,
+      p[2]==="Base"?6:3,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.fillStyle="white";
+    ctx.fillText(
+      p[2],
+      a.x+7,
+      a.y+4
+    );
+  }
+
+  const me=pos(
+    player.x,
+    player.z
+  );
+
+  ctx.fillStyle="#ff3333";
+
+  ctx.beginPath();
+  ctx.arc(
+    me.x,
+    me.y,
+    7,
+    0,
+    Math.PI*2
+  );
+
+  ctx.fill();
+}
+
+
+/* =========================================================
+   HUD
+========================================================= */
+
+const info=document.getElementById("info");
+
+function updateHUD(){
+
+  const dist=Math.sqrt(
+    player.x*player.x+
+    player.z*player.z
+  );
+
+  const time=
+    night
+    ?"Noche"
+    :"Día";
+
+  info.textContent=
+    `${time} · Posición ${Math.round(player.x)}, ${Math.round(player.z)} · Distancia base ${Math.round(dist)}m`;
+}
+
+
+/* =========================================================
+   RESIZE
+========================================================= */
+
+addEventListener("resize",()=>{
+
+  camera.aspect=
+    innerWidth/innerHeight;
+
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(
+    innerWidth,
+    innerHeight
+  );
+});
+
+
+/* =========================================================
+   LOOP
+========================================================= */
+
+let last=performance.now();
+
+function animate(now){
+
+  requestAnimationFrame(animate);
+
+  const dt=
+    Math.min(
+      (now-last)/1000,
+      .05
+    );
+
+  last=now;
+
+  updateMovement(dt);
+  updateCamera();
+  updateHUD();
+
+  renderer.render(
+    scene,
+    camera
+  );
+}
+
+animate(performance.now());
+
+
+/* =========================================================
+   EVITAR ZOOM / SCROLL
+========================================================= */
+
+document.addEventListener(
+  "contextmenu",
+  e=>e.preventDefault()
+);
+
+document.addEventListener(
+  "touchmove",
+  e=>e.preventDefault(),
+  {passive:false}
+);
+
+</script>
+
+</body>
+</html>
